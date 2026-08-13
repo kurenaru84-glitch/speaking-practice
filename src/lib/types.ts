@@ -7,3 +7,13 @@ export type FeedbackResult = {
   natural: string;
   summary: string;
 };
+
+export type StorySet = {
+  id: string;
+  title: string;
+  images: string[];
+};
+
+export type ImagesResponse =
+  | { pattern: string; images: string[]; stories?: undefined }
+  | { pattern: string; stories: StorySet[]; images?: undefined };

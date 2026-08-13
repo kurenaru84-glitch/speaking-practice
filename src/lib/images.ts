@@ -10,6 +10,8 @@ const MIME: Record<string, string> = {
   ".gif": "image/gif",
 };
 
+const IMAGE_EXT = new Set(Object.keys(MIME));
+
 export function getImageRoot() {
   return IMAGE_ROOT;
 }
@@ -22,7 +24,11 @@ export function getPatternImageDir(folder: string) {
   return dir;
 }
 
-/** e.g. "/images/speculate/cafe.jpg" -> { dir, filename, mimeType } */
+export function isImageFile(filename: string) {
+  return IMAGE_EXT.has(path.extname(filename).toLowerCase());
+}
+
+/** e.g. "/images/speculate/cafe.jpg" */
 export function parseImageUrl(imageUrl: string, patternFolder: string) {
   const relative = imageUrl.replace(/^\/images\//, "");
   const parts = relative.split("/").filter(Boolean);
@@ -44,4 +50,28 @@ export function parseImageUrl(imageUrl: string, patternFolder: string) {
 
   const mimeType = MIME[path.extname(filename).toLowerCase()] ?? "image/jpeg";
   return { fullPath, filename, mimeType, publicPath: `/images/${patternFolder}/${filename}` };
+}
+
+/** e.g. "/images/story/demo/01.jpg" */
+export function parseStoryImageUrl(imageUrl: string) {
+  const relative = imageUrl.replace(/^\/images\//, "");
+  const parts = relative.split("/").filter(Boolean);
+  if (parts.length !== 3 || parts[0] !== "story") {
+    throw new Error("ストーリー画像パスが不正です。");
+  }
+
+  const setId = path.basename(parts[1]);
+  const filename = path.basename(parts[2]);
+  const dir = path.join(IMAGE_ROOT, "story", setId);
+  const fullPath = path.join(dir, filename);
+  if (!fullPath.startsWith(dir)) {
+    throw new Error("画像が不正です。");
+  }
+
+  const mimeType = MIME[path.extname(filename).toLowerCase()] ?? "image/jpeg";
+  return { fullPath, filename, mimeType, setId };
+}
+
+export function parseStoryImageUrls(imageUrls: string[]) {
+  return imageUrls.map(parseStoryImageUrl);
 }

@@ -2,12 +2,13 @@ import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { getLanguage } from "@/lib/languages";
 import { getSpeakingFeedback } from "@/lib/gemini";
-import { parseImageUrl } from "@/lib/images";
+import { parseImageUrl, parseStoryImageUrls } from "@/lib/images";
 import { getPattern, type PatternId } from "@/lib/patterns";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
     image?: string;
+    images?: string[];
     text?: string;
     language?: string;
     pattern?: string;
@@ -19,30 +20,35 @@ export async function POST(request: Request) {
   }
 
   const pattern = getPattern(body.pattern ?? "describe");
+  const language = getLanguage(body.language ?? "en-US");
 
-  let imagePath: string;
-  let mimeType: string;
-  try {
-    const parsed = parseImageUrl(body.image ?? "", pattern.imageFolder);
-    imagePath = parsed.fullPath;
-    mimeType = parsed.mimeType;
-  } catch {
-    return NextResponse.json({ error: "画像が不正です。" }, { status: 400 });
-  }
+  let imageInputs: Array<{ base64: string; mimeType: string }>;
 
-  let buffer: Buffer;
   try {
-    buffer = await readFile(imagePath);
+    if (pattern.multiImage) {
+      const urls = body.images ?? [];
+      if (urls.length === 0) {
+        return NextResponse.json({ error: "ストーリー画像がありません。" }, { status: 400 });
+      }
+      const parsed = parseStoryImageUrls(urls);
+      imageInputs = await Promise.all(
+        parsed.map(async (item) => ({
+          base64: (await readFile(item.fullPath)).toString("base64"),
+          mimeType: item.mimeType,
+        }))
+      );
+    } else {
+      const parsed = parseImageUrl(body.image ?? "", pattern.imageFolder);
+      const buffer = await readFile(parsed.fullPath);
+      imageInputs = [{ base64: buffer.toString("base64"), mimeType: parsed.mimeType }];
+    }
   } catch {
     return NextResponse.json({ error: "画像が見つかりません。" }, { status: 404 });
   }
 
-  const language = getLanguage(body.language ?? "en-US");
-
   try {
     const feedback = await getSpeakingFeedback({
-      imageBase64: buffer.toString("base64"),
-      mimeType,
+      images: imageInputs,
       userText: text,
       languageName: language.promptName,
       patternId: pattern.id as PatternId,

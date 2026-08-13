@@ -81,26 +81,24 @@ Keep filler words and natural spoken phrasing.`;
 }
 
 export async function getSpeakingFeedback(params: {
-  imageBase64: string;
-  mimeType: string;
+  images: Array<{ base64: string; mimeType: string }>;
   userText: string;
   languageName: string;
   patternId: PatternId;
 }): Promise<FeedbackResult> {
   const prompt = buildFeedbackPrompt(params.patternId, params.languageName, params.userText);
 
+  const imageParts = params.images.map((img) => ({
+    inline_data: {
+      mime_type: img.mimeType,
+      data: img.base64,
+    },
+  }));
+
   const text = await callGemini({
     contents: [
       {
-        parts: [
-          {
-            inline_data: {
-              mime_type: params.mimeType,
-              data: params.imageBase64,
-            },
-          },
-          { text: prompt },
-        ],
+        parts: [...imageParts, { text: prompt }],
       },
     ],
     generationConfig: {

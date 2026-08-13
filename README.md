@@ -20,6 +20,7 @@ Gemini API キーは `.env.local` の `GEMINI_API_KEY=` に入れます。
 | パターン | フォルダ |
 |---------|---------|
 | 状況説明 | `public/images/describe/` |
+| ストーリー | `public/images/story/セット名/`（01.jpg, 02.jpg...） |
 | 推測・予測 | `public/images/speculate/` |
 | ロールプレイ | `public/images/roleplay/` |
 

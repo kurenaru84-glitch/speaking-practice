@@ -6,13 +6,14 @@ import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
 import { getPattern, PATTERNS, type PatternId } from "@/lib/patterns";
-import type { FeedbackResult } from "@/lib/types";
+import type { FeedbackResult, ImagesResponse, StorySet } from "@/lib/types";
 
 const RECORD_SECONDS = 60;
 
 export function SpeakingPractice() {
   const [patternId, setPatternId] = useState<PatternId>("describe");
   const [images, setImages] = useState<string[]>([]);
+  const [stories, setStories] = useState<StorySet[]>([]);
   const [index, setIndex] = useState(0);
   const [language, setLanguage] = useState<LanguageId>("en-US");
   const [text, setText] = useState("");
@@ -31,15 +32,25 @@ export function SpeakingPractice() {
   const timerRef = useRef<number | null>(null);
 
   const pattern = getPattern(patternId);
-  const image = images[index];
+  const isStory = pattern.multiImage;
+  const currentStory = isStory ? stories[index] : null;
+  const currentImages = isStory ? (currentStory?.images ?? []) : images[index] ? [images[index]] : [];
+  const hasVisual = currentImages.length > 0;
   const busy = recording || transcribing || loading;
+  const itemCount = isStory ? stories.length : images.length;
 
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
     fetch(`/api/images?pattern=${patternId}`)
       .then((res) => res.json())
-      .then((data: { images: string[] }) => {
-        setImages(data.images);
+      .then((data: ImagesResponse) => {
+        if ("stories" in data && data.stories) {
+          setStories(data.stories);
+          setImages([]);
+        } else {
+          setImages(data.images ?? []);
+          setStories([]);
+        }
         setIndex(0);
         setText("");
         setFeedback(null);
@@ -126,7 +137,7 @@ export function SpeakingPractice() {
   }
 
   async function requestFeedback() {
-    if (!image || !text.trim()) return;
+    if (!hasVisual || !text.trim()) return;
     setLoading(true);
     setError("");
     setFeedback(null);
@@ -136,7 +147,7 @@ export function SpeakingPractice() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          image,
+          ...(isStory ? { images: currentImages } : { image: currentImages[0] }),
           text: text.trim(),
           language,
           pattern: patternId,
@@ -152,13 +163,13 @@ export function SpeakingPractice() {
     }
   }
 
-  async function nextImage(delta: number) {
-    if (!images.length || busy) return;
+  async function nextItem(delta: number) {
+    if (!itemCount || busy) return;
     clearTimer();
     stopPreview();
     setLivePreview(false);
     await stop();
-    setIndex((prev) => (prev + delta + images.length) % images.length);
+    setIndex((prev) => (prev + delta + itemCount) % itemCount);
     setText("");
     setFeedback(null);
     setSecondsLeft(RECORD_SECONDS);
@@ -193,12 +204,30 @@ export function SpeakingPractice() {
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
         <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-stone-200">
-          <div className="relative aspect-[4/3] bg-stone-100">
-            {image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt="練習用の写真" className="h-full w-full object-cover" />
+          <div className={`relative bg-stone-100 ${isStory ? "p-3" : "aspect-[4/3]"}`}>
+            {hasVisual ? (
+              isStory ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {currentImages.map((src, i) => (
+                    <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={`Panel ${i + 1}`} className="h-full w-full object-cover" />
+                      <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
+                        {i + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={currentImages[0]}
+                  alt="練習用の写真"
+                  className="h-full w-full object-cover"
+                />
+              )
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-stone-500">
+              <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
                 {pattern.emptyImageHint}
               </div>
             )}
@@ -214,14 +243,15 @@ export function SpeakingPractice() {
             )}
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <button type="button" className="btn-ghost" onClick={() => void nextImage(-1)} disabled={busy}>
-              前の画像
+            <button type="button" className="btn-ghost" onClick={() => void nextItem(-1)} disabled={busy}>
+              {pattern.navLabel}
             </button>
             <p className="text-sm text-stone-500">
-              {images.length ? `${index + 1} / ${images.length}` : "0 / 0"}
+              {itemCount ? `${index + 1} / ${itemCount}` : "0 / 0"}
+              {isStory && currentStory ? ` · ${currentStory.title}` : ""}
             </p>
-            <button type="button" className="btn-ghost" onClick={() => void nextImage(1)} disabled={busy}>
-              次の画像
+            <button type="button" className="btn-ghost" onClick={() => void nextItem(1)} disabled={busy}>
+              {isStory ? "次のストーリー" : "次の画像"}
             </button>
           </div>
         </section>

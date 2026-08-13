@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LANGUAGES, type LanguageId } from "@/lib/languages";
 import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
+import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
 import type { FeedbackResult } from "@/lib/types";
 
@@ -20,6 +21,8 @@ export function SpeakingPractice() {
   const [transcribing, setTranscribing] = useState(false);
   const [recordingOk, setRecordingOk] = useState(true);
   const [livePreview, setLivePreview] = useState(false);
+  const [previewCapable] = useState(() => isLivePreviewSupported());
+  const [mobile] = useState(() => isMobileDevice());
 
   const { recording, start, stop } = useRecorder();
   const { start: startPreview, stop: stopPreview } = useLivePreview();
@@ -160,7 +163,7 @@ export function SpeakingPractice() {
           画像を見て 1 分で説明する練習
         </h1>
         <p className="max-w-2xl text-sm leading-6 text-stone-600">
-          話している間はリアルタイムで文字が出ます。録音後に Gemini が精度の高い確定版に更新します。
+          PC では話している間に文字が出ます。スマホは録音後に Gemini が高精度で文字起こしします。
         </p>
       </header>
 
@@ -239,7 +242,9 @@ export function SpeakingPractice() {
               {recording
                 ? livePreview
                   ? `残り ${secondsLeft} 秒 · リアルタイム表示中`
-                  : `残り ${secondsLeft} 秒`
+                  : mobile
+                    ? `残り ${secondsLeft} 秒 · 終了後に文字起こし`
+                    : `残り ${secondsLeft} 秒`
                 : transcribing
                   ? "Gemini が確定版を作成中"
                   : "または下に直接入力"}
@@ -252,10 +257,15 @@ export function SpeakingPractice() {
             </p>
           )}
 
-          {recording && !livePreview && isLivePreviewSupported() === false && (
-            <p className="rounded-xl bg-stone-100 px-3 py-2 text-sm text-stone-600">
-              リアルタイム表示非対応のブラウザです。録音後に Gemini が文字起こしします。
-            </p>
+          {recording && !livePreview && !previewCapable && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-stone-700">
+              <p className="font-medium text-red-700">録音中 · 残り {secondsLeft} 秒</p>
+              <p className="mt-2 leading-6">
+                {mobile
+                  ? "iPhone / Android ではリアルタイム文字表示に対応していません。話し終わったら「録音を止める」を押してください。Gemini が文字起こしします。"
+                  : "リアルタイム表示非対応のブラウザです。録音後に Gemini が文字起こしします。"}
+              </p>
+            </div>
           )}
 
           <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -265,17 +275,29 @@ export function SpeakingPractice() {
                 <span className="ml-2 text-xs font-normal text-amber-700">プレビュー（確定版は録音後）</span>
               )}
             </span>
-            <textarea
-              className={`min-h-40 flex-1 resize-y rounded-2xl border px-3 py-2 leading-6 ${
-                livePreview
-                  ? "border-amber-200 bg-amber-50/60 text-stone-700"
-                  : "border-stone-200 bg-stone-50"
-              }`}
-              placeholder="話している間ここに文字が出ます。録音後に Gemini が確定版に更新します。"
-              value={text}
-              readOnly={livePreview || transcribing}
-              onChange={(e) => setText(e.target.value)}
-            />
+            {recording && !livePreview ? (
+              <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center text-sm leading-6 text-stone-500">
+                <p className="text-2xl">🎙</p>
+                <p className="mt-3 font-medium text-stone-700">録音中...</p>
+                <p className="mt-1">終了後、この欄に文字が入ります</p>
+              </div>
+            ) : (
+              <textarea
+                className={`min-h-40 flex-1 resize-y rounded-2xl border px-3 py-2 leading-6 ${
+                  livePreview
+                    ? "border-amber-200 bg-amber-50/60 text-stone-700"
+                    : "border-stone-200 bg-stone-50"
+                }`}
+                placeholder={
+                  mobile
+                    ? "録音を止めると Gemini がここへ文字起こしします。キーボード入力もできます。"
+                    : "話している間ここに文字が出ます。録音後に Gemini が確定版に更新します。"
+                }
+                value={text}
+                readOnly={livePreview || transcribing}
+                onChange={(e) => setText(e.target.value)}
+              />
+            )}
           </label>
 
           <button

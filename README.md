@@ -23,6 +23,7 @@ Gemini API キーは `.env.local` の `GEMINI_API_KEY=` に入れます。
 | ストーリー | `public/images/story/セット名/`（01.jpg, 02.jpg...） |
 | 推測・予測 | `public/images/speculate/` |
 | ロールプレイ | `public/images/roleplay/` |
+| 比較・意見 | `public/images/compare/セット名/`（a.jpg, b.jpg） |
 
 `.jpg` / `.png` / `.webp` を入れると一覧に出ます。
 

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { getLanguage } from "@/lib/languages";
 import { getSpeakingFeedback } from "@/lib/gemini";
-import { parseImageUrl, parseStoryImageUrls } from "@/lib/images";
+import { parseImageUrl, parseSetImageUrls } from "@/lib/images";
 import { getPattern, type PatternId } from "@/lib/patterns";
 
 export async function POST(request: Request) {
@@ -28,9 +28,9 @@ export async function POST(request: Request) {
     if (pattern.multiImage) {
       const urls = body.images ?? [];
       if (urls.length === 0) {
-        return NextResponse.json({ error: "ストーリー画像がありません。" }, { status: 400 });
+        return NextResponse.json({ error: "画像セットがありません。" }, { status: 400 });
       }
-      const parsed = parseStoryImageUrls(urls);
+      const parsed = parseSetImageUrls(urls, pattern.imageFolder);
       imageInputs = await Promise.all(
         parsed.map(async (item) => ({
           base64: (await readFile(item.fullPath)).toString("base64"),

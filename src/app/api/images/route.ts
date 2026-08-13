@@ -5,17 +5,17 @@ import { getPatternImageDir, isImageFile } from "@/lib/images";
 import { getPattern } from "@/lib/patterns";
 import type { StorySet } from "@/lib/types";
 
-async function listStorySets(storyDir: string): Promise<StorySet[]> {
+async function listImageSets(baseDir: string, patternFolder: string): Promise<StorySet[]> {
   let entries: string[];
   try {
-    entries = await readdir(storyDir);
+    entries = await readdir(baseDir);
   } catch {
     return [];
   }
 
   const sets: StorySet[] = [];
   for (const entry of entries) {
-    const setDir = path.join(storyDir, entry);
+    const setDir = path.join(baseDir, entry);
     const info = await stat(setDir).catch(() => null);
     if (!info?.isDirectory()) continue;
 
@@ -23,7 +23,7 @@ async function listStorySets(storyDir: string): Promise<StorySet[]> {
     const images = files
       .filter(isImageFile)
       .sort((a, b) => a.localeCompare(b))
-      .map((file) => `/images/story/${entry}/${file}`);
+      .map((file) => `/images/${patternFolder}/${entry}/${file}`);
 
     if (images.length > 0) {
       sets.push({ id: entry, title: entry, images });
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     const dir = getPatternImageDir(pattern.imageFolder);
 
     if (pattern.multiImage) {
-      const stories = await listStorySets(dir);
+      const stories = await listImageSets(dir, pattern.imageFolder);
       return NextResponse.json({ stories, pattern: pattern.id });
     }
 

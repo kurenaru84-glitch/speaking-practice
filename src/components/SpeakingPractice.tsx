@@ -32,12 +32,13 @@ export function SpeakingPractice() {
   const timerRef = useRef<number | null>(null);
 
   const pattern = getPattern(patternId);
-  const isStory = pattern.multiImage;
-  const currentStory = isStory ? stories[index] : null;
-  const currentImages = isStory ? (currentStory?.images ?? []) : images[index] ? [images[index]] : [];
+  const isMultiSet = pattern.multiImage;
+  const isCompare = pattern.imageLayout === "compare";
+  const currentSet = isMultiSet ? stories[index] : null;
+  const currentImages = isMultiSet ? (currentSet?.images ?? []) : images[index] ? [images[index]] : [];
   const hasVisual = currentImages.length > 0;
   const busy = recording || transcribing || loading;
-  const itemCount = isStory ? stories.length : images.length;
+  const itemCount = isMultiSet ? stories.length : images.length;
 
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
@@ -147,7 +148,7 @@ export function SpeakingPractice() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...(isStory ? { images: currentImages } : { image: currentImages[0] }),
+          ...(isMultiSet ? { images: currentImages } : { image: currentImages[0] }),
           text: text.trim(),
           language,
           pattern: patternId,
@@ -204,20 +205,34 @@ export function SpeakingPractice() {
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
         <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-stone-200">
-          <div className={`relative bg-stone-100 ${isStory ? "p-3" : "aspect-[4/3]"}`}>
+          <div className={`relative bg-stone-100 ${isMultiSet ? "p-3" : "aspect-[4/3]"}`}>
             {hasVisual ? (
-              isStory ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {currentImages.map((src, i) => (
-                    <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={src} alt={`Panel ${i + 1}`} className="h-full w-full object-cover" />
-                      <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
-                        {i + 1}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              isMultiSet ? (
+                isCompare ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {currentImages.slice(0, 2).map((src, i) => (
+                      <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt={`Option ${String.fromCharCode(65 + i)}`} className="h-full w-full object-cover" />
+                        <span className="absolute left-2 top-2 rounded-full bg-amber-700 px-2.5 py-0.5 text-xs font-bold text-white">
+                          {String.fromCharCode(65 + i)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {currentImages.map((src, i) => (
+                      <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt={`Panel ${i + 1}`} className="h-full w-full object-cover" />
+                        <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
+                          {i + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -248,10 +263,10 @@ export function SpeakingPractice() {
             </button>
             <p className="text-sm text-stone-500">
               {itemCount ? `${index + 1} / ${itemCount}` : "0 / 0"}
-              {isStory && currentStory ? ` · ${currentStory.title}` : ""}
+              {isMultiSet && currentSet ? ` · ${currentSet.title}` : ""}
             </p>
             <button type="button" className="btn-ghost" onClick={() => void nextItem(1)} disabled={busy}>
-              {isStory ? "次のストーリー" : "次の画像"}
+              {isCompare ? "次の比較" : isMultiSet ? "次のストーリー" : "次の画像"}
             </button>
           </div>
         </section>

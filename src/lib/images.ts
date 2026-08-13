@@ -52,17 +52,17 @@ export function parseImageUrl(imageUrl: string, patternFolder: string) {
   return { fullPath, filename, mimeType, publicPath: `/images/${patternFolder}/${filename}` };
 }
 
-/** e.g. "/images/story/demo/01.jpg" */
-export function parseStoryImageUrl(imageUrl: string) {
+/** e.g. "/images/story/demo/01.jpg" or "/images/compare/desks/a.jpg" */
+export function parseSetImageUrl(imageUrl: string, patternFolder: string) {
   const relative = imageUrl.replace(/^\/images\//, "");
   const parts = relative.split("/").filter(Boolean);
-  if (parts.length !== 3 || parts[0] !== "story") {
-    throw new Error("ストーリー画像パスが不正です。");
+  if (parts.length !== 3 || parts[0] !== patternFolder) {
+    throw new Error("セット画像パスが不正です。");
   }
 
   const setId = path.basename(parts[1]);
   const filename = path.basename(parts[2]);
-  const dir = path.join(IMAGE_ROOT, "story", setId);
+  const dir = path.join(IMAGE_ROOT, patternFolder, setId);
   const fullPath = path.join(dir, filename);
   if (!fullPath.startsWith(dir)) {
     throw new Error("画像が不正です。");
@@ -72,6 +72,15 @@ export function parseStoryImageUrl(imageUrl: string) {
   return { fullPath, filename, mimeType, setId };
 }
 
+export function parseSetImageUrls(imageUrls: string[], patternFolder: string) {
+  return imageUrls.map((url) => parseSetImageUrl(url, patternFolder));
+}
+
+/** @deprecated use parseSetImageUrl */
+export function parseStoryImageUrl(imageUrl: string) {
+  return parseSetImageUrl(imageUrl, "story");
+}
+
 export function parseStoryImageUrls(imageUrls: string[]) {
-  return imageUrls.map(parseStoryImageUrl);
+  return parseSetImageUrls(imageUrls, "story");
 }

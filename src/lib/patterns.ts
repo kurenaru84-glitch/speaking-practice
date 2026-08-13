@@ -1,4 +1,4 @@
-export type PatternId = "describe" | "story" | "speculate" | "roleplay";
+export type PatternId = "describe" | "story" | "speculate" | "roleplay" | "compare";
 
 export type Pattern = {
   id: PatternId;
@@ -9,6 +9,7 @@ export type Pattern = {
   taskEn: string;
   imageFolder: string;
   multiImage: boolean;
+  imageLayout: "single" | "sequence" | "compare";
   feedbackButton: string;
   naturalTitle: string;
   emptyImageHint: string;
@@ -25,6 +26,7 @@ export const PATTERNS: Pattern[] = [
     taskEn: "Describe what is happening in this photo.",
     imageFolder: "describe",
     multiImage: false,
+    imageLayout: "single",
     feedbackButton: "文法と自然な言い方を見る",
     naturalTitle: "こう言うともっと自然",
     emptyImageHint: "public/images/describe に画像を入れてください",
@@ -41,6 +43,7 @@ export const PATTERNS: Pattern[] = [
       "Tell the story shown in these panels in order. Use connectors (First, Then, After that, Eventually) and explain cause and effect.",
     imageFolder: "story",
     multiImage: true,
+    imageLayout: "sequence",
     feedbackButton: "ストーリーと時制をチェック",
     naturalTitle: "こう語るともっと自然",
     emptyImageHint: "public/images/story/セット名/ に 01.jpg などを入れてください",
@@ -57,6 +60,7 @@ export const PATTERNS: Pattern[] = [
       "Speculate: Why might this be happening? What probably happened before? What might happen next?",
     imageFolder: "speculate",
     multiImage: false,
+    imageLayout: "single",
     feedbackButton: "推測と助動詞をチェック",
     naturalTitle: "こう推測すると自然",
     emptyImageHint: "public/images/speculate に画像を入れてください",
@@ -73,10 +77,28 @@ export const PATTERNS: Pattern[] = [
       'Role-play: If you were this person, what would you say or do? What advice would you give them? Speak directly to the person (e.g. "Excuse me, I am so sorry...").',
     imageFolder: "roleplay",
     multiImage: false,
+    imageLayout: "single",
     feedbackButton: "話し方と仮定法をチェック",
     naturalTitle: "こう言うともっと自然",
     emptyImageHint: "public/images/roleplay に画像を入れてください",
     navLabel: "前の画像",
+  },
+  {
+    id: "compare",
+    label: "比較・意見",
+    title: "比較して意見を述べる練習",
+    description: "2枚の写真を比べて、A と B どちらが良いか理由とともに述べます。",
+    taskJa:
+      "A と B の写真を比べて、どちらが良いか（またはどちらを選ぶか）を選び、メリット・デメリットを交えて理由を述べてください。（On the one hand... On the other hand... Therefore...）",
+    taskEn:
+      "Compare photos A and B. Choose which you prefer and explain why, using pros and cons (On the one hand... On the other hand... Therefore...).",
+    imageFolder: "compare",
+    multiImage: true,
+    imageLayout: "compare",
+    feedbackButton: "比較と論理構成をチェック",
+    naturalTitle: "こう述べるともっと自然",
+    emptyImageHint: "public/images/compare/セット名/ に a.jpg と b.jpg を入れてください",
+    navLabel: "前の比較",
   },
 ];
 
@@ -109,6 +131,30 @@ Return JSON only, with this shape:
 Rules:
 - Focus corrections on connectors, tense shifts, missing causal links, and illogical jumps between panels.
 - natural must follow the actual panel sequence shown in the images.
+- Keep notes and summary in Japanese.
+- Do not wrap the JSON in markdown.`;
+  }
+
+  if (patternId === "compare") {
+    return `You are a kind language tutor specializing in comparison and structured opinions in ${languageName}.
+
+The learner saw two photos (Image A and Image B) and compared them, chose a preference, and gave reasons in ${languageName}.
+
+Learner text:
+"""
+${userText}
+"""
+
+Return JSON only, with this shape:
+{
+  "corrections": [{ "original": "exact phrase from the learner", "fixed": "corrected phrase", "note": "short explanation in Japanese" }],
+  "natural": "a natural 60-second spoken comparison in ${languageName}. Clearly choose A or B, use On the one hand... On the other hand... Therefore/In conclusion. Give specific comparative vocabulary, not just good/bad. 80-140 words, spoken style.",
+  "summary": "2-4 sentences in Japanese evaluating: (1) comparison structure, (2) specific vocabulary vs vague words, (3) whether a clear choice and reasons were given"
+}
+
+Rules:
+- Focus corrections on comparison phrases, vague adjectives, missing conclusion, and unclear preference.
+- natural must compare the actual A and B images shown.
 - Keep notes and summary in Japanese.
 - Do not wrap the JSON in markdown.`;
   }

@@ -15,9 +15,14 @@ Gemini API キーは `.env.local` の `GEMINI_API_KEY=` に入れます。
 4. Deploy 後、スマホで URL を開く
 5. Safari / Chrome の **ホーム画面に追加** でアプリのように使える
 
-## 画像を追加する
+## 練習パターン
 
-`public/images` に `.jpg` / `.png` / `.webp` を入れると一覧に出ます。
+| パターン | フォルダ |
+|---------|---------|
+| 状況説明 | `public/images/describe/` |
+| 推測・予測 | `public/images/speculate/` |
+
+`.jpg` / `.png` / `.webp` を入れると一覧に出ます。
 
 ## 音声の仕組み
 
@@ -30,4 +35,5 @@ Gemini API キーは `.env.local` の `GEMINI_API_KEY=` に入れます。
 - `src/lib/use-recorder.ts` … 60秒録音
 - `src/lib/use-live-preview.ts` … リアルタイムプレビュー
 - `src/app/api/transcribe/route.ts` … Gemini 音声文字起こし
-- `src/lib/gemini.ts` … 添削プロンプト
+- `src/lib/patterns.ts` … 練習パターンとプロンプト
+- `src/lib/gemini.ts` … 添削 API

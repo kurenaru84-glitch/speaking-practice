@@ -5,11 +5,13 @@ import { LANGUAGES, type LanguageId } from "@/lib/languages";
 import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
+import { getPattern, PATTERNS, type PatternId } from "@/lib/patterns";
 import type { FeedbackResult } from "@/lib/types";
 
 const RECORD_SECONDS = 60;
 
 export function SpeakingPractice() {
+  const [patternId, setPatternId] = useState<PatternId>("describe");
   const [images, setImages] = useState<string[]>([]);
   const [index, setIndex] = useState(0);
   const [language, setLanguage] = useState<LanguageId>("en-US");
@@ -28,16 +30,23 @@ export function SpeakingPractice() {
   const { start: startPreview, stop: stopPreview } = useLivePreview();
   const timerRef = useRef<number | null>(null);
 
+  const pattern = getPattern(patternId);
   const image = images[index];
   const busy = recording || transcribing || loading;
 
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
-    fetch("/api/images")
+    fetch(`/api/images?pattern=${patternId}`)
       .then((res) => res.json())
-      .then((data: { images: string[] }) => setImages(data.images))
+      .then((data: { images: string[] }) => {
+        setImages(data.images);
+        setIndex(0);
+        setText("");
+        setFeedback(null);
+        setError("");
+      })
       .catch(() => setError("画像一覧の取得に失敗しました。"));
-  }, []);
+  }, [patternId]);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -127,9 +136,10 @@ export function SpeakingPractice() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          image: image.replace("/images/", ""),
+          image,
           text: text.trim(),
           language,
+          pattern: patternId,
         }),
       });
       const data = await res.json();
@@ -157,14 +167,28 @@ export function SpeakingPractice() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 md:px-8">
-      <header className="flex flex-col gap-2">
+      <header className="flex flex-col gap-3">
         <p className="text-sm font-medium tracking-wide text-amber-800">Picture Speaking</p>
-        <h1 className="text-2xl font-semibold text-stone-900 md:text-3xl">
-          画像を見て 1 分で説明する練習
-        </h1>
-        <p className="max-w-2xl text-sm leading-6 text-stone-600">
-          PC では話している間に文字が出ます。スマホは録音後に Gemini が高精度で文字起こしします。
-        </p>
+        <h1 className="text-2xl font-semibold text-stone-900 md:text-3xl">{pattern.title}</h1>
+        <p className="max-w-2xl text-sm leading-6 text-stone-600">{pattern.description}</p>
+
+        <div className="flex flex-wrap gap-2">
+          {PATTERNS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              disabled={busy}
+              onClick={() => setPatternId(p.id)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                patternId === p.id
+                  ? "bg-amber-700 text-white"
+                  : "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
@@ -175,7 +199,7 @@ export function SpeakingPractice() {
               <img src={image} alt="練習用の写真" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-stone-500">
-                public/images に画像を入れてください
+                {pattern.emptyImageHint}
               </div>
             )}
             {recording && (
@@ -203,6 +227,12 @@ export function SpeakingPractice() {
         </section>
 
         <section className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
+          <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-6 text-stone-800">
+            <p className="font-medium text-amber-900">課題</p>
+            <p className="mt-1">{pattern.taskJa}</p>
+            <p className="mt-2 text-xs text-stone-500">{pattern.taskEn}</p>
+          </div>
+
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium text-stone-700">話す言語</span>
             <select
@@ -306,7 +336,7 @@ export function SpeakingPractice() {
             onClick={requestFeedback}
             disabled={!text.trim() || busy}
           >
-            {loading ? "添削中..." : "文法と自然な言い方を見る"}
+            {loading ? "添削中..." : pattern.feedbackButton}
           </button>
 
           {error && <p className="text-sm text-red-700">{error}</p>}
@@ -333,7 +363,7 @@ export function SpeakingPractice() {
             <p className="mt-4 text-sm leading-6 text-stone-600">{feedback.summary}</p>
           </div>
           <div>
-            <h2 className="mb-3 text-lg font-semibold text-stone-900">こう言うともっと自然</h2>
+            <h2 className="mb-3 text-lg font-semibold text-stone-900">{pattern.naturalTitle}</h2>
             <p className="whitespace-pre-wrap rounded-2xl bg-amber-50 p-4 text-sm leading-7 text-stone-800">
               {feedback.natural}
             </p>

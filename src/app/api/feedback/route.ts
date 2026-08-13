@@ -1,24 +1,16 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { getLanguage } from "@/lib/languages";
 import { getSpeakingFeedback } from "@/lib/gemini";
-
-const IMAGE_DIR = path.join(process.cwd(), "public", "images");
-
-const MIME: Record<string, string> = {
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
-  ".gif": "image/gif",
-};
+import { parseImageUrl } from "@/lib/images";
+import { getPattern, type PatternId } from "@/lib/patterns";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
     image?: string;
     text?: string;
     language?: string;
+    pattern?: string;
   };
 
   const text = body.text?.trim() ?? "";
@@ -26,9 +18,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "説明テキストが空です。" }, { status: 400 });
   }
 
-  const filename = path.basename(body.image ?? "");
-  const imagePath = path.join(IMAGE_DIR, filename);
-  if (!imagePath.startsWith(IMAGE_DIR) || !filename) {
+  const pattern = getPattern(body.pattern ?? "describe");
+
+  let imagePath: string;
+  let mimeType: string;
+  try {
+    const parsed = parseImageUrl(body.image ?? "", pattern.imageFolder);
+    imagePath = parsed.fullPath;
+    mimeType = parsed.mimeType;
+  } catch {
     return NextResponse.json({ error: "画像が不正です。" }, { status: 400 });
   }
 
@@ -39,7 +37,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "画像が見つかりません。" }, { status: 404 });
   }
 
-  const mimeType = MIME[path.extname(filename).toLowerCase()] ?? "image/jpeg";
   const language = getLanguage(body.language ?? "en-US");
 
   try {
@@ -48,6 +45,7 @@ export async function POST(request: Request) {
       mimeType,
       userText: text,
       languageName: language.promptName,
+      patternId: pattern.id as PatternId,
     });
     return NextResponse.json(feedback);
   } catch (error) {

@@ -1,4 +1,5 @@
 import type { FeedbackResult } from "@/lib/types";
+import { buildFeedbackPrompt, type PatternId } from "@/lib/patterns";
 
 const MODEL = "gemini-3.6-flash";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -84,26 +85,9 @@ export async function getSpeakingFeedback(params: {
   mimeType: string;
   userText: string;
   languageName: string;
+  patternId: PatternId;
 }): Promise<FeedbackResult> {
-  const prompt = `You are a kind language tutor. The learner described the attached photo in ${params.languageName} for about 1 minute.
-
-Learner text:
-"""
-${params.userText}
-"""
-
-Return JSON only, with this shape:
-{
-  "corrections": [{ "original": "exact phrase from the learner", "fixed": "corrected phrase", "note": "short explanation in Japanese" }],
-  "natural": "a natural 60-second spoken description of THIS photo in ${params.languageName}. Write as spoken language, 80-140 words.",
-  "summary": "2-4 sentences of overall feedback in Japanese"
-}
-
-Rules:
-- If the text is already good, corrections may be an empty array.
-- natural must describe the actual photo, not a generic scene.
-- Keep notes and summary in Japanese.
-- Do not wrap the JSON in markdown.`;
+  const prompt = buildFeedbackPrompt(params.patternId, params.languageName, params.userText);
 
   const text = await callGemini({
     contents: [

@@ -1,4 +1,4 @@
-export type PatternId = "describe" | "speculate";
+export type PatternId = "describe" | "speculate" | "roleplay";
 
 export type Pattern = {
   id: PatternId;
@@ -40,6 +40,20 @@ export const PATTERNS: Pattern[] = [
     naturalTitle: "こう推測すると自然",
     emptyImageHint: "public/images/speculate に画像を入れてください",
   },
+  {
+    id: "roleplay",
+    label: "ロールプレイ",
+    title: "ロールプレイ・アドバイスの練習",
+    description: "写真の人物になりきって話すか、相手に直接アドバイス・声かけをします。",
+    taskJa:
+      "もしあなたがこの状況の人物だったら、何と言いますか？または、この人になんてアドバイス／声かけをしますか？（If I were... で自分の行動を述べ、相手には直接話しかけてください）",
+    taskEn:
+      'Role-play: If you were this person, what would you say or do? What advice would you give them? Speak directly to the person (e.g. "Excuse me, I am so sorry...").',
+    imageFolder: "roleplay",
+    feedbackButton: "話し方と仮定法をチェック",
+    naturalTitle: "こう言うともっと自然",
+    emptyImageHint: "public/images/roleplay に画像を入れてください",
+  },
 ];
 
 export function getPattern(id: string): Pattern {
@@ -51,6 +65,32 @@ export function buildFeedbackPrompt(
   languageName: string,
   userText: string
 ): string {
+  if (patternId === "roleplay") {
+    return `You are a kind language tutor specializing in role-play, direct speech, and advice in ${languageName}.
+
+The learner looked at the attached photo and either:
+- spoke as if they were someone in the scene (using "If I were...", "I would..."), and/or
+- gave advice or spoke directly to a person in the photo.
+
+Learner text:
+"""
+${userText}
+"""
+
+Return JSON only, with this shape:
+{
+  "corrections": [{ "original": "exact phrase from the learner", "fixed": "corrected phrase", "note": "short explanation in Japanese" }],
+  "natural": "a natural 60-second role-play response about THIS photo in ${languageName}. Include direct speech to someone in the scene and use If I were... / I would... where appropriate. Show politeness and practical communication. 80-140 words, spoken style.",
+  "summary": "2-4 sentences in Japanese evaluating: (1) subjunctive / conditional (If I were...), (2) direct speech and tone (polite, persuasive), (3) whether the response fits the situation in the photo"
+}
+
+Rules:
+- Focus corrections on subjunctive, direct address, register (too casual/formal), and unrealistic responses.
+- natural must respond to THIS specific photo's situation.
+- Keep notes and summary in Japanese.
+- Do not wrap the JSON in markdown.`;
+  }
+
   if (patternId === "speculate") {
     return `You are a kind language tutor specializing in speculation and modality in ${languageName}.
 

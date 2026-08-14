@@ -80,8 +80,8 @@ export function SpeakingPractice() {
     fetch(`/api/images?pattern=${patternId}`)
       .then((res) => res.json())
       .then((data: ImagesResponse) => {
-        if ("roleplayScenarios" in data && data.roleplayScenarios) {
-          setRoleplayScenarios(data.roleplayScenarios);
+        if ("roleplayScenarios" in data) {
+          setRoleplayScenarios(data.roleplayScenarios ?? []);
           setStories([]);
           setImages([]);
         } else if ("stories" in data && data.stories) {

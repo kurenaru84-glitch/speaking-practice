@@ -80,7 +80,7 @@ export const PATTERNS: Pattern[] = [
     imageLayout: "roleplay",
     feedbackButton: "話し方と仮定法をチェック",
     naturalTitle: "こう言うともっと自然",
-    emptyImageHint: "public/images/roleplay/カテゴリ名/ に画像と meta.json を入れてください",
+    emptyImageHint: "public/images/roleplay/カテゴリ名/ に画像を入れ、npm run generate:roleplay で問いかけを生成してください",
     navLabel: "前のシーン",
   },
   {

@@ -59,6 +59,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ images, pattern: pattern.id });
   } catch {
+    if (pattern.imageLayout === "roleplay") {
+      return NextResponse.json({ roleplayScenarios: [], pattern: pattern.id });
+    }
     return NextResponse.json(
       pattern.multiImage ? { stories: [], pattern: pattern.id } : { images: [], pattern: pattern.id }
     );

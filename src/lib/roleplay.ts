@@ -59,25 +59,6 @@ async function listCategoryScenarios(
   return images.map((filename) => buildScenario(categoryId, meta, filename));
 }
 
-async function listLegacyScenarios(baseDir: string): Promise<RoleplayScenario[]> {
-  const files = await readdir(baseDir);
-  const images = files.filter(isImageFile).sort((a, b) => a.localeCompare(b));
-  if (images.length === 0) return [];
-
-  const categoryId = "uncategorized";
-  const meta = {
-    categoryJa: defaultCategoryLabels(categoryId).ja,
-    categoryEn: defaultCategoryLabels(categoryId).en,
-    images: [] as RoleplayMeta["images"],
-  };
-
-  return images.map((filename) => ({
-    ...buildScenario(categoryId, meta, filename),
-    image: `/images/roleplay/${filename}`,
-    id: `uncategorized/${path.parse(filename).name}`,
-  }));
-}
-
 export async function listRoleplayScenarios(): Promise<RoleplayScenario[]> {
   const baseDir = getPatternImageDir("roleplay");
   let entries: string[];
@@ -95,8 +76,6 @@ export async function listRoleplayScenarios(): Promise<RoleplayScenario[]> {
     if (!info?.isDirectory() || entry.startsWith("_")) continue;
     scenarios.push(...(await listCategoryScenarios(entryPath, entry)));
   }
-
-  scenarios.push(...(await listLegacyScenarios(baseDir)));
 
   return scenarios.sort((a, b) =>
     `${a.categoryId}/${a.image}`.localeCompare(`${b.categoryId}/${b.image}`)

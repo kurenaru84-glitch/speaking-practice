@@ -156,7 +156,7 @@ export function buildFeedbackPrompt(
   patternId: PatternId,
   languageName: string,
   userText: string,
-  scenario?: { promptJa: string; promptEn: string }
+  scenario?: { promptJa: string; promptEn: string; labelA?: string; labelB?: string }
 ): string {
   const intro = `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
 
@@ -182,7 +182,17 @@ ${SHARED_RULES}`;
   }
 
   if (patternId === "compare") {
+    const topicBlock = scenario
+      ? `
+Comparison topic shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}
+- Option A: ${scenario.labelA ?? "A"}
+- Option B: ${scenario.labelB ?? "B"}`
+      : "";
+
     return `${intro}
+${topicBlock}
 
 The learner compared Image A and Image B in ${languageName} and stated a preference.
 

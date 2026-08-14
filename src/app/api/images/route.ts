@@ -3,6 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { getPatternImageDir, isImageFile } from "@/lib/images";
 import { getPattern } from "@/lib/patterns";
+import { listCompareSets } from "@/lib/compare";
 import { listRoleplayScenarios } from "@/lib/roleplay";
 import type { StorySet } from "@/lib/types";
 
@@ -46,6 +47,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ roleplayScenarios, pattern: pattern.id });
     }
 
+    if (pattern.imageLayout === "compare") {
+      const compareSets = await listCompareSets();
+      return NextResponse.json({ compareSets, pattern: pattern.id });
+    }
+
     if (pattern.multiImage) {
       const stories = await listImageSets(dir, pattern.imageFolder);
       return NextResponse.json({ stories, pattern: pattern.id });
@@ -61,6 +67,9 @@ export async function GET(request: Request) {
   } catch {
     if (pattern.imageLayout === "roleplay") {
       return NextResponse.json({ roleplayScenarios: [], pattern: pattern.id });
+    }
+    if (pattern.imageLayout === "compare") {
+      return NextResponse.json({ compareSets: [], pattern: pattern.id });
     }
     return NextResponse.json(
       pattern.multiImage ? { stories: [], pattern: pattern.id } : { images: [], pattern: pattern.id }

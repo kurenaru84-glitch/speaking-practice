@@ -18,7 +18,7 @@ import {
 } from "@/lib/session-usage";
 import { canUseWordList, getPlan } from "@/lib/plan";
 import { useWordList } from "@/lib/use-word-list";
-import type { FeedbackResult, ImagesResponse, RoleplayScenario, StorySet } from "@/lib/types";
+import type { FeedbackResult, ImagesResponse, CompareSet, RoleplayScenario, StorySet } from "@/lib/types";
 import { SelectableText } from "@/components/SelectableText";
 
 const RECORD_SECONDS = 60;
@@ -27,6 +27,7 @@ export function SpeakingPractice() {
   const [patternId, setPatternId] = useState<PatternId>("describe");
   const [images, setImages] = useState<string[]>([]);
   const [stories, setStories] = useState<StorySet[]>([]);
+  const [compareSets, setCompareSets] = useState<CompareSet[]>([]);
   const [roleplayScenarios, setRoleplayScenarios] = useState<RoleplayScenario[]>([]);
   const [index, setIndex] = useState(0);
   const [language, setLanguage] = useState<LanguageId>("en-US");
@@ -51,29 +52,35 @@ export function SpeakingPractice() {
   const timerRef = useRef<number | null>(null);
 
   const pattern = getPattern(patternId);
-  const isMultiSet = pattern.multiImage;
   const isCompare = pattern.imageLayout === "compare";
   const isRoleplay = pattern.imageLayout === "roleplay";
-  const currentSet = isMultiSet ? stories[index] : null;
+  const isStory = pattern.imageLayout === "sequence";
+  const isMultiVisual = isStory || isCompare;
+  const currentSet = isStory ? stories[index] : null;
+  const currentCompare = isCompare ? compareSets[index] : null;
   const currentScenario = isRoleplay ? roleplayScenarios[index] : null;
-  const currentImages = isMultiSet
-    ? (currentSet?.images ?? [])
-    : isRoleplay
-      ? currentScenario
-        ? [currentScenario.image]
-        : []
-      : images[index]
-        ? [images[index]]
-        : [];
+  const currentImages = isCompare
+    ? (currentCompare?.images ?? [])
+    : isStory
+      ? (currentSet?.images ?? [])
+      : isRoleplay
+        ? currentScenario
+          ? [currentScenario.image]
+          : []
+        : images[index]
+          ? [images[index]]
+          : [];
   const hasVisual = currentImages.length > 0;
   const busy = recording || transcribing || loading;
-  const itemCount = isMultiSet
-    ? stories.length
+  const itemCount = isCompare
+    ? compareSets.length
     : isRoleplay
       ? roleplayScenarios.length
-      : images.length;
-  const taskJa = currentScenario?.promptJa ?? pattern.taskJa;
-  const taskEn = currentScenario?.promptEn ?? pattern.taskEn;
+      : isStory
+        ? stories.length
+        : images.length;
+  const taskJa = currentCompare?.promptJa ?? currentScenario?.promptJa ?? pattern.taskJa;
+  const taskEn = currentCompare?.promptEn ?? currentScenario?.promptEn ?? pattern.taskEn;
 
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
@@ -82,15 +89,23 @@ export function SpeakingPractice() {
       .then((data: ImagesResponse) => {
         if ("roleplayScenarios" in data) {
           setRoleplayScenarios(data.roleplayScenarios ?? []);
+          setCompareSets([]);
+          setStories([]);
+          setImages([]);
+        } else if ("compareSets" in data) {
+          setCompareSets(data.compareSets ?? []);
+          setRoleplayScenarios([]);
           setStories([]);
           setImages([]);
         } else if ("stories" in data && data.stories) {
           setStories(data.stories);
+          setCompareSets([]);
           setRoleplayScenarios([]);
           setImages([]);
         } else {
           setImages(data.images ?? []);
           setStories([]);
+          setCompareSets([]);
           setRoleplayScenarios([]);
         }
         setIndex(0);
@@ -221,16 +236,23 @@ export function SpeakingPractice() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...(isMultiSet ? { images: currentImages } : { image: currentImages[0] }),
+          ...(isMultiVisual ? { images: currentImages } : { image: currentImages[0] }),
           text: text.trim(),
           language,
           pattern: patternId,
-          ...(currentScenario
+          ...(currentCompare
             ? {
-                scenarioPromptJa: currentScenario.promptJa,
-                scenarioPromptEn: currentScenario.promptEn,
+                scenarioPromptJa: currentCompare.promptJa,
+                scenarioPromptEn: currentCompare.promptEn,
+                compareLabelA: currentCompare.labelA,
+                compareLabelB: currentCompare.labelB,
               }
-            : {}),
+            : currentScenario
+              ? {
+                  scenarioPromptJa: currentScenario.promptJa,
+                  scenarioPromptEn: currentScenario.promptEn,
+                }
+              : {}),
         }),
       });
       const data = await res.json();
@@ -298,9 +320,9 @@ export function SpeakingPractice() {
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
         <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-stone-200">
-          <div className={`relative bg-stone-100 ${isMultiSet ? "p-3" : "aspect-[4/3]"}`}>
+          <div className={`relative bg-stone-100 ${isMultiVisual ? "p-3" : "aspect-[4/3]"}`}>
             {hasVisual ? (
-              isMultiSet ? (
+              isMultiVisual ? (
                 isCompare ? (
                   <div className="grid grid-cols-2 gap-2">
                     {currentImages.slice(0, 2).map((src, i) => (
@@ -308,7 +330,7 @@ export function SpeakingPractice() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={src} alt={`Option ${String.fromCharCode(65 + i)}`} className="h-full w-full object-cover" />
                         <span className="absolute left-2 top-2 rounded-full bg-amber-700 px-2.5 py-0.5 text-xs font-bold text-white">
-                          {String.fromCharCode(65 + i)}
+                          {i === 0 ? currentCompare?.labelA ?? "A" : currentCompare?.labelB ?? "B"}
                         </span>
                       </div>
                     ))}
@@ -356,16 +378,18 @@ export function SpeakingPractice() {
             </button>
             <p className="text-sm text-stone-500">
               {itemCount ? `${index + 1} / ${itemCount}` : "0 / 0"}
-              {isMultiSet && currentSet
+              {isStory && currentSet
                 ? ` · ${currentSet.title}`
-                : isRoleplay && currentScenario
-                  ? ` · ${currentScenario.categoryJa}`
-                  : ""}
+                : isCompare && currentCompare
+                  ? ` · ${currentCompare.titleJa}`
+                  : isRoleplay && currentScenario
+                    ? ` · ${currentScenario.categoryJa}`
+                    : ""}
             </p>
             <button type="button" className="btn-ghost" onClick={() => void nextItem(1)} disabled={busy}>
               {isCompare
                 ? "次の比較"
-                : isMultiSet
+                : isStory
                   ? "次のストーリー"
                   : isRoleplay
                     ? "次のシーン"
@@ -377,6 +401,11 @@ export function SpeakingPractice() {
         <section className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
           <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-6 text-stone-800">
             <p className="font-medium text-amber-900">課題</p>
+            {isCompare && currentCompare && (
+              <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
+                {currentCompare.titleJa}
+              </p>
+            )}
             {isRoleplay && currentScenario && (
               <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
                 {currentScenario.categoryJa}

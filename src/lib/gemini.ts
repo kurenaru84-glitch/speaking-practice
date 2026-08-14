@@ -158,7 +158,7 @@ export async function getSpeakingFeedback(params: {
   userText: string;
   languageName: string;
   patternId: PatternId;
-  scenario?: { promptJa: string; promptEn: string };
+  scenario?: { promptJa: string; promptEn: string; labelA?: string; labelB?: string };
 }): Promise<FeedbackResult> {
   const prompt = buildFeedbackPrompt(
     params.patternId,

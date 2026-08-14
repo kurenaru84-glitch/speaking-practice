@@ -14,6 +14,8 @@ export async function POST(request: Request) {
     pattern?: string;
     scenarioPromptJa?: string;
     scenarioPromptEn?: string;
+    compareLabelA?: string;
+    compareLabelB?: string;
   };
 
   const text = body.text?.trim() ?? "";
@@ -59,6 +61,8 @@ export async function POST(request: Request) {
           ? {
               promptJa: body.scenarioPromptJa.trim(),
               promptEn: body.scenarioPromptEn?.trim() ?? "",
+              labelA: body.compareLabelA?.trim(),
+              labelB: body.compareLabelB?.trim(),
             }
           : undefined,
     });

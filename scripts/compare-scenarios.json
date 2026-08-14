@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ev-vs-gas",
+    "titleJa": "電気自動車 vs ガソリン車",
+    "labelA": "電気自動車",
+    "labelB": "ガソリン車"
+  },
+  {
+    "id": "paper-vs-ebook",
+    "titleJa": "紙の本 vs 電子書籍",
+    "labelA": "紙の本",
+    "labelB": "電子書籍"
+  },
+  {
+    "id": "eat-out-vs-home",
+    "titleJa": "外食 vs 自炊",
+    "labelA": "外食",
+    "labelB": "自炊"
+  },
+  {
+    "id": "city-vs-country",
+    "titleJa": "都会 vs 田舎",
+    "labelA": "都会",
+    "labelB": "田舎"
+  },
+  {
+    "id": "train-vs-car",
+    "titleJa": "電車 vs 車",
+    "labelA": "電車",
+    "labelB": "車"
+  }
+]

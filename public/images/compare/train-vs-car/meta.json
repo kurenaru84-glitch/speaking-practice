@@ -1,0 +1,8 @@
+{
+  "titleJa": "電車 vs 車",
+  "titleEn": "Train vs car commute",
+  "labelA": "電車",
+  "labelB": "車",
+  "promptJa": "A（電車通勤）とB（車通勤）を比べて、どちらが良いか理由を述べてください。",
+  "promptEn": "Compare A (commuting by train) and B (commuting by car). Which is better and why?"
+}

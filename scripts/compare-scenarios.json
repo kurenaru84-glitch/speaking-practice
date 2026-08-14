@@ -76,5 +76,53 @@
     "titleJa": "テキストメッセージ vs 通話",
     "labelA": "テキストメッセージ",
     "labelB": "通話"
+  },
+  {
+    "id": "cinema-vs-home",
+    "titleJa": "映画館 vs 自宅",
+    "labelA": "映画館",
+    "labelB": "自宅"
+  },
+  {
+    "id": "solo-vs-group-study",
+    "titleJa": "独学 vs グループで学ぶ",
+    "labelA": "独学",
+    "labelB": "グループで学ぶ"
+  },
+  {
+    "id": "dog-vs-cat",
+    "titleJa": "犬 vs 猫",
+    "labelA": "犬",
+    "labelB": "猫"
+  },
+  {
+    "id": "alone-vs-social",
+    "titleJa": "一人の時間 vs 人と過ごす時間",
+    "labelA": "一人の時間",
+    "labelB": "人と過ごす時間"
+  },
+  {
+    "id": "planned-vs-spontaneous",
+    "titleJa": "計画旅行 vs その場の気分で",
+    "labelA": "計画旅行",
+    "labelB": "その場の気分で"
+  },
+  {
+    "id": "summer-vs-winter",
+    "titleJa": "夏 vs 冬",
+    "labelA": "夏",
+    "labelB": "冬"
+  },
+  {
+    "id": "sunny-vs-rainy",
+    "titleJa": "晴れ vs 雨の日",
+    "labelA": "晴れ",
+    "labelB": "雨の日"
+  },
+  {
+    "id": "hotel-vs-airbnb",
+    "titleJa": "ホテル vs Airbnb",
+    "labelA": "ホテル",
+    "labelB": "Airbnb"
   }
 ]

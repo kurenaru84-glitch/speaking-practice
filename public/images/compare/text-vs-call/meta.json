@@ -1,0 +1,8 @@
+{
+  "titleJa": "テキストメッセージ vs 通話",
+  "titleEn": "Text message vs phone call",
+  "labelA": "テキストメッセージ",
+  "labelB": "通話",
+  "promptJa": "A（テキストメッセージ）とB（通話）を比べて、どちらを選ぶか、メリット・デメリットを交えて理由を述べてください。",
+  "promptEn": "Compare A (text messages) and B (phone calls). Which do you prefer for communication? Explain why with pros and cons."
+}

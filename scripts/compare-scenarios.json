@@ -28,5 +28,53 @@
     "titleJa": "電車 vs 車",
     "labelA": "電車",
     "labelB": "車"
+  },
+  {
+    "id": "remote-vs-office",
+    "titleJa": "リモートワーク vs 出社",
+    "labelA": "リモートワーク",
+    "labelB": "出社"
+  },
+  {
+    "id": "cash-vs-cashless",
+    "titleJa": "現金 vs キャッシュレス",
+    "labelA": "現金",
+    "labelB": "キャッシュレス"
+  },
+  {
+    "id": "rent-vs-own",
+    "titleJa": "賃貸 vs 持ち家",
+    "labelA": "賃貸",
+    "labelB": "持ち家"
+  },
+  {
+    "id": "sea-vs-mountain",
+    "titleJa": "海 vs 山",
+    "labelA": "海",
+    "labelB": "山"
+  },
+  {
+    "id": "subscription-vs-own",
+    "titleJa": "サブスク vs 所有",
+    "labelA": "サブスク",
+    "labelB": "所有"
+  },
+  {
+    "id": "outdoor-vs-home",
+    "titleJa": "外でのアクティビティ vs 家でゆっくり",
+    "labelA": "外でのアクティビティ",
+    "labelB": "家でゆっくり"
+  },
+  {
+    "id": "online-vs-store",
+    "titleJa": "ネット通販 vs 店で買い物",
+    "labelA": "ネット通販",
+    "labelB": "店で買い物"
+  },
+  {
+    "id": "text-vs-call",
+    "titleJa": "テキストメッセージ vs 通話",
+    "labelA": "テキストメッセージ",
+    "labelB": "通話"
   }
 ]

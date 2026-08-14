@@ -1,4 +1,4 @@
-import type { FeedbackResult } from "@/lib/types";
+import type { FeedbackResult, NaturalExample } from "@/lib/types";
 import { buildFeedbackPrompt, type PatternId } from "@/lib/patterns";
 
 const MODEL = "gemini-3.6-flash";
@@ -80,6 +80,33 @@ Keep filler words and natural spoken phrasing.`;
   return text;
 }
 
+export async function translateToJapanese(params: {
+  text: string;
+  languageName: string;
+}): Promise<string> {
+  const phrase = params.text.trim();
+  if (!phrase) throw new Error("翻訳するテキストが空です。");
+
+  const prompt = `Translate the following ${params.languageName} phrase into natural Japanese for a language learner's vocabulary memo.
+Use a concise, natural Japanese meaning (not word-for-word if unnatural).
+Return only the Japanese translation, with no quotes or explanation.
+
+Phrase:
+"""
+${phrase}
+"""`;
+
+  const text = await callGemini({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      thinkingConfig: { thinkingLevel: "minimal" },
+    },
+  });
+
+  if (!text) throw new Error("翻訳できませんでした。");
+  return text.replace(/^["「]|["」]$/g, "").trim();
+}
+
 export async function getSpeakingFeedback(params: {
   images: Array<{ base64: string; mimeType: string }>;
   userText: string;
@@ -114,14 +141,30 @@ export async function getSpeakingFeedback(params: {
   }
 }
 
-function normalizeNatural(value: unknown): string[] {
+function normalizeNatural(value: unknown): NaturalExample[] {
   if (Array.isArray(value)) {
-    const items = value.map((item) => String(item ?? "").trim()).filter(Boolean);
-    if (items.length >= 2) return items.slice(0, 2);
-    return items;
+    const items = value
+      .map((item): NaturalExample | null => {
+        if (typeof item === "string") {
+          const text = item.trim();
+          return text ? { text, translationJa: "" } : null;
+        }
+        if (item && typeof item === "object") {
+          const obj = item as Record<string, unknown>;
+          const text = String(obj.text ?? obj.example ?? "").trim();
+          const translationJa = String(
+            obj.translationJa ?? obj.translation_ja ?? obj.translation ?? ""
+          ).trim();
+          if (!text) return null;
+          return { text, translationJa };
+        }
+        return null;
+      })
+      .filter((item): item is NaturalExample => item !== null);
+    return items.slice(0, 2);
   }
   if (typeof value === "string" && value.trim()) {
-    return [value.trim()];
+    return [{ text: value.trim(), translationJa: "" }];
   }
   return [];
 }

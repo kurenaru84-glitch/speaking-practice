@@ -10,6 +10,7 @@ type SelectableTextProps = {
   source: string;
   className?: string;
   inline?: boolean;
+  allowAdd?: boolean;
   onToast?: (message: string) => void;
 };
 
@@ -19,6 +20,7 @@ export function SelectableText({
   source,
   className = "",
   inline = false,
+  allowAdd = true,
   onToast,
 }: SelectableTextProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -73,7 +75,7 @@ export function SelectableText({
   }, [clearPopup]);
 
   function handleAdd() {
-    if (!popup) return;
+    if (!popup || !allowAdd) return;
     const result = addEntry({
       term: popup.text,
       language,
@@ -96,7 +98,7 @@ export function SelectableText({
       >
         {text}
       </Tag>
-      {popup && (
+      {popup && allowAdd && (
         <button
           type="button"
           data-add-word-popup

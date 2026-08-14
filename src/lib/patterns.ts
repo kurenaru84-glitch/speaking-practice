@@ -121,6 +121,7 @@ Vocabulary rules:
 
 Natural examples rules:
 - Provide exactly 2 entries in "natural". Two different but equally good ways to say it (different wording or emphasis).
+- Each entry has "text" in the target language and "translationJa": a natural Japanese translation of that example (not word-for-word if unnatural).
 
 General:
 - Do not wrap JSON in markdown.`;
@@ -135,8 +136,14 @@ function buildJsonShape(languageName: string, naturalHint: string, summaryHint: 
     }
   ],
   "natural": [
-    "${naturalHint}",
-    "A second alternative natural example in ${languageName}. Different wording or angle from the first, same quality. 80-140 words, spoken style."
+    {
+      "text": "${naturalHint}",
+      "translationJa": "natural Japanese translation of example 1"
+    },
+    {
+      "text": "A second alternative natural example in ${languageName}. Different wording or angle from the first, same quality. 80-140 words, spoken style.",
+      "translationJa": "natural Japanese translation of example 2"
+    }
   ],
   "vocabulary": [
     { "term": "useful word or phrase in ${languageName}", "note": "short Japanese explanation" }

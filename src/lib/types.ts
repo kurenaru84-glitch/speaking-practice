@@ -9,9 +9,14 @@ export type VocabularyItem = {
   note: string;
 };
 
+export type NaturalExample = {
+  text: string;
+  translationJa: string;
+};
+
 export type FeedbackResult = {
   sentences: SentenceFeedback[];
-  natural: string[];
+  natural: NaturalExample[];
   vocabulary: VocabularyItem[];
   summary: string;
 };

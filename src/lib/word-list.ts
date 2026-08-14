@@ -6,18 +6,32 @@ export type WordListEntry = {
   note: string;
   language: LanguageId;
   source: string;
+  learned: boolean;
   addedAt: number;
 };
 
 const STORAGE_KEY = "speaking-practice-word-list";
+
+function normalizeEntry(raw: Partial<WordListEntry> & { id: string }): WordListEntry {
+  return {
+    id: raw.id,
+    term: raw.term ?? "",
+    note: raw.note ?? "",
+    language: (raw.language ?? "en-US") as LanguageId,
+    source: raw.source ?? "",
+    learned: Boolean(raw.learned),
+    addedAt: raw.addedAt ?? Date.now(),
+  };
+}
 
 function readRaw(): WordListEntry[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as WordListEntry[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(raw) as Array<Partial<WordListEntry> & { id: string }>;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizeEntry);
   } catch {
     return [];
   }
@@ -32,7 +46,7 @@ export function loadWordList(): WordListEntry[] {
 }
 
 export function addWordListEntry(
-  entry: Omit<WordListEntry, "id" | "addedAt">
+  entry: Omit<WordListEntry, "id" | "addedAt" | "learned"> & { learned?: boolean }
 ): { ok: true; entry: WordListEntry } | { ok: false; reason: "duplicate" } {
   const term = entry.term.trim();
   if (!term) return { ok: false, reason: "duplicate" };
@@ -49,6 +63,7 @@ export function addWordListEntry(
     ...entry,
     term,
     note: entry.note.trim(),
+    learned: entry.learned ?? false,
     id: crypto.randomUUID(),
     addedAt: Date.now(),
   };
@@ -63,5 +78,11 @@ export function removeWordListEntry(id: string) {
 export function updateWordListNote(id: string, note: string) {
   writeRaw(
     readRaw().map((item) => (item.id === id ? { ...item, note: note.trim() } : item))
+  );
+}
+
+export function setWordListLearned(id: string, learned: boolean) {
+  writeRaw(
+    readRaw().map((item) => (item.id === id ? { ...item, learned } : item))
   );
 }

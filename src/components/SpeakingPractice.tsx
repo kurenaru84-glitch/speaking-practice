@@ -7,6 +7,15 @@ import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
 import { getPattern, PATTERNS, type PatternId } from "@/lib/patterns";
+import {
+  FREE_DAILY_LIMIT,
+  FREE_MONTHLY_LIMIT,
+  getSessionUsage,
+  recordSession,
+  sessionLimitMessage,
+  type SessionUsage,
+} from "@/lib/session-usage";
+import { canUseWordList, getPlan } from "@/lib/plan";
 import { useWordList } from "@/lib/use-word-list";
 import type { FeedbackResult, ImagesResponse, StorySet } from "@/lib/types";
 import { SelectableText } from "@/components/SelectableText";
@@ -30,6 +39,8 @@ export function SpeakingPractice() {
   const [previewCapable] = useState(() => isLivePreviewSupported());
   const [mobile] = useState(() => isMobileDevice());
   const [toast, setToast] = useState("");
+  const [sessionUsage, setSessionUsage] = useState<SessionUsage>(() => getSessionUsage());
+  const [wordListEnabled] = useState(() => canUseWordList(getPlan()));
 
   const { addEntry } = useWordList();
 
@@ -121,14 +132,23 @@ export function SpeakingPractice() {
   }, []);
 
   function addVocabulary(term: string, note: string) {
+    if (!wordListEnabled) {
+      showToast("単語リストは有料プラン限定です");
+      return;
+    }
     const result = addEntry({
       term,
       note,
       language,
       source: "この場面で使える語彙",
+      autoTranslate: false,
     });
     showToast(result.ok ? "単語リストに追加しました" : "すでに登録済みです");
   }
+
+  const refreshSessionUsage = useCallback(() => {
+    setSessionUsage(getSessionUsage());
+  }, []);
 
   useEffect(() => {
     if (recording && secondsLeft === 0) {
@@ -160,6 +180,14 @@ export function SpeakingPractice() {
 
   async function requestFeedback() {
     if (!hasVisual || !text.trim()) return;
+
+    const usage = getSessionUsage();
+    setSessionUsage(usage);
+    if (!usage.canUse) {
+      setError(sessionLimitMessage(usage));
+      return;
+    }
+
     setLoading(true);
     setError("");
     setFeedback(null);
@@ -177,6 +205,8 @@ export function SpeakingPractice() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "フィードバックに失敗しました。");
+      recordSession();
+      refreshSessionUsage();
       setFeedback(data as FeedbackResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : "フィードバックに失敗しました。");
@@ -205,9 +235,13 @@ export function SpeakingPractice() {
           <p className="text-sm font-medium tracking-wide text-amber-800">Picture Speaking</p>
           <Link
             href="/word-list"
-            className="rounded-full bg-white px-4 py-2 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50"
+            className={`rounded-full px-4 py-2 text-sm font-medium ring-1 transition ${
+              wordListEnabled
+                ? "bg-white text-stone-700 ring-stone-200 hover:bg-stone-50"
+                : "bg-stone-100 text-stone-500 ring-stone-200"
+            }`}
           >
-            単語リスト
+            単語リスト{!wordListEnabled ? " 🔒" : ""}
           </Link>
         </div>
         <h1 className="text-2xl font-semibold text-stone-900 md:text-3xl">{pattern.title}</h1>
@@ -408,10 +442,20 @@ export function SpeakingPractice() {
             type="button"
             className="btn-primary"
             onClick={requestFeedback}
-            disabled={!text.trim() || busy}
+            disabled={!text.trim() || busy || !sessionUsage.canUse}
           >
             {loading ? "添削中..." : pattern.feedbackButton}
           </button>
+
+          <p className="text-xs text-stone-500">
+            無料枠: 今日あと {sessionUsage.dailyRemaining}/{FREE_DAILY_LIMIT} 回 · 今月あと{" "}
+            {sessionUsage.monthlyRemaining}/{FREE_MONTHLY_LIMIT} 回
+          </p>
+          {!sessionUsage.canUse && (
+            <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {sessionLimitMessage(sessionUsage)}
+            </p>
+          )}
 
           {error && <p className="text-sm text-red-700">{error}</p>}
         </section>
@@ -421,7 +465,9 @@ export function SpeakingPractice() {
         <section className="grid gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200 lg:grid-cols-2">
           <div>
             <h2 className="mb-1 text-lg font-semibold text-stone-900">一文ずとのフィードバック</h2>
-            <p className="mb-3 text-xs text-stone-500">例文を選択すると単語リストに追加できます</p>
+            {wordListEnabled && (
+              <p className="mb-3 text-xs text-stone-500">例文を選択すると単語リストに追加できます</p>
+            )}
             <ul className="space-y-3">
               {feedback.sentences.map((item, i) => {
                 const needsFix = item.fixed.trim() !== item.original.trim();
@@ -432,6 +478,7 @@ export function SpeakingPractice() {
                       language={language}
                       source="フィードバック（原文）"
                       className="font-medium text-stone-800"
+                      allowAdd={wordListEnabled}
                       onToast={showToast}
                     />
                     {needsFix && (
@@ -442,6 +489,7 @@ export function SpeakingPractice() {
                           language={language}
                           source="フィードバック（修正例）"
                           inline
+                          allowAdd={wordListEnabled}
                           onToast={showToast}
                         />
                       </p>
@@ -458,24 +506,36 @@ export function SpeakingPractice() {
               language={language}
               source="総評"
               className="mt-4 text-sm leading-6 text-stone-600"
+              allowAdd={wordListEnabled}
               onToast={showToast}
             />
           </div>
           <div className="flex flex-col gap-4">
             <div>
               <h2 className="mb-1 text-lg font-semibold text-stone-900">{pattern.naturalTitle}</h2>
-              <p className="mb-3 text-xs text-stone-500">例文を選択すると単語リストに追加できます</p>
+              {wordListEnabled && (
+                <p className="mb-3 text-xs text-stone-500">例文を選択すると単語リストに追加できます</p>
+              )}
               <div className="flex flex-col gap-3">
-                {feedback.natural.filter(Boolean).map((example, i) => (
+                {feedback.natural
+                  .filter((example) => example.text.trim())
+                  .map((example, i) => (
                   <div key={`natural-${i}`} className="rounded-2xl bg-amber-50 p-4">
                     <p className="mb-2 text-xs font-medium text-amber-900">例 {i + 1}</p>
                     <SelectableText
-                      text={example}
+                      text={example.text}
                       language={language}
                       source={`${pattern.naturalTitle} 例${i + 1}`}
                       className="whitespace-pre-wrap text-sm leading-7 text-stone-800"
+                      allowAdd={wordListEnabled}
                       onToast={showToast}
                     />
+                    {example.translationJa && (
+                      <div className="mt-3 border-t border-amber-200/80 pt-3">
+                        <p className="mb-1 text-xs font-medium text-stone-500">訳</p>
+                        <p className="text-sm leading-7 text-stone-600">{example.translationJa}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -483,20 +543,29 @@ export function SpeakingPractice() {
             {feedback.vocabulary.length > 0 && (
               <div>
                 <h3 className="mb-1 text-sm font-semibold text-stone-900">この場面で使える語彙</h3>
-                <p className="mb-2 text-xs text-stone-500">タップで単語リストに追加</p>
+                {wordListEnabled && (
+                  <p className="mb-2 text-xs text-stone-500">タップで単語リストに追加</p>
+                )}
                 <ul className="flex flex-wrap gap-2">
                   {feedback.vocabulary.map((item, i) => (
                     <li key={`${item.term}-${i}`}>
-                      <button
-                        type="button"
-                        className="rounded-xl bg-stone-100 px-3 py-2 text-left text-sm transition hover:bg-amber-100 hover:ring-1 hover:ring-amber-300"
-                        title={`${item.note} — タップで追加`}
-                        onClick={() => addVocabulary(item.term, item.note)}
-                      >
-                        <span className="font-medium text-stone-900">{item.term}</span>
-                        <span className="text-stone-500"> · {item.note}</span>
-                        <span className="ml-1 text-xs text-amber-700">＋</span>
-                      </button>
+                      {wordListEnabled ? (
+                        <button
+                          type="button"
+                          className="rounded-xl bg-stone-100 px-3 py-2 text-left text-sm transition hover:bg-amber-100 hover:ring-1 hover:ring-amber-300"
+                          title={`${item.note} — タップで追加`}
+                          onClick={() => addVocabulary(item.term, item.note)}
+                        >
+                          <span className="font-medium text-stone-900">{item.term}</span>
+                          <span className="text-stone-500"> · {item.note}</span>
+                          <span className="ml-1 text-xs text-amber-700">＋</span>
+                        </button>
+                      ) : (
+                        <span className="rounded-xl bg-stone-100 px-3 py-2 text-sm">
+                          <span className="font-medium text-stone-900">{item.term}</span>
+                          <span className="text-stone-500"> · {item.note}</span>
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>

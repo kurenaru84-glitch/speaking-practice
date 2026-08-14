@@ -1,5 +1,16 @@
 {
   "categoryJa": "謝罪・許し",
   "categoryEn": "Apology & forgiveness",
-  "images": []
+  "images": [
+    {
+      "file": "pexels-keira-burton-6147229.jpg",
+      "promptJa": "約束の時間に遅れてしまい、彼女が機嫌を損ねています。どのように謝りますか？",
+      "promptEn": "You arrived late for your meetup and she looks upset. How do you apologize to her?"
+    },
+    {
+      "file": "spilled-coffee.jpg",
+      "promptJa": "カフェで誤って友達のテーブルに飲み物をこぼしてしまいました。何と言ってあやまりますか？",
+      "promptEn": "You accidentally spilled a drink on your friend's table at a cafe. How would you apologize?"
+    }
+  ]
 }

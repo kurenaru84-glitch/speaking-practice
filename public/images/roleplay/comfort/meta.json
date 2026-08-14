@@ -1,5 +1,31 @@
 {
   "categoryJa": "慰め・励まし",
   "categoryEn": "Comfort & encouragement",
-  "images": []
+  "images": [
+    {
+      "file": "pregnant-friend.jpg",
+      "promptJa": "友人が妊娠を報告してとても嬉しそうです。祝福と励ましの言葉をかけてください。",
+      "promptEn": "Your friend looks overjoyed to share her pregnancy news. Congratulate her and say something warm and supportive."
+    },
+    {
+      "file": "birthday-friend.jpg",
+      "promptJa": "友人の誕生日を迎え、とても嬉しそうです。祝福の言葉をかけてください。",
+      "promptEn": "It's your friend's birthday and they look delighted. Say something to celebrate and wish them well."
+    },
+    {
+      "file": "pexels-ketut-subiyanto-4964773.jpg",
+      "promptJa": "同僚が仕事がうまくいかなくて落ち込んでいます。どう声をかけますか？",
+      "promptEn": "Your colleague looks stressed and discouraged about work. What would you say to comfort them?"
+    },
+    {
+      "file": "pexels-polina-zimmerman-3958419.jpg",
+      "promptJa": "友人が泣いています。肩に手を置きながら、慰める言葉をかけてください。",
+      "promptEn": "Your friend is crying. Place a hand on their shoulder and say something comforting."
+    },
+    {
+      "file": "pexels-rdne-6129039.jpg",
+      "promptJa": "病院で友人がとても悲しんでいます。そばで支える言葉をかけてください。",
+      "promptEn": "Your friend is grieving in a hospital. Stay by their side and say something supportive."
+    }
+  ]
 }

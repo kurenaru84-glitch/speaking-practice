@@ -1,5 +1,11 @@
 {
   "categoryJa": "接客・トラブル対応",
   "categoryEn": "Customer service & trouble",
-  "images": []
+  "images": [
+    {
+      "file": "angry-customer.jpg",
+      "promptJa": "レジで困った顔（怒り顔）をしているお客様がいます。店員として丁寧に対応してください。",
+      "promptEn": "An upset customer is complaining at the checkout. As a shop assistant, respond politely and professionally."
+    }
+  ]
 }

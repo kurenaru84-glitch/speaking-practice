@@ -1,0 +1,50 @@
+[
+  {
+    "category": "help",
+    "title": "道に迷った観光客",
+    "promptJa": "道に迷って、どこに行えばいいか分からなそうな人がいます。声をかけて助けてあげてください。",
+    "imagePrompt": "Photorealistic: confused tourist on city sidewalk with smartphone map, candid stock photo"
+  },
+  {
+    "category": "help",
+    "title": "路線に迷う人",
+    "promptJa": "駅でどの路線に乗ればいいか迷っている人がいます。案内してあげてください。",
+    "imagePrompt": "Photorealistic: person confused at train station departure board, candid photo"
+  },
+  {
+    "category": "comfort",
+    "title": "妊娠を報告する友人",
+    "promptJa": "友人が妊娠を報告してとても嬉しそうです。祝福と励ましの言葉をかけてください。",
+    "imagePrompt": "Photorealistic: two women friends at cafe, one sharing happy pregnancy news, warm smiles"
+  },
+  {
+    "category": "comfort",
+    "title": "誕生日の友人",
+    "promptJa": "友人の誕生日を迎え、とても嬉しそうです。祝福の言葉をかけてください。",
+    "imagePrompt": "Photorealistic: friends celebrating birthday with cake at restaurant, joyful moment"
+  },
+  {
+    "category": "comfort",
+    "title": "落ち込む同僚",
+    "promptJa": "同僚が仕事がうまくいかなくて落ち込んでいます。どう声をかけますか？",
+    "imagePrompt": "Photorealistic: stressed office worker holding head, colleague nearby, outdoor business district"
+  },
+  {
+    "category": "customer-trouble",
+    "title": "怒るお客様",
+    "promptJa": "レジで困った顔（怒り顔）をしているお客様がいます。店員として丁寧に対応してください。",
+    "imagePrompt": "Photorealistic: upset customer at retail checkout, clerk listening professionally"
+  },
+  {
+    "category": "apology",
+    "title": "コーヒーをこぼす",
+    "promptJa": "カフェで誤って友達のテーブルに飲み物をこぼしてしまいました。何と言ってあやまりますか？",
+    "imagePrompt": "Photorealistic: person apologizing after spilling coffee at cafe table"
+  },
+  {
+    "category": "advice",
+    "title": "服選びで迷う友人",
+    "promptJa": "友達が2つの上着のどちらを買うか迷っています。どちらが似合うかアドバイスしてください。",
+    "imagePrompt": "Photorealistic: friend choosing between two jackets in clothing store, indecisive"
+  }
+]

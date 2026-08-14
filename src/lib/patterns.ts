@@ -106,127 +106,127 @@ export function getPattern(id: string): Pattern {
   return PATTERNS.find((p) => p.id === id) ?? PATTERNS[0];
 }
 
+const SHARED_RULES = `
+Sentence feedback rules:
+- Split the learner text into sentences. Create one "sentences" entry per sentence. Never skip a sentence.
+- "comment" is always in Japanese (1-2 short sentences).
+- If the sentence is good, set "fixed" equal to "original" and praise in comment (e.g. よくできていますね / 自然です).
+- If correction is needed, put the corrected sentence in "fixed" and explain why in "comment".
+- You may also give brief advice in "comment" even when grammar is fine.
+
+Vocabulary rules:
+- Add 5-10 "vocabulary" items: words or short phrases in the target language that fit THIS image/scene.
+- "term" is in the learner's target language. "note" is a short Japanese explanation (what it means or when to use it).
+- Pick practical scene vocabulary (people, objects, actions, places), not generic words.
+
+General:
+- Do not wrap JSON in markdown.`;
+
+function buildJsonShape(languageName: string, naturalHint: string, summaryHint: string) {
+  return `{
+  "sentences": [
+    {
+      "original": "one learner sentence exactly as spoken/written",
+      "fixed": "corrected sentence in ${languageName}, or same as original if already good",
+      "comment": "reaction in Japanese: correction, advice, or praise"
+    }
+  ],
+  "natural": "${naturalHint}",
+  "vocabulary": [
+    { "term": "useful word or phrase in ${languageName}", "note": "short Japanese explanation" }
+  ],
+  "summary": "${summaryHint}"
+}`;
+}
+
 export function buildFeedbackPrompt(
   patternId: PatternId,
   languageName: string,
   userText: string
 ): string {
-  if (patternId === "story") {
-    return `You are a kind language tutor specializing in storytelling and narrative sequencing in ${languageName}.
-
-The learner saw a sequence of photos (panel 1, then 2, then 3, then 4) and told the story in ${languageName}, including cause and effect.
+  const intro = `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
 
 Learner text:
 """
 ${userText}
-"""
+"""`;
 
-Return JSON only, with this shape:
-{
-  "corrections": [{ "original": "exact phrase from the learner", "fixed": "corrected phrase", "note": "short explanation in Japanese" }],
-  "natural": "a natural 60-second spoken story covering ALL panels in order in ${languageName}. Use connectors like First, Then, After that, Eventually, However. Use past/present tenses appropriately. Explain why things happened. 80-160 words, spoken style.",
-  "summary": "2-4 sentences in Japanese evaluating: (1) sequencing connectors, (2) tense consistency, (3) logical cause-effect and any story gaps"
-}
+  if (patternId === "story") {
+    return `${intro}
 
-Rules:
-- Focus corrections on connectors, tense shifts, missing causal links, and illogical jumps between panels.
-- natural must follow the actual panel sequence shown in the images.
-- Keep notes and summary in Japanese.
-- Do not wrap the JSON in markdown.`;
+The learner saw photos in order (panel 1 → 2 → 3 → 4) and told the story in ${languageName}.
+
+Return JSON only:
+${buildJsonShape(
+  languageName,
+  `A natural 60-second spoken story covering ALL panels in order in ${languageName}. Use First, Then, After that, Eventually, However. 80-160 words, spoken style.`,
+  "2-4 sentences in Japanese on connectors, tense consistency, and cause-effect logic"
+)}
+
+Focus sentence comments on: connectors, tense, causal links, story gaps.
+${SHARED_RULES}`;
   }
 
   if (patternId === "compare") {
-    return `You are a kind language tutor specializing in comparison and structured opinions in ${languageName}.
+    return `${intro}
 
-The learner saw two photos (Image A and Image B) and compared them, chose a preference, and gave reasons in ${languageName}.
+The learner compared Image A and Image B in ${languageName} and stated a preference.
 
-Learner text:
-"""
-${userText}
-"""
+Return JSON only:
+${buildJsonShape(
+  languageName,
+  `A natural 60-second comparison in ${languageName}. Choose A or B clearly. Use On the one hand... On the other hand... Therefore... 80-140 words.`,
+  "2-4 sentences in Japanese on comparison structure, vocabulary specificity, and clear reasoning"
+)}
 
-Return JSON only, with this shape:
-{
-  "corrections": [{ "original": "exact phrase from the learner", "fixed": "corrected phrase", "note": "short explanation in Japanese" }],
-  "natural": "a natural 60-second spoken comparison in ${languageName}. Clearly choose A or B, use On the one hand... On the other hand... Therefore/In conclusion. Give specific comparative vocabulary, not just good/bad. 80-140 words, spoken style.",
-  "summary": "2-4 sentences in Japanese evaluating: (1) comparison structure, (2) specific vocabulary vs vague words, (3) whether a clear choice and reasons were given"
-}
-
-Rules:
-- Focus corrections on comparison phrases, vague adjectives, missing conclusion, and unclear preference.
-- natural must compare the actual A and B images shown.
-- Keep notes and summary in Japanese.
-- Do not wrap the JSON in markdown.`;
+Focus sentence comments on: comparison phrases, vague words, missing conclusion.
+Vocabulary: comparison words and scene-specific terms for both images.
+${SHARED_RULES}`;
   }
 
   if (patternId === "roleplay") {
-    return `You are a kind language tutor specializing in role-play, direct speech, and advice in ${languageName}.
+    return `${intro}
 
-The learner looked at the attached photo and either:
-- spoke as if they were someone in the scene (using "If I were...", "I would..."), and/or
-- gave advice or spoke directly to a person in the photo.
+The learner did role-play or gave advice about the photo in ${languageName}.
 
-Learner text:
-"""
-${userText}
-"""
+Return JSON only:
+${buildJsonShape(
+  languageName,
+  `A natural 60-second role-play in ${languageName}. Use If I were... / I would... and direct speech. Polite and practical. 80-140 words.`,
+  "2-4 sentences in Japanese on subjunctive, tone, and situational fit"
+)}
 
-Return JSON only, with this shape:
-{
-  "corrections": [{ "original": "exact phrase from the learner", "fixed": "corrected phrase", "note": "short explanation in Japanese" }],
-  "natural": "a natural 60-second role-play response about THIS photo in ${languageName}. Include direct speech to someone in the scene and use If I were... / I would... where appropriate. Show politeness and practical communication. 80-140 words, spoken style.",
-  "summary": "2-4 sentences in Japanese evaluating: (1) subjunctive / conditional (If I were...), (2) direct speech and tone (polite, persuasive), (3) whether the response fits the situation in the photo"
-}
-
-Rules:
-- Focus corrections on subjunctive, direct address, register (too casual/formal), and unrealistic responses.
-- natural must respond to THIS specific photo's situation.
-- Keep notes and summary in Japanese.
-- Do not wrap the JSON in markdown.`;
+Focus sentence comments on: subjunctive, direct address, register, realism.
+${SHARED_RULES}`;
   }
 
   if (patternId === "speculate") {
-    return `You are a kind language tutor specializing in speculation and modality in ${languageName}.
+    return `${intro}
 
-The learner looked at the attached photo and speculated about what might be happening, what probably happened before, and what might happen next.
+The learner speculated about the photo in ${languageName} (why, before, next).
 
-Learner text:
-"""
-${userText}
-"""
+Return JSON only:
+${buildJsonShape(
+  languageName,
+  `A natural 60-second speculation in ${languageName}. Use must/might/could with visible evidence. 80-140 words.`,
+  "2-4 sentences in Japanese on modality usage and logical grounding"
+)}
 
-Return JSON only, with this shape:
-{
-  "corrections": [{ "original": "exact phrase from the learner", "fixed": "corrected phrase", "note": "short explanation in Japanese" }],
-  "natural": "a natural 60-second spoken speculation about THIS photo in ${languageName}. Use must/might/could/may/can't appropriately to show confidence levels. Mention what you see as evidence. 80-140 words, spoken style.",
-  "summary": "2-4 sentences in Japanese evaluating: (1) modality usage (must be, might be, could have been, etc.), (2) whether speculation is grounded in visible evidence, (3) any logical leaps"
-}
-
-Rules:
-- Focus corrections on modal verbs, speculation grammar, and unsupported leaps.
-- If modality is already good, corrections may be empty or minimal.
-- natural must speculate about THIS specific photo, not a generic scene.
-- Keep notes and summary in Japanese.
-- Do not wrap the JSON in markdown.`;
+Focus sentence comments on: modal verbs, unsupported leaps.
+${SHARED_RULES}`;
   }
 
-  return `You are a kind language tutor. The learner described the attached photo in ${languageName} for about 1 minute.
+  return `${intro}
 
-Learner text:
-"""
-${userText}
-"""
+The learner described the photo in ${languageName}.
 
-Return JSON only, with this shape:
-{
-  "corrections": [{ "original": "exact phrase from the learner", "fixed": "corrected phrase", "note": "short explanation in Japanese" }],
-  "natural": "a natural 60-second spoken description of THIS photo in ${languageName}. Write as spoken language, 80-140 words.",
-  "summary": "2-4 sentences of overall feedback in Japanese"
-}
+Return JSON only:
+${buildJsonShape(
+  languageName,
+  `A natural 60-second description of THIS photo in ${languageName}. 80-140 words, spoken style.`,
+  "2-4 sentences of overall feedback in Japanese"
+)}
 
-Rules:
-- If the text is already good, corrections may be an empty array.
-- natural must describe the actual photo, not a generic scene.
-- Keep notes and summary in Japanese.
-- Do not wrap the JSON in markdown.`;
+Focus sentence comments on grammar, word choice, and clarity.
+${SHARED_RULES}`;
 }

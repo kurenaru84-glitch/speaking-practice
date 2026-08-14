@@ -108,8 +108,42 @@ export async function getSpeakingFeedback(params: {
   });
 
   try {
-    return JSON.parse(text) as FeedbackResult;
+    return normalizeFeedback(JSON.parse(text));
   } catch {
     throw new Error("AIの応答を解析できませんでした。もう一度お試しください。");
   }
+}
+
+function normalizeFeedback(raw: unknown): FeedbackResult {
+  const data = raw as Partial<FeedbackResult> & {
+    corrections?: Array<{ original: string; fixed: string; note: string }>;
+  };
+
+  if (Array.isArray(data.sentences) && data.sentences.length > 0) {
+    return {
+      sentences: data.sentences.map((s) => ({
+        original: s.original ?? "",
+        fixed: s.fixed ?? s.original ?? "",
+        comment: s.comment ?? "",
+      })),
+      natural: data.natural ?? "",
+      vocabulary: (data.vocabulary ?? []).slice(0, 10),
+      summary: data.summary ?? "",
+    };
+  }
+
+  if (Array.isArray(data.corrections)) {
+    return {
+      sentences: data.corrections.map((c) => ({
+        original: c.original,
+        fixed: c.fixed,
+        comment: c.note,
+      })),
+      natural: data.natural ?? "",
+      vocabulary: (data.vocabulary ?? []).slice(0, 10),
+      summary: data.summary ?? "",
+    };
+  }
+
+  throw new Error("AIの応答形式が不正です。");
 }

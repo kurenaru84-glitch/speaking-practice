@@ -389,29 +389,51 @@ export function SpeakingPractice() {
       </div>
 
       {feedback && (
-        <section className="grid gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200 md:grid-cols-2">
+        <section className="grid gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200 lg:grid-cols-2">
           <div>
-            <h2 className="mb-3 text-lg font-semibold text-stone-900">文法の直し</h2>
-            {feedback.corrections.length === 0 ? (
-              <p className="text-sm text-stone-600">大きな文法ミスは見つかりませんでした。</p>
-            ) : (
-              <ul className="space-y-3">
-                {feedback.corrections.map((item, i) => (
+            <h2 className="mb-3 text-lg font-semibold text-stone-900">一文ずとのフィードバック</h2>
+            <ul className="space-y-3">
+              {feedback.sentences.map((item, i) => {
+                const needsFix = item.fixed.trim() !== item.original.trim();
+                return (
                   <li key={`${item.original}-${i}`} className="rounded-2xl bg-stone-50 p-3 text-sm">
-                    <p className="text-stone-500 line-through">{item.original}</p>
-                    <p className="mt-1 font-medium text-emerald-800">{item.fixed}</p>
-                    <p className="mt-1 text-stone-600">{item.note}</p>
+                    <p className="font-medium text-stone-800">{item.original}</p>
+                    {needsFix && (
+                      <p className="mt-1 font-medium text-emerald-800">→ {item.fixed}</p>
+                    )}
+                    <p className={`mt-1 ${needsFix ? "text-stone-600" : "text-emerald-700"}`}>
+                      {item.comment}
+                    </p>
                   </li>
-                ))}
-              </ul>
-            )}
+                );
+              })}
+            </ul>
             <p className="mt-4 text-sm leading-6 text-stone-600">{feedback.summary}</p>
           </div>
-          <div>
-            <h2 className="mb-3 text-lg font-semibold text-stone-900">{pattern.naturalTitle}</h2>
-            <p className="whitespace-pre-wrap rounded-2xl bg-amber-50 p-4 text-sm leading-7 text-stone-800">
-              {feedback.natural}
-            </p>
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2 className="mb-3 text-lg font-semibold text-stone-900">{pattern.naturalTitle}</h2>
+              <p className="whitespace-pre-wrap rounded-2xl bg-amber-50 p-4 text-sm leading-7 text-stone-800">
+                {feedback.natural}
+              </p>
+            </div>
+            {feedback.vocabulary.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-stone-900">この場面で使える語彙</h3>
+                <ul className="flex flex-wrap gap-2">
+                  {feedback.vocabulary.map((item, i) => (
+                    <li
+                      key={`${item.term}-${i}`}
+                      className="rounded-xl bg-stone-100 px-3 py-2 text-sm"
+                      title={item.note}
+                    >
+                      <span className="font-medium text-stone-900">{item.term}</span>
+                      <span className="text-stone-500"> · {item.note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </section>
       )}

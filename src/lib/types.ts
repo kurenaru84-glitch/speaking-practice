@@ -1,10 +1,18 @@
+export type SentenceFeedback = {
+  original: string;
+  fixed: string;
+  comment: string;
+};
+
+export type VocabularyItem = {
+  term: string;
+  note: string;
+};
+
 export type FeedbackResult = {
-  corrections: Array<{
-    original: string;
-    fixed: string;
-    note: string;
-  }>;
+  sentences: SentenceFeedback[];
   natural: string;
+  vocabulary: VocabularyItem[];
   summary: string;
 };
 

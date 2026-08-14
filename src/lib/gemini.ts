@@ -107,13 +107,65 @@ ${phrase}
   return text.replace(/^["「]|["」]$/g, "").trim();
 }
 
+export async function generateRoleplayScenarioPrompt(params: {
+  imageBase64: string;
+  mimeType: string;
+  categoryJa: string;
+  categoryEn: string;
+}): Promise<{ promptJa: string; promptEn: string }> {
+  const prompt = `You are creating role-play speaking practice for language learners.
+Category: ${params.categoryJa} (${params.categoryEn})
+
+Look at the photo. Write ONE short scenario question for the learner.
+- promptJa: 1-2 sentences in Japanese ending with ？ Example: "同僚が仕事がうまくいかなくて落ち込んでいます。どう声をかけますか？"
+- promptEn: same meaning in natural English
+The learner should speak DIRECTLY to the person in the photo (not describe the scene).
+
+Return JSON only:
+{ "promptJa": "...", "promptEn": "..." }`;
+
+  const text = await callGemini({
+    contents: [
+      {
+        parts: [
+          {
+            inline_data: {
+              mime_type: params.mimeType,
+              data: params.imageBase64,
+            },
+          },
+          { text: prompt },
+        ],
+      },
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      thinkingConfig: { thinkingLevel: "minimal" },
+    },
+  });
+
+  const parsed = JSON.parse(text) as { promptJa?: string; promptEn?: string };
+  const promptJa = parsed.promptJa?.trim();
+  const promptEn = parsed.promptEn?.trim();
+  if (!promptJa || !promptEn) {
+    throw new Error("プロンプト生成結果が不完全です。");
+  }
+  return { promptJa, promptEn };
+}
+
 export async function getSpeakingFeedback(params: {
   images: Array<{ base64: string; mimeType: string }>;
   userText: string;
   languageName: string;
   patternId: PatternId;
+  scenario?: { promptJa: string; promptEn: string };
 }): Promise<FeedbackResult> {
-  const prompt = buildFeedbackPrompt(params.patternId, params.languageName, params.userText);
+  const prompt = buildFeedbackPrompt(
+    params.patternId,
+    params.languageName,
+    params.userText,
+    params.scenario
+  );
 
   const imageParts = params.images.map((img) => ({
     inline_data: {

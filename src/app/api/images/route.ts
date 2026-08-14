@@ -3,6 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { getPatternImageDir, isImageFile } from "@/lib/images";
 import { getPattern } from "@/lib/patterns";
+import { listRoleplayScenarios } from "@/lib/roleplay";
 import type { StorySet } from "@/lib/types";
 
 async function listImageSets(baseDir: string, patternFolder: string): Promise<StorySet[]> {
@@ -39,6 +40,11 @@ export async function GET(request: Request) {
 
   try {
     const dir = getPatternImageDir(pattern.imageFolder);
+
+    if (pattern.imageLayout === "roleplay") {
+      const roleplayScenarios = await listRoleplayScenarios();
+      return NextResponse.json({ roleplayScenarios, pattern: pattern.id });
+    }
 
     if (pattern.multiImage) {
       const stories = await listImageSets(dir, pattern.imageFolder);

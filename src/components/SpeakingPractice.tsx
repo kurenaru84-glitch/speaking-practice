@@ -18,7 +18,7 @@ import {
 } from "@/lib/session-usage";
 import { canUseWordList, getPlan } from "@/lib/plan";
 import { useWordList } from "@/lib/use-word-list";
-import type { FeedbackResult, ImagesResponse, StorySet } from "@/lib/types";
+import type { FeedbackResult, ImagesResponse, RoleplayScenario, StorySet } from "@/lib/types";
 import { SelectableText } from "@/components/SelectableText";
 
 const RECORD_SECONDS = 60;
@@ -27,6 +27,7 @@ export function SpeakingPractice() {
   const [patternId, setPatternId] = useState<PatternId>("describe");
   const [images, setImages] = useState<string[]>([]);
   const [stories, setStories] = useState<StorySet[]>([]);
+  const [roleplayScenarios, setRoleplayScenarios] = useState<RoleplayScenario[]>([]);
   const [index, setIndex] = useState(0);
   const [language, setLanguage] = useState<LanguageId>("en-US");
   const [text, setText] = useState("");
@@ -52,23 +53,45 @@ export function SpeakingPractice() {
   const pattern = getPattern(patternId);
   const isMultiSet = pattern.multiImage;
   const isCompare = pattern.imageLayout === "compare";
+  const isRoleplay = pattern.imageLayout === "roleplay";
   const currentSet = isMultiSet ? stories[index] : null;
-  const currentImages = isMultiSet ? (currentSet?.images ?? []) : images[index] ? [images[index]] : [];
+  const currentScenario = isRoleplay ? roleplayScenarios[index] : null;
+  const currentImages = isMultiSet
+    ? (currentSet?.images ?? [])
+    : isRoleplay
+      ? currentScenario
+        ? [currentScenario.image]
+        : []
+      : images[index]
+        ? [images[index]]
+        : [];
   const hasVisual = currentImages.length > 0;
   const busy = recording || transcribing || loading;
-  const itemCount = isMultiSet ? stories.length : images.length;
+  const itemCount = isMultiSet
+    ? stories.length
+    : isRoleplay
+      ? roleplayScenarios.length
+      : images.length;
+  const taskJa = currentScenario?.promptJa ?? pattern.taskJa;
+  const taskEn = currentScenario?.promptEn ?? pattern.taskEn;
 
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
     fetch(`/api/images?pattern=${patternId}`)
       .then((res) => res.json())
       .then((data: ImagesResponse) => {
-        if ("stories" in data && data.stories) {
+        if ("roleplayScenarios" in data && data.roleplayScenarios) {
+          setRoleplayScenarios(data.roleplayScenarios);
+          setStories([]);
+          setImages([]);
+        } else if ("stories" in data && data.stories) {
           setStories(data.stories);
+          setRoleplayScenarios([]);
           setImages([]);
         } else {
           setImages(data.images ?? []);
           setStories([]);
+          setRoleplayScenarios([]);
         }
         setIndex(0);
         setText("");
@@ -202,6 +225,12 @@ export function SpeakingPractice() {
           text: text.trim(),
           language,
           pattern: patternId,
+          ...(currentScenario
+            ? {
+                scenarioPromptJa: currentScenario.promptJa,
+                scenarioPromptEn: currentScenario.promptEn,
+              }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -327,10 +356,20 @@ export function SpeakingPractice() {
             </button>
             <p className="text-sm text-stone-500">
               {itemCount ? `${index + 1} / ${itemCount}` : "0 / 0"}
-              {isMultiSet && currentSet ? ` · ${currentSet.title}` : ""}
+              {isMultiSet && currentSet
+                ? ` · ${currentSet.title}`
+                : isRoleplay && currentScenario
+                  ? ` · ${currentScenario.categoryJa}`
+                  : ""}
             </p>
             <button type="button" className="btn-ghost" onClick={() => void nextItem(1)} disabled={busy}>
-              {isCompare ? "次の比較" : isMultiSet ? "次のストーリー" : "次の画像"}
+              {isCompare
+                ? "次の比較"
+                : isMultiSet
+                  ? "次のストーリー"
+                  : isRoleplay
+                    ? "次のシーン"
+                    : "次の画像"}
             </button>
           </div>
         </section>
@@ -338,8 +377,13 @@ export function SpeakingPractice() {
         <section className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
           <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-6 text-stone-800">
             <p className="font-medium text-amber-900">課題</p>
-            <p className="mt-1">{pattern.taskJa}</p>
-            <p className="mt-2 text-xs text-stone-500">{pattern.taskEn}</p>
+            {isRoleplay && currentScenario && (
+              <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
+                {currentScenario.categoryJa}
+              </p>
+            )}
+            <p className="mt-1">{taskJa}</p>
+            <p className="mt-2 text-xs text-stone-500">{taskEn}</p>
           </div>
 
           <label className="flex flex-col gap-1 text-sm">

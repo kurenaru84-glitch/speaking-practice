@@ -27,6 +27,17 @@ export type StorySet = {
   images: string[];
 };
 
+export type RoleplayScenario = {
+  id: string;
+  categoryId: string;
+  categoryJa: string;
+  categoryEn: string;
+  image: string;
+  promptJa: string;
+  promptEn: string;
+};
+
 export type ImagesResponse =
-  | { pattern: string; images: string[]; stories?: undefined }
-  | { pattern: string; stories: StorySet[]; images?: undefined };
+  | { pattern: string; images: string[]; stories?: undefined; roleplayScenarios?: undefined }
+  | { pattern: string; stories: StorySet[]; images?: undefined; roleplayScenarios?: undefined }
+  | { pattern: string; roleplayScenarios: RoleplayScenario[]; images?: undefined; stories?: undefined };

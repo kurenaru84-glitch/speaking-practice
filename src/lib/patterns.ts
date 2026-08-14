@@ -9,7 +9,7 @@ export type Pattern = {
   taskEn: string;
   imageFolder: string;
   multiImage: boolean;
-  imageLayout: "single" | "sequence" | "compare";
+  imageLayout: "single" | "sequence" | "compare" | "roleplay";
   feedbackButton: string;
   naturalTitle: string;
   emptyImageHint: string;
@@ -77,11 +77,11 @@ export const PATTERNS: Pattern[] = [
       'Role-play: If you were this person, what would you say or do? What advice would you give them? Speak directly to the person (e.g. "Excuse me, I am so sorry...").',
     imageFolder: "roleplay",
     multiImage: false,
-    imageLayout: "single",
+    imageLayout: "roleplay",
     feedbackButton: "話し方と仮定法をチェック",
     naturalTitle: "こう言うともっと自然",
-    emptyImageHint: "public/images/roleplay に画像を入れてください",
-    navLabel: "前の画像",
+    emptyImageHint: "public/images/roleplay/カテゴリ名/ に画像と meta.json を入れてください",
+    navLabel: "前のシーン",
   },
   {
     id: "compare",
@@ -155,7 +155,8 @@ function buildJsonShape(languageName: string, naturalHint: string, summaryHint: 
 export function buildFeedbackPrompt(
   patternId: PatternId,
   languageName: string,
-  userText: string
+  userText: string,
+  scenario?: { promptJa: string; promptEn: string }
 ): string {
   const intro = `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
 
@@ -198,7 +199,17 @@ ${SHARED_RULES}`;
   }
 
   if (patternId === "roleplay") {
+    const scenarioBlock = scenario
+      ? `
+Scenario shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}
+
+Evaluate whether the learner's response fits THIS scenario. They should speak directly to the person in the photo.`
+      : "";
+
     return `${intro}
+${scenarioBlock}
 
 The learner did role-play or gave advice about the photo in ${languageName}.
 

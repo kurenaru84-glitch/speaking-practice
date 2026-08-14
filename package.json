@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:roleplay": "npx tsx scripts/generate-roleplay-prompts.ts"
   },
   "dependencies": {
     "next": "16.3.0",

@@ -12,6 +12,8 @@ export async function POST(request: Request) {
     text?: string;
     language?: string;
     pattern?: string;
+    scenarioPromptJa?: string;
+    scenarioPromptEn?: string;
   };
 
   const text = body.text?.trim() ?? "";
@@ -52,6 +54,13 @@ export async function POST(request: Request) {
       userText: text,
       languageName: language.promptName,
       patternId: pattern.id as PatternId,
+      scenario:
+        body.scenarioPromptJa?.trim()
+          ? {
+              promptJa: body.scenarioPromptJa.trim(),
+              promptEn: body.scenarioPromptEn?.trim() ?? "",
+            }
+          : undefined,
     });
     return NextResponse.json(feedback);
   } catch (error) {

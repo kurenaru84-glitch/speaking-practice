@@ -28,28 +28,40 @@ export function isImageFile(filename: string) {
   return IMAGE_EXT.has(path.extname(filename).toLowerCase());
 }
 
-/** e.g. "/images/speculate/cafe.jpg" */
+/** e.g. "/images/speculate/cafe.jpg" or "/images/roleplay/comfort/01.jpg" */
 export function parseImageUrl(imageUrl: string, patternFolder: string) {
   const relative = imageUrl.replace(/^\/images\//, "");
   const parts = relative.split("/").filter(Boolean);
 
   let filename: string;
-  if (parts.length === 1) {
-    filename = path.basename(parts[0]);
+  let dir: string;
+
+  if (parts.length === 3 && parts[0] === patternFolder) {
+    const category = path.basename(parts[1]);
+    filename = path.basename(parts[2]);
+    dir = path.join(getPatternImageDir(patternFolder), category);
   } else if (parts.length === 2 && parts[0] === patternFolder) {
     filename = path.basename(parts[1]);
+    dir = getPatternImageDir(patternFolder);
+  } else if (parts.length === 1) {
+    filename = path.basename(parts[0]);
+    dir = getPatternImageDir(patternFolder);
   } else {
     throw new Error("画像パスが不正です。");
   }
 
-  const dir = getPatternImageDir(patternFolder);
   const fullPath = path.join(dir, filename);
   if (!fullPath.startsWith(dir)) {
     throw new Error("画像が不正です。");
   }
 
   const mimeType = MIME[path.extname(filename).toLowerCase()] ?? "image/jpeg";
-  return { fullPath, filename, mimeType, publicPath: `/images/${patternFolder}/${filename}` };
+  const publicPath =
+    parts.length === 3 && parts[0] === patternFolder
+      ? `/images/${patternFolder}/${path.basename(parts[1])}/${filename}`
+      : `/images/${patternFolder}/${filename}`;
+
+  return { fullPath, filename, mimeType, publicPath };
 }
 
 /** e.g. "/images/story/demo/01.jpg" or "/images/compare/desks/a.jpg" */

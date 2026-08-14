@@ -1,3 +1,5 @@
+import { FREE_TIER_ENABLED } from "@/lib/feature-flags";
+
 export type PlanId = "free" | "standard" | "pro";
 
 const STORAGE_KEY = "speaking-practice-plan";
@@ -23,6 +25,7 @@ export function setPlan(plan: PlanId) {
 }
 
 export function canUseWordList(plan: PlanId = getPlan()): boolean {
+  if (!FREE_TIER_ENABLED) return true;
   return plan === "standard" || plan === "pro";
 }
 

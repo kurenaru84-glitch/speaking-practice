@@ -7,6 +7,7 @@ import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
 import { getPattern, PATTERNS, type PatternId } from "@/lib/patterns";
+import { FREE_TIER_ENABLED } from "@/lib/feature-flags";
 import {
   FREE_DAILY_LIMIT,
   FREE_MONTHLY_LIMIT,
@@ -442,19 +443,23 @@ export function SpeakingPractice() {
             type="button"
             className="btn-primary"
             onClick={requestFeedback}
-            disabled={!text.trim() || busy || !sessionUsage.canUse}
+            disabled={!text.trim() || busy || (FREE_TIER_ENABLED && !sessionUsage.canUse)}
           >
             {loading ? "添削中..." : pattern.feedbackButton}
           </button>
 
-          <p className="text-xs text-stone-500">
-            無料枠: 今日あと {sessionUsage.dailyRemaining}/{FREE_DAILY_LIMIT} 回 · 今月あと{" "}
-            {sessionUsage.monthlyRemaining}/{FREE_MONTHLY_LIMIT} 回
-          </p>
-          {!sessionUsage.canUse && (
-            <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              {sessionLimitMessage(sessionUsage)}
-            </p>
+          {FREE_TIER_ENABLED && (
+            <>
+              <p className="text-xs text-stone-500">
+                無料枠: 今日あと {sessionUsage.dailyRemaining}/{FREE_DAILY_LIMIT} 回 · 今月あと{" "}
+                {sessionUsage.monthlyRemaining}/{FREE_MONTHLY_LIMIT} 回
+              </p>
+              {!sessionUsage.canUse && (
+                <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  {sessionLimitMessage(sessionUsage)}
+                </p>
+              )}
+            </>
           )}
 
           {error && <p className="text-sm text-red-700">{error}</p>}

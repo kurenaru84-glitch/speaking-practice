@@ -1,3 +1,5 @@
+import { FREE_TIER_ENABLED } from "@/lib/feature-flags";
+
 const STORAGE_KEY = "speaking-practice-sessions";
 
 export const FREE_DAILY_LIMIT = 2;
@@ -44,6 +46,16 @@ export type SessionUsage = {
 };
 
 export function getSessionUsage(now = new Date()): SessionUsage {
+  if (!FREE_TIER_ENABLED) {
+    return {
+      dailyUsed: 0,
+      monthlyUsed: 0,
+      dailyRemaining: FREE_DAILY_LIMIT,
+      monthlyRemaining: FREE_MONTHLY_LIMIT,
+      canUse: true,
+    };
+  }
+
   const timestamps = readLog().timestamps;
   const dailyUsed = timestamps.filter((ts) => isSameDay(new Date(ts), now)).length;
   const monthlyUsed = timestamps.filter((ts) => isSameMonth(new Date(ts), now)).length;
@@ -60,6 +72,7 @@ export function getSessionUsage(now = new Date()): SessionUsage {
 }
 
 export function recordSession(now = Date.now()) {
+  if (!FREE_TIER_ENABLED) return;
   const log = readLog();
   writeLog({ timestamps: [...log.timestamps, now] });
 }

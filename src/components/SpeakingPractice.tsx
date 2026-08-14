@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { containsJapanese } from "@/lib/code-switch";
 import { LANGUAGES, type LanguageId } from "@/lib/languages";
 import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
@@ -72,6 +73,7 @@ export function SpeakingPractice() {
           : [];
   const hasVisual = currentImages.length > 0;
   const busy = recording || transcribing || loading;
+  const mixedLanguage = containsJapanese(text);
   const itemCount = isCompare
     ? compareSets.length
     : isRoleplay
@@ -486,6 +488,9 @@ export function SpeakingPractice() {
               {livePreview && (
                 <span className="ml-2 text-xs font-normal text-amber-700">プレビュー（確定版は録音後）</span>
               )}
+              {livePreview && (
+                <span className="ml-2 text-xs font-normal text-stone-500">日本語は録音後に反映</span>
+              )}
             </span>
             {recording && !livePreview ? (
               <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center text-sm leading-6 text-stone-500">
@@ -502,8 +507,8 @@ export function SpeakingPractice() {
                 }`}
                 placeholder={
                   mobile
-                    ? "録音を止めると Gemini がここへ文字起こしします。キーボード入力もできます。"
-                    : "話している間ここに文字が出ます。録音後に Gemini が確定版に更新します。"
+                    ? "録音を止めると Gemini がここへ文字起こしします。忘れた語は日本語で話してもOKです。"
+                    : "話している間ここに文字が出ます。忘れた語は日本語で話してもOK — 録音後に Gemini が確定版に更新します。"
                 }
                 value={text}
                 readOnly={livePreview || transcribing}
@@ -511,6 +516,12 @@ export function SpeakingPractice() {
               />
             )}
           </label>
+
+          {mixedLanguage && !recording && (
+            <p className="rounded-xl bg-sky-50 px-3 py-2 text-sm text-sky-900">
+              日本語混在を検出しました。添削で学習言語の言い方を確認できます。
+            </p>
+          )}
 
           <button
             type="button"

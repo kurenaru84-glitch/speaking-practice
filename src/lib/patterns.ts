@@ -1,3 +1,5 @@
+import { codeSwitchFeedbackRules, containsJapanese } from "@/lib/code-switch";
+
 export type PatternId = "describe" | "story" | "speculate" | "roleplay" | "compare";
 
 export type Pattern = {
@@ -126,6 +128,10 @@ Natural examples rules:
 General:
 - Do not wrap JSON in markdown.`;
 
+function sharedRules(languageName: string): string {
+  return `${SHARED_RULES}${codeSwitchFeedbackRules(languageName)}`;
+}
+
 function buildJsonShape(languageName: string, naturalHint: string, summaryHint: string) {
   return `{
   "sentences": [
@@ -158,8 +164,12 @@ export function buildFeedbackPrompt(
   userText: string,
   scenario?: { promptJa: string; promptEn: string; labelA?: string; labelB?: string }
 ): string {
-  const intro = `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
+  const codeSwitchNote = containsJapanese(userText)
+    ? "\nThis transcript contains Japanese mixed in — the learner likely forgot vocabulary. Help them express it in the target language.\n"
+    : "";
 
+  const intro = `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
+${codeSwitchNote}
 Learner text:
 """
 ${userText}
@@ -178,7 +188,7 @@ ${buildJsonShape(
 )}
 
 Focus sentence comments on: connectors, tense, causal links, story gaps.
-${SHARED_RULES}`;
+${sharedRules(languageName)}`;
   }
 
   if (patternId === "compare") {
@@ -205,7 +215,7 @@ ${buildJsonShape(
 
 Focus sentence comments on: comparison phrases, vague words, missing conclusion.
 Vocabulary: comparison words and scene-specific terms for both images.
-${SHARED_RULES}`;
+${sharedRules(languageName)}`;
   }
 
   if (patternId === "roleplay") {
@@ -231,7 +241,7 @@ ${buildJsonShape(
 )}
 
 Focus sentence comments on: subjunctive, direct address, register, realism.
-${SHARED_RULES}`;
+${sharedRules(languageName)}`;
   }
 
   if (patternId === "speculate") {
@@ -247,7 +257,7 @@ ${buildJsonShape(
 )}
 
 Focus sentence comments on: modal verbs, unsupported leaps.
-${SHARED_RULES}`;
+${sharedRules(languageName)}`;
   }
 
   return `${intro}
@@ -262,5 +272,5 @@ ${buildJsonShape(
 )}
 
 Focus sentence comments on grammar, word choice, and clarity.
-${SHARED_RULES}`;
+${sharedRules(languageName)}`;
 }

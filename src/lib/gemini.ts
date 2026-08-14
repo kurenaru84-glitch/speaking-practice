@@ -1,3 +1,4 @@
+import { buildTranscribePrompt } from "@/lib/code-switch";
 import type { FeedbackResult, NaturalExample } from "@/lib/types";
 import { buildFeedbackPrompt, type PatternId } from "@/lib/patterns";
 
@@ -50,10 +51,7 @@ export async function transcribeAudio(params: {
   mimeType: string;
   languageName: string;
 }): Promise<string> {
-  const prompt = `Transcribe this spoken audio accurately in ${params.languageName}.
-Return only the transcription text.
-Do not translate, summarize, or add commentary.
-Keep filler words and natural spoken phrasing.`;
+  const prompt = buildTranscribePrompt(params.languageName);
 
   const text = await callGemini({
     contents: [

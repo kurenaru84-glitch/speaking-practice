@@ -114,9 +114,22 @@ export async function getSpeakingFeedback(params: {
   }
 }
 
+function normalizeNatural(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    const items = value.map((item) => String(item ?? "").trim()).filter(Boolean);
+    if (items.length >= 2) return items.slice(0, 2);
+    return items;
+  }
+  if (typeof value === "string" && value.trim()) {
+    return [value.trim()];
+  }
+  return [];
+}
+
 function normalizeFeedback(raw: unknown): FeedbackResult {
   const data = raw as Partial<FeedbackResult> & {
     corrections?: Array<{ original: string; fixed: string; note: string }>;
+    natural?: string | string[];
   };
 
   if (Array.isArray(data.sentences) && data.sentences.length > 0) {
@@ -126,7 +139,7 @@ function normalizeFeedback(raw: unknown): FeedbackResult {
         fixed: s.fixed ?? s.original ?? "",
         comment: s.comment ?? "",
       })),
-      natural: data.natural ?? "",
+      natural: normalizeNatural(data.natural),
       vocabulary: (data.vocabulary ?? []).slice(0, 10),
       summary: data.summary ?? "",
     };
@@ -139,7 +152,7 @@ function normalizeFeedback(raw: unknown): FeedbackResult {
         fixed: c.fixed,
         comment: c.note,
       })),
-      natural: data.natural ?? "",
+      natural: normalizeNatural(data.natural),
       vocabulary: (data.vocabulary ?? []).slice(0, 10),
       summary: data.summary ?? "",
     };

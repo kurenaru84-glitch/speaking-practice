@@ -11,7 +11,7 @@ export type VocabularyItem = {
 
 export type FeedbackResult = {
   sentences: SentenceFeedback[];
-  natural: string;
+  natural: string[];
   vocabulary: VocabularyItem[];
   summary: string;
 };

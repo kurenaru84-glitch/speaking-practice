@@ -1,12 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LANGUAGES, type LanguageId } from "@/lib/languages";
 import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
 import { getPattern, PATTERNS, type PatternId } from "@/lib/patterns";
+import { useWordList } from "@/lib/use-word-list";
 import type { FeedbackResult, ImagesResponse, StorySet } from "@/lib/types";
+import { SelectableText } from "@/components/SelectableText";
 
 const RECORD_SECONDS = 60;
 
@@ -26,6 +29,9 @@ export function SpeakingPractice() {
   const [livePreview, setLivePreview] = useState(false);
   const [previewCapable] = useState(() => isLivePreviewSupported());
   const [mobile] = useState(() => isMobileDevice());
+  const [toast, setToast] = useState("");
+
+  const { addEntry } = useWordList();
 
   const { recording, start, stop } = useRecorder();
   const { start: startPreview, stop: stopPreview } = useLivePreview();
@@ -109,6 +115,21 @@ export function SpeakingPractice() {
     };
   }, [clearTimer, stop, stopPreview]);
 
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2200);
+  }, []);
+
+  function addVocabulary(term: string, note: string) {
+    const result = addEntry({
+      term,
+      note,
+      language,
+      source: "この場面で使える語彙",
+    });
+    showToast(result.ok ? "単語リストに追加しました" : "すでに登録済みです");
+  }
+
   useEffect(() => {
     if (recording && secondsLeft === 0) {
       void finishRecording();
@@ -180,7 +201,15 @@ export function SpeakingPractice() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 md:px-8">
       <header className="flex flex-col gap-3">
-        <p className="text-sm font-medium tracking-wide text-amber-800">Picture Speaking</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-medium tracking-wide text-amber-800">Picture Speaking</p>
+          <Link
+            href="/word-list"
+            className="rounded-full bg-white px-4 py-2 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50"
+          >
+            単語リスト
+          </Link>
+        </div>
         <h1 className="text-2xl font-semibold text-stone-900 md:text-3xl">{pattern.title}</h1>
         <p className="max-w-2xl text-sm leading-6 text-stone-600">{pattern.description}</p>
 
@@ -391,15 +420,31 @@ export function SpeakingPractice() {
       {feedback && (
         <section className="grid gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200 lg:grid-cols-2">
           <div>
-            <h2 className="mb-3 text-lg font-semibold text-stone-900">一文ずとのフィードバック</h2>
+            <h2 className="mb-1 text-lg font-semibold text-stone-900">一文ずとのフィードバック</h2>
+            <p className="mb-3 text-xs text-stone-500">例文を選択すると単語リストに追加できます</p>
             <ul className="space-y-3">
               {feedback.sentences.map((item, i) => {
                 const needsFix = item.fixed.trim() !== item.original.trim();
                 return (
                   <li key={`${item.original}-${i}`} className="rounded-2xl bg-stone-50 p-3 text-sm">
-                    <p className="font-medium text-stone-800">{item.original}</p>
+                    <SelectableText
+                      text={item.original}
+                      language={language}
+                      source="フィードバック（原文）"
+                      className="font-medium text-stone-800"
+                      onToast={showToast}
+                    />
                     {needsFix && (
-                      <p className="mt-1 font-medium text-emerald-800">→ {item.fixed}</p>
+                      <p className="mt-1 font-medium text-emerald-800">
+                        →{" "}
+                        <SelectableText
+                          text={item.fixed}
+                          language={language}
+                          source="フィードバック（修正例）"
+                          inline
+                          onToast={showToast}
+                        />
+                      </p>
                     )}
                     <p className={`mt-1 ${needsFix ? "text-stone-600" : "text-emerald-700"}`}>
                       {item.comment}
@@ -408,27 +453,50 @@ export function SpeakingPractice() {
                 );
               })}
             </ul>
-            <p className="mt-4 text-sm leading-6 text-stone-600">{feedback.summary}</p>
+            <SelectableText
+              text={feedback.summary}
+              language={language}
+              source="総評"
+              className="mt-4 text-sm leading-6 text-stone-600"
+              onToast={showToast}
+            />
           </div>
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className="mb-3 text-lg font-semibold text-stone-900">{pattern.naturalTitle}</h2>
-              <p className="whitespace-pre-wrap rounded-2xl bg-amber-50 p-4 text-sm leading-7 text-stone-800">
-                {feedback.natural}
-              </p>
+              <h2 className="mb-1 text-lg font-semibold text-stone-900">{pattern.naturalTitle}</h2>
+              <p className="mb-3 text-xs text-stone-500">例文を選択すると単語リストに追加できます</p>
+              <div className="flex flex-col gap-3">
+                {feedback.natural.filter(Boolean).map((example, i) => (
+                  <div key={`natural-${i}`} className="rounded-2xl bg-amber-50 p-4">
+                    <p className="mb-2 text-xs font-medium text-amber-900">例 {i + 1}</p>
+                    <SelectableText
+                      text={example}
+                      language={language}
+                      source={`${pattern.naturalTitle} 例${i + 1}`}
+                      className="whitespace-pre-wrap text-sm leading-7 text-stone-800"
+                      onToast={showToast}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
             {feedback.vocabulary.length > 0 && (
               <div>
-                <h3 className="mb-2 text-sm font-semibold text-stone-900">この場面で使える語彙</h3>
+                <h3 className="mb-1 text-sm font-semibold text-stone-900">この場面で使える語彙</h3>
+                <p className="mb-2 text-xs text-stone-500">タップで単語リストに追加</p>
                 <ul className="flex flex-wrap gap-2">
                   {feedback.vocabulary.map((item, i) => (
-                    <li
-                      key={`${item.term}-${i}`}
-                      className="rounded-xl bg-stone-100 px-3 py-2 text-sm"
-                      title={item.note}
-                    >
-                      <span className="font-medium text-stone-900">{item.term}</span>
-                      <span className="text-stone-500"> · {item.note}</span>
+                    <li key={`${item.term}-${i}`}>
+                      <button
+                        type="button"
+                        className="rounded-xl bg-stone-100 px-3 py-2 text-left text-sm transition hover:bg-amber-100 hover:ring-1 hover:ring-amber-300"
+                        title={`${item.note} — タップで追加`}
+                        onClick={() => addVocabulary(item.term, item.note)}
+                      >
+                        <span className="font-medium text-stone-900">{item.term}</span>
+                        <span className="text-stone-500"> · {item.note}</span>
+                        <span className="ml-1 text-xs text-amber-700">＋</span>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -436,6 +504,12 @@ export function SpeakingPractice() {
             )}
           </div>
         </section>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white shadow-lg">
+          {toast}
+        </div>
       )}
     </main>
   );

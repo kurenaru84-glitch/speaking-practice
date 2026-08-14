@@ -119,6 +119,9 @@ Vocabulary rules:
 - "term" is in the learner's target language. "note" is a short Japanese explanation (what it means or when to use it).
 - Pick practical scene vocabulary (people, objects, actions, places), not generic words.
 
+Natural examples rules:
+- Provide exactly 2 entries in "natural". Two different but equally good ways to say it (different wording or emphasis).
+
 General:
 - Do not wrap JSON in markdown.`;
 
@@ -131,7 +134,10 @@ function buildJsonShape(languageName: string, naturalHint: string, summaryHint: 
       "comment": "reaction in Japanese: correction, advice, or praise"
     }
   ],
-  "natural": "${naturalHint}",
+  "natural": [
+    "${naturalHint}",
+    "A second alternative natural example in ${languageName}. Different wording or angle from the first, same quality. 80-140 words, spoken style."
+  ],
   "vocabulary": [
     { "term": "useful word or phrase in ${languageName}", "note": "short Japanese explanation" }
   ],

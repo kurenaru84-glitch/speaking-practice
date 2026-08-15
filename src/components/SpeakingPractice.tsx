@@ -52,6 +52,7 @@ import { FeedbackChecklist } from "@/components/FeedbackChecklist";
 import { PracticeGrowthPanel } from "@/components/PracticeGrowthPanel";
 import { RetryQueuePanel } from "@/components/RetryQueuePanel";
 import { StructuredNaturalExample } from "@/components/StructuredNaturalExample";
+import { SentenceCorrection } from "@/components/SentenceCorrection";
 import { SelectableText } from "@/components/SelectableText";
 
 const RECORD_SECONDS = 60;
@@ -950,7 +951,7 @@ export function SpeakingPractice() {
 
           <div className="grid gap-4 lg:grid-cols-2">
           <div>
-            <h2 className="mb-1 text-lg font-semibold text-stone-900">一文ずとのフィードバック</h2>
+            <h2 className="mb-1 text-lg font-semibold text-stone-900">フィードバック</h2>
             {wordListEnabled && (
               <p className="mb-3 text-xs text-stone-500">
                 {mobile
@@ -963,27 +964,13 @@ export function SpeakingPractice() {
                 const needsFix = item.fixed.trim() !== item.original.trim();
                 return (
                   <li key={`${item.original}-${i}`} className="rounded-2xl bg-stone-50 p-3 text-sm">
-                    <SelectableText
-                      text={item.original}
+                    <SentenceCorrection
+                      original={item.original}
+                      fixed={item.fixed}
                       language={learningLanguage}
-                      source="フィードバック（原文）"
-                      className="font-medium text-stone-800"
                       allowAdd={wordListEnabled}
                       onToast={showToast}
                     />
-                    {needsFix && (
-                      <p className="mt-1 font-medium text-emerald-800">
-                        →{" "}
-                        <SelectableText
-                          text={item.fixed}
-                          language={learningLanguage}
-                          source="フィードバック（修正例）"
-                          inline
-                          allowAdd={wordListEnabled}
-                          onToast={showToast}
-                        />
-                      </p>
-                    )}
                     <p className={`mt-1 ${needsFix ? "text-stone-600" : "text-emerald-700"}`}>
                       {item.comment}
                     </p>

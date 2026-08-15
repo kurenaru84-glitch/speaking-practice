@@ -26,6 +26,17 @@ function isTouchUi() {
   return window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 }
 
+function isNodeInContainer(node: Node | null, container: HTMLElement) {
+  if (!node) return false;
+  if (node === container) return true;
+  return container.contains(node);
+}
+
+function estimateRows(text: string) {
+  const lines = text.split("\n").length;
+  return Math.min(12, Math.max(2, lines + Math.ceil(text.length / 48)));
+}
+
 export function SelectableText({
   text,
   language,
@@ -35,17 +46,55 @@ export function SelectableText({
   allowAdd = true,
   onToast,
 }: SelectableTextProps) {
-  const containerRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
   const selectionTimerRef = useRef<number | null>(null);
   const { addEntry } = useWordList();
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [touchUi, setTouchUi] = useState(false);
 
-  const clearPopup = useCallback(() => setPopup(null), []);
+  const clearPopup = useCallback(() => {
+    setPopup(null);
+  }, []);
+
+  const showPopup = useCallback((selected: string, rect?: DOMRect) => {
+    const useBottomBar = isTouchUi();
+    const placement = useBottomBar || !rect || rect.top < 72 ? "below" : "above";
+    setPopup({
+      x: rect
+        ? Math.min(Math.max(rect.left + rect.width / 2, 80), window.innerWidth - 80)
+        : window.innerWidth / 2,
+      y: rect ? (placement === "above" ? rect.top : rect.bottom) : 0,
+      text: selected,
+      placement,
+    });
+  }, []);
+
+  const handleTextareaSelection = useCallback(() => {
+    const el = containerRef.current;
+    if (!el || !(el instanceof HTMLTextAreaElement)) {
+      clearPopup();
+      return;
+    }
+
+    const { selectionStart, selectionEnd } = el;
+    if (selectionStart === selectionEnd) {
+      clearPopup();
+      return;
+    }
+
+    const selected = el.value.slice(selectionStart, selectionEnd).trim();
+    if (!selected || selected.length > 200) {
+      clearPopup();
+      return;
+    }
+
+    showPopup(selected);
+  }, [clearPopup, showPopup]);
 
   const handleSelection = useCallback(() => {
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !containerRef.current) {
+    const container = containerRef.current;
+    if (!selection || selection.isCollapsed || !container) {
       clearPopup();
       return;
     }
@@ -56,13 +105,9 @@ export function SelectableText({
       return;
     }
 
-    const anchor = selection.anchorNode;
-    const focus = selection.focusNode;
     if (
-      !anchor ||
-      !focus ||
-      !containerRef.current.contains(anchor) ||
-      !containerRef.current.contains(focus)
+      !isNodeInContainer(selection.anchorNode, container) ||
+      !isNodeInContainer(selection.focusNode, container)
     ) {
       clearPopup();
       return;
@@ -75,62 +120,42 @@ export function SelectableText({
       return;
     }
 
-    const useBottomBar = isTouchUi();
-    const placement = useBottomBar || rect.top < 72 ? "below" : "above";
+    showPopup(selected, rect);
+  }, [clearPopup, showPopup]);
 
-    setPopup({
-      x: Math.min(Math.max(rect.left + rect.width / 2, 80), window.innerWidth - 80),
-      y: placement === "above" ? rect.top : rect.bottom,
-      text: selected,
-      placement,
-    });
-  }, [clearPopup]);
-
-  const scheduleSelectionCheck = useCallback(() => {
-    if (selectionTimerRef.current) {
-      window.clearTimeout(selectionTimerRef.current);
-    }
-    selectionTimerRef.current = window.setTimeout(() => {
-      selectionTimerRef.current = null;
-      handleSelection();
-    }, 120);
-  }, [handleSelection]);
+  const scheduleSelectionCheck = useCallback(
+    (delay = 120) => {
+      if (selectionTimerRef.current) {
+        window.clearTimeout(selectionTimerRef.current);
+      }
+      selectionTimerRef.current = window.setTimeout(() => {
+        selectionTimerRef.current = null;
+        if (containerRef.current instanceof HTMLTextAreaElement) {
+          handleTextareaSelection();
+        } else {
+          handleSelection();
+        }
+      }, delay);
+    },
+    [handleSelection, handleTextareaSelection]
+  );
 
   useEffect(() => {
     setTouchUi(isTouchUi());
   }, []);
 
   useEffect(() => {
-    document.addEventListener("selectionchange", scheduleSelectionCheck);
+    if (touchUi) return;
+
+    const onSelectionChange = () => scheduleSelectionCheck(120);
+    document.addEventListener("selectionchange", onSelectionChange);
     return () => {
-      document.removeEventListener("selectionchange", scheduleSelectionCheck);
+      document.removeEventListener("selectionchange", onSelectionChange);
       if (selectionTimerRef.current) {
         window.clearTimeout(selectionTimerRef.current);
       }
     };
-  }, [scheduleSelectionCheck]);
-
-  useEffect(() => {
-    function shouldIgnoreTarget(target: Node | null) {
-      if (!target) return false;
-      if (containerRef.current?.contains(target)) return true;
-      if (target instanceof Element && target.closest("[data-add-word-popup]")) return true;
-      return false;
-    }
-
-    function handleDismiss(e: Event) {
-      const target = e.target as Node | null;
-      if (shouldIgnoreTarget(target)) return;
-      clearPopup();
-    }
-
-    document.addEventListener("mousedown", handleDismiss);
-    document.addEventListener("touchstart", handleDismiss, { passive: true });
-    return () => {
-      document.removeEventListener("mousedown", handleDismiss);
-      document.removeEventListener("touchstart", handleDismiss);
-    };
-  }, [clearPopup]);
+  }, [scheduleSelectionCheck, touchUi]);
 
   function handleAdd() {
     if (!popup || !allowAdd) return;
@@ -141,6 +166,9 @@ export function SelectableText({
     });
     onToast?.(result.ok ? "単語リストに追加しました" : "すでに登録済みです");
     window.getSelection()?.removeAllRanges();
+    if (containerRef.current instanceof HTMLTextAreaElement) {
+      containerRef.current.setSelectionRange(0, 0);
+    }
     clearPopup();
   }
 
@@ -151,16 +179,31 @@ export function SelectableText({
   const preview =
     popup && popup.text.length > 36 ? `${popup.text.slice(0, 36)}…` : popup?.text;
 
+  const useMobileTextarea = touchUi && allowAdd;
+  const sharedClassName = `${inline ? "" : "block"} ${className}`;
+
   return (
     <>
-      <span
-        ref={containerRef}
-        className={`select-text ${inline ? "" : "block"} ${className}`}
-        onMouseUp={scheduleSelectionCheck}
-        onTouchEnd={scheduleSelectionCheck}
-      >
-        {text}
-      </span>
+      {useMobileTextarea ? (
+        <textarea
+          ref={containerRef as React.RefObject<HTMLTextAreaElement>}
+          readOnly
+          aria-label="選択して単語リストに追加"
+          value={text}
+          rows={estimateRows(text)}
+          className={`select-text selectable-textarea w-full resize-none border-0 bg-transparent p-0 leading-inherit outline-none ${sharedClassName}`}
+          onSelect={() => scheduleSelectionCheck(0)}
+          onTouchEnd={() => scheduleSelectionCheck(250)}
+        />
+      ) : (
+        <span
+          ref={containerRef as React.RefObject<HTMLSpanElement>}
+          className={`select-text ${sharedClassName}`}
+          onMouseUp={() => scheduleSelectionCheck(0)}
+        >
+          {text}
+        </span>
+      )}
       {popup && allowAdd && touchUi ? (
         <div
           data-add-word-popup
@@ -184,7 +227,7 @@ export function SelectableText({
           <button
             type="button"
             data-add-word-popup
-            className="fixed z-[60] -translate-x-1/2 rounded-full bg-stone-900 px-3 py-2 text-xs font-medium text-white shadow-lg"
+            className="fixed z-[60] rounded-full bg-stone-900 px-3 py-2 text-xs font-medium text-white shadow-lg"
             style={{
               left: popup.x,
               top: popup.placement === "above" ? popup.y - 8 : popup.y + 8,

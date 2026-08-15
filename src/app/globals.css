@@ -30,3 +30,11 @@ body {
   -webkit-touch-callout: default;
   cursor: text;
 }
+
+.selectable-textarea {
+  field-sizing: content;
+  min-height: 2.5rem;
+  font: inherit;
+  color: inherit;
+  overflow: hidden;
+}

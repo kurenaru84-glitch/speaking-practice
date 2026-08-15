@@ -555,7 +555,11 @@ export function SpeakingPractice() {
           <div>
             <h2 className="mb-1 text-lg font-semibold text-stone-900">一文ずとのフィードバック</h2>
             {wordListEnabled && (
-              <p className="mb-3 text-xs text-stone-500">例文を選択すると単語リストに追加できます</p>
+              <p className="mb-3 text-xs text-stone-500">
+                {mobile
+                  ? "例文を長押しして範囲を選び、下のボタンで単語リストに追加できます"
+                  : "例文を選択すると単語リストに追加できます"}
+              </p>
             )}
             <ul className="space-y-3">
               {feedback.sentences.map((item, i) => {
@@ -603,7 +607,11 @@ export function SpeakingPractice() {
             <div>
               <h2 className="mb-1 text-lg font-semibold text-stone-900">{pattern.naturalTitle}</h2>
               {wordListEnabled && (
-                <p className="mb-3 text-xs text-stone-500">例文を選択すると単語リストに追加できます</p>
+                <p className="mb-3 text-xs text-stone-500">
+                  {mobile
+                    ? "例文を長押しして範囲を選び、下のボタンで単語リストに追加できます"
+                    : "例文を選択すると単語リストに追加できます"}
+                </p>
               )}
               <div className="flex flex-col gap-3">
                 {feedback.natural

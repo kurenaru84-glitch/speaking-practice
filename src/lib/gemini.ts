@@ -1,4 +1,8 @@
-import { buildTranscribePrompt } from "@/lib/code-switch";
+import {
+  buildFormatTranscriptPrompt,
+  buildTranscribePrompt,
+  looksLikeRunOnTranscript,
+} from "@/lib/code-switch";
 import type { FeedbackResult, NaturalExample } from "@/lib/types";
 import { buildFeedbackPrompt, type PatternId } from "@/lib/patterns";
 
@@ -53,7 +57,7 @@ export async function transcribeAudio(params: {
 }): Promise<string> {
   const prompt = buildTranscribePrompt(params.languageName);
 
-  const text = await callGemini({
+  let text = await callGemini({
     contents: [
       {
         parts: [
@@ -75,7 +79,26 @@ export async function transcribeAudio(params: {
   if (!text) {
     throw new Error("音声を認識できませんでした。もう一度録音してください。");
   }
-  return text;
+
+  text = text.trim();
+  if (looksLikeRunOnTranscript(text)) {
+    text = await callGemini({
+      contents: [
+        {
+          parts: [{ text: buildFormatTranscriptPrompt(params.languageName, text) }],
+        },
+      ],
+      generationConfig: {
+        thinkingConfig: { thinkingLevel: "minimal" },
+      },
+    });
+  }
+
+  if (!text.trim()) {
+    throw new Error("音声を認識できませんでした。もう一度録音してください。");
+  }
+
+  return text.trim();
 }
 
 export async function translateToJapanese(params: {

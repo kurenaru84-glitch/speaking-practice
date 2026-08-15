@@ -106,7 +106,7 @@ export const PATTERNS: Pattern[] = [
     id: "interview",
     label: "インタビュー",
     title: "インタビュー練習",
-    description: "面接官の質問に1分ほど答える練習です。具体例や理由を入れて話してください。",
+    description: "面接官の質問に1分ほど答える練習です。経験・背景・価値観を語る質問向け（AとBの比較・意見表明は「比較・意見」パターンを使ってください）。",
     taskJa: "質問に対して、具体例と理由を交えて1分ほど答えてください。",
     taskEn: "Answer the interview question for about one minute. Include specific examples and reasons.",
     imageFolder: "interview",

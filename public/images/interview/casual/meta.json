@@ -147,10 +147,10 @@
       "promptEn": "When you are busy, how do you stay organized with work or study? Share any tips that work for you."
     },
     {
-      "id": "city-or-country",
-      "titleJa": "都市と田舎",
-      "promptJa": "住むなら都市と田舎、どちらが好きですか？メリット・デメリットを挙げて理由も説明してください。",
-      "promptEn": "Would you prefer to live in a city or in the countryside? Compare the pros and cons and explain your choice."
+      "id": "proud-accomplishment",
+      "titleJa": "誇りに思うこと",
+      "promptJa": "仕事、勉強、または私生活で、自分が誇りに思っていることを教えてください。どんな努力をして、どんな結果が得られましたか？",
+      "promptEn": "Tell me about something you are proud of in your work, studies, or personal life. What effort did you make, and what was the result?"
     },
     {
       "id": "music",
@@ -181,6 +181,126 @@
       "titleJa": "意味のある贈り物",
       "promptJa": "これまでにもらってうれしかった贈り物、または誰かに贈ってよかったものを教えてください。なぜそれが特別でしたか？",
       "promptEn": "Tell me about a gift you received that meant a lot to you, or one you were glad to give someone. Why was it special?"
+    },
+    {
+      "id": "leadership",
+      "titleJa": "リーダーシップの経験",
+      "promptJa": "人をまとめたり、プロジェクトを率いた経験について教えてください。どんな場面で、どう役割を果たしましたか？",
+      "promptEn": "Tell me about a time you led people or took charge of a project. What was the situation, and what role did you play?"
+    },
+    {
+      "id": "conflict-resolution",
+      "titleJa": "意見の対立",
+      "promptJa": "誰かと意見が対立した経験を教えてください。そのときどう対処し、結果はどうなりましたか？",
+      "promptEn": "Tell me about a time you disagreed with someone. How did you handle it, and what was the outcome?"
+    },
+    {
+      "id": "mentor-influence",
+      "titleJa": "影響を受けた人",
+      "promptJa": "仕事や勉強で、あなたに大きな影響を与えた人について教えてください。その人から何を学びましたか？",
+      "promptEn": "Tell me about someone who had a strong influence on your work or studies. What did you learn from them?"
+    },
+    {
+      "id": "strength",
+      "titleJa": "自分の強み",
+      "promptJa": "自分の強みだと思う点は何ですか？具体例を挙げて、それがどう活きているか教えてください。",
+      "promptEn": "What do you consider your greatest strength? Give a specific example of how it helps you."
+    },
+    {
+      "id": "weakness-improvement",
+      "titleJa": "弱みと改善",
+      "promptJa": "自分の弱みだと感じている点と、それを改善するために今取り組んでいることを教えてください。",
+      "promptEn": "What weakness do you recognize in yourself, and what are you doing now to improve it?"
+    },
+    {
+      "id": "career-choice",
+      "titleJa": "進路・仕事の選択",
+      "promptJa": "今の仕事、専攻、または進路を選んだ理由を教えてください。きっかけとなった出来事があれば話してください。",
+      "promptEn": "Why did you choose your current job, major, or career path? Describe any moment that influenced your decision."
+    },
+    {
+      "id": "typical-day",
+      "titleJa": "典型的な一日",
+      "promptJa": "平日の典型的な一日を教えてください。朝から夜まで、だいたいどのように過ごしていますか？",
+      "promptEn": "Walk me through a typical weekday for you. What do you usually do from morning to evening?"
+    },
+    {
+      "id": "helped-someone",
+      "titleJa": "誰かを助けた経験",
+      "promptJa": "誰かを助けた経験について教えてください。どんな状況で、何をして、どう感じましたか？",
+      "promptEn": "Tell me about a time you helped someone. What was the situation, what did you do, and how did you feel?"
+    },
+    {
+      "id": "received-help",
+      "titleJa": "助けてもらった経験",
+      "promptJa": "困っているときに助けてもらった経験を教えてください。誰が、どう助けてくれましたか？",
+      "promptEn": "Tell me about a time someone helped you when you were in trouble. Who helped you, and how?"
+    },
+    {
+      "id": "presentation",
+      "titleJa": "発表・プレゼンの経験",
+      "promptJa": "人前で発表したりプレゼンした経験について教えてください。準備はどうしましたか？うまくいった点や学んだことは？",
+      "promptEn": "Tell me about a time you gave a presentation or spoke in front of a group. How did you prepare, and what did you learn?"
+    },
+    {
+      "id": "handling-pressure",
+      "titleJa": "プレッシャーへの対処",
+      "promptJa": "強いプレッシャーを感じた場面について教えてください。そのときどう乗り越えましたか？",
+      "promptEn": "Tell me about a time you felt under strong pressure. How did you get through it?"
+    },
+    {
+      "id": "cross-cultural",
+      "titleJa": "異文化との関わり",
+      "promptJa": "異文化の人や環境と関わった経験を教えてください。印象に残っていることや学んだことは何ですか？",
+      "promptEn": "Tell me about an experience involving a different culture or people from another country. What stood out or what did you learn?"
+    },
+    {
+      "id": "self-taught-skill",
+      "titleJa": "独学で身につけたこと",
+      "promptJa": "独学で身につけたスキルや知識について教えてください。なぜそれを学び始め、どうやって続けましたか？",
+      "promptEn": "Tell me about a skill or subject you taught yourself. Why did you start, and how did you keep going?"
+    },
+    {
+      "id": "habit-changed",
+      "titleJa": "変えた習慣",
+      "promptJa": "最近、または過去に意識的に変えた習慣について教えてください。なぜ変え、どんな効果がありましたか？",
+      "promptEn": "Tell me about a habit you deliberately changed recently or in the past. Why did you change it, and what effect did it have?"
+    },
+    {
+      "id": "goal-achieved",
+      "titleJa": "達成した目標",
+      "promptJa": "設定して達成した目標について教えてください。どんな目標で、どうやって達成しましたか？",
+      "promptEn": "Tell me about a goal you set and achieved. What was the goal, and how did you reach it?"
+    },
+    {
+      "id": "stay-motivated",
+      "titleJa": "モチベーション",
+      "promptJa": "勉強や仕事のモチベーションが下がったとき、普段どうやって立て直しますか？うまくいく方法があれば教えてください。",
+      "promptEn": "When your motivation for study or work drops, how do you usually recover? Share anything that works for you."
+    },
+    {
+      "id": "childhood-memory",
+      "titleJa": "子どもの頃の思い出",
+      "promptJa": "子どもの頃の楽しい思い出を1つ教えてください。いつ、どこで、誰と、何をしましたか？",
+      "promptEn": "Share a happy memory from your childhood. When and where was it, who were you with, and what did you do?"
+    },
+    {
+      "id": "family-influence",
+      "titleJa": "家族の影響",
+      "promptJa": "家族から受けた影響について教えてください。価値観や生き方のどんな部分に影響していますか？",
+      "promptEn": "Tell me how your family has influenced you. What values or attitudes from them shape who you are today?"
+    },
+    {
+      "id": "currently-learning",
+      "titleJa": "今学んでいること",
+      "promptJa": "今、新しく学んでいることや挑戦していることは何ですか？なぜ始め、どこまで進んでいますか？",
+      "promptEn": "What are you learning or trying to master right now? Why did you start, and how far have you gotten?"
+    },
+    {
+      "id": "unexpected-challenge",
+      "titleJa": "予想外の出来事",
+      "promptJa": "予想していなかった出来事や変化に直面した経験を教えてください。そのときどう対応しましたか？",
+      "promptEn": "Tell me about an unexpected event or change you faced. How did you respond to it?"
     }
   ]
 }

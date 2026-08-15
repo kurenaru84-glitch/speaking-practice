@@ -71,6 +71,76 @@
       "titleJa": "推薦状の依頼",
       "promptJa": "大学院出願のため、以前指導してくださった教授に推薦状をお願いしたいです。出願先、締切、これまでの関係を簡潔に伝える依頼メールを書いてください。",
       "promptEn": "You need a recommendation letter from a former professor for graduate school applications. Write an email requesting the letter, including the program, deadline, and your relationship briefly."
+    },
+    {
+      "id": "client-follow-up",
+      "type": "compose",
+      "titleJa": "商談後のフォロー",
+      "promptJa": "先週の製品デモの後、見込み客にフォローメールを書いてください。デモのお礼、資料送付の旨、次のステップ（追加デモや見積もり）を提案してください。",
+      "promptEn": "After a product demo last week, write a follow-up email to a prospective client. Thank them, mention you are sending materials, and suggest next steps such as another demo or a quote."
+    },
+    {
+      "id": "training-leave",
+      "type": "compose",
+      "titleJa": "研修参加の申請",
+      "promptJa": "来月3日間の外部研修に参加したいです。上司に、目的・期間・業務への影響と引き継ぎ案を伝え、承認を得るメールを書いてください。",
+      "promptEn": "You want to attend a three-day external training course next month. Write an email to your manager explaining the purpose, dates, impact on work, and your handover plan."
+    },
+    {
+      "id": "project-intro",
+      "type": "compose",
+      "titleJa": "新プロジェクトの自己紹介",
+      "promptJa": "新しいプロジェクトチームに加わりました。メンバー全員に、自分の役割・経歴・これから協力したい旨を伝える自己紹介メールを書いてください。",
+      "promptEn": "You have joined a new project team. Write a self-introduction email to all members covering your role, background, and how you hope to collaborate."
+    },
+    {
+      "id": "supplier-sample",
+      "type": "compose",
+      "titleJa": "サンプル依頼",
+      "promptJa": "新しい資材サプライヤーに、Product Bのサンプル3点と仕様書を送ってほしいと依頼するメールを書いてください。用途と希望納期も伝えてください。",
+      "promptEn": "Write an email to a new supplier asking for three samples of Product B and the specification sheet. Mention the purpose and your preferred delivery date."
+    },
+    {
+      "id": "schedule-change-notice",
+      "type": "compose",
+      "titleJa": "納期変更の連絡",
+      "promptJa": "取引先に、部材不足のため納期が1週間遅れることを伝えるメールを書いてください。理由・新しい予定日・代替案を丁寧に説明してください。",
+      "promptEn": "Write an email to a client explaining that delivery will be delayed by one week due to a parts shortage. Include the reason, new expected date, and any alternative you can offer."
+    },
+    {
+      "id": "thank-friend-gift",
+      "type": "compose",
+      "titleJa": "プレゼントのお礼",
+      "promptJa": "誕生日に友人から届いたプレゼントにお礼のメールを書いてください。何をもらったか、どう使うか、なぜうれしかったかを伝えてください。",
+      "promptEn": "Write a thank-you email to a friend for a birthday gift. Mention what you received, how you will use it, and why it meant a lot to you."
+    },
+    {
+      "id": "housewarming-invite",
+      "type": "compose",
+      "titleJa": "引っ越しパーティー",
+      "promptJa": "新居に引っ越したので、近い友人2人を引っ越しパーティーに誘うメールを書いてください。日時・場所・持ち寄りの有無をカジュアルに伝えてください。",
+      "promptEn": "You have moved to a new apartment. Write a casual email inviting two close friends to a housewarming get-together. Include the date, time, location, and whether they should bring anything."
+    },
+    {
+      "id": "sports-club-join",
+      "type": "compose",
+      "titleJa": "スポーツクラブ入会",
+      "promptJa": "地域のテニスクラブに入会したいです。体験参加の希望、自分のレベル、平日夜に活動できる旨を問い合わせるメールを書いてください。",
+      "promptEn": "You would like to join a local tennis club. Write an email asking about a trial session, your skill level, and that you are available on weekday evenings."
+    },
+    {
+      "id": "apologize-missed-dinner",
+      "type": "compose",
+      "titleJa": "食事の約束のお詫び",
+      "promptJa": "急な残業で友人との食事約束に遅刻し、結局行けませんでした。謝罪と、改めて来週末に会えないか提案するメールを書いてください。",
+      "promptEn": "You had to miss dinner with a friend because of sudden overtime. Write an apology email and suggest meeting again next weekend."
+    },
+    {
+      "id": "pet-sitting-request",
+      "type": "compose",
+      "titleJa": "ペットの世話をお願い",
+      "promptJa": "来週末だけ旅行に行くため、信頼できる友人に猫の世話（エサ・トイレ）をお願いするメールを書いてください。日程・鍵の渡し方・お礼の旨を書いてください。",
+      "promptEn": "You are going away next weekend and need a trusted friend to look after your cat (feeding and litter). Write an email with the dates, how you will give them the key, and your thanks."
     }
   ]
 }

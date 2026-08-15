@@ -91,6 +91,96 @@
       "promptEn": "Reply as a manager to your team member's paid-leave request. Approve the leave, confirm handover items, and acknowledge their return date.",
       "incomingEmailJa": "件名: 8/20-8/22 有休申請\n\n8月20日から22日まで有休を取得したいです。進行中のA案件は同僚の田中さんに引き継ぎます。ご承認よろしくお願いします。\n\n伊藤",
       "incomingEmailEn": "Subject: Paid leave request Aug 20–22\n\nI would like to take paid leave from August 20 to 22. I will hand over Project A to Tanaka on my team. Please approve.\n\nIto"
+    },
+    {
+      "id": "demo-recording-request",
+      "type": "reply",
+      "titleJa": "デモ資料の依頼",
+      "promptJa": "見込み客からデモの録画データを求められました。送付可能であること、ファイル形式、ダウンロードリンクの送付予定を返信してください。",
+      "promptEn": "A prospective client asked for a recording of your product demo. Reply confirming you can share it, the file format, and when you will send a download link.",
+      "incomingEmailJa": "件名: 先日のデモ録画について\n\n先日のオンラインデモ、大変参考になりました。社内共有のため、録画データをいただけますでしょうか。\n\nClient Co.",
+      "incomingEmailEn": "Subject: Recording of last week's demo\n\nThank you for the online demo last week — it was very helpful. Could you share the recording so we can show it to our team internally?\n\nClient Co."
+    },
+    {
+      "id": "concert-invite",
+      "type": "reply",
+      "titleJa": "コンサートの誘い",
+      "promptJa": "友人からコンサートに誘われました。参加できること、チケット代の支払い方法、当日の待ち合わせ場所を確認して返信してください。",
+      "promptEn": "A friend invited you to a concert. Reply confirming you can come, ask how to pay for the ticket, and confirm where to meet on the day.",
+      "incomingEmailJa": "件名: 来月のジャズライブ、一緒にどう？\n\n来月15日のジャズライブ、チケット2枚取ったよ。一緒に行ける？会場前のカフェで18:30待ち合わせがいいな。\n\nKen",
+      "incomingEmailEn": "Subject: Jazz live next month — want to come?\n\nI got two tickets for the jazz live on the 15th. Can you join? Let's meet at the café in front of the venue at 6:30 p.m.\n\nKen"
+    },
+    {
+      "id": "landlord-rent",
+      "type": "reply",
+      "titleJa": "家賃の問い合わせ",
+      "promptJa": "大家さんから家賃の振込先変更の連絡がありました。確認した旨、来月分から新口座に振り込むこと、不明点があれば連絡することを返信してください。",
+      "promptEn": "Your landlord emailed about a change in the rent bank account. Reply confirming you received the notice, that you will use the new account from next month, and that you will ask if anything is unclear.",
+      "incomingEmailJa": "件名: 家賃振込口座の変更\n\n来月分より家賃の振込先が変更になります。新口座情報を添付します。ご確認ください。\n\n管理会社",
+      "incomingEmailEn": "Subject: Change of rent payment account\n\nFrom next month, please transfer rent to the new account shown in the attachment. Thank you.\n\nProperty Management"
+    },
+    {
+      "id": "neighbor-tool-borrow",
+      "type": "reply",
+      "titleJa": "工具の貸し借り",
+      "promptJa": "隣人からドリルを借りたいとメールがありました。貸せること、返却希望日、安全に使う注意点をカジュアルに返信してください。",
+      "promptEn": "Your neighbor emailed asking to borrow your drill. Reply casually saying you can lend it, when you would like it back, and a brief safety tip.",
+      "incomingEmailJa": "件名: ドリル借りられますか？\n\n来週末、棚を付けるのにドリルが必要なんですが、お借りできますか？日曜の午前中だけ使います。\n\n隣の佐々木",
+      "incomingEmailEn": "Subject: Could I borrow your drill?\n\nI need a drill this weekend to put up a shelf. Could I borrow yours? I would only use it Sunday morning.\n\nSasaki (next door)"
+    },
+    {
+      "id": "wedding-save-the-date",
+      "type": "reply",
+      "titleJa": "結婚式の予定",
+      "promptJa": "友人からSave the Dateのメールが届きました。祝福の言葉、出席意向（未定だが調整する）、詳細案内を楽しみにしている旨を返信してください。",
+      "promptEn": "You received a save-the-date email from a friend who is getting married. Reply with congratulations, say you plan to attend if you can arrange it, and that you look forward to the details.",
+      "incomingEmailJa": "件名: Save the Date — 5月の結婚式\n\n来年5月に結婚式を挙げます！詳しい招待状は後日送るね。日程だけ先に押さえておいてくれるとうれしいです。\n\nMika",
+      "incomingEmailEn": "Subject: Save the Date — wedding in May\n\nWe are getting married next May! Formal invitations will follow, but please save the date if you can.\n\nMika"
+    },
+    {
+      "id": "marketplace-buyer",
+      "type": "reply",
+      "titleJa": "フリマアプリの問い合わせ",
+      "promptJa": "出品中の中古カメラについて、購入希望者から状態と値下げの可否を聞かれました。傷の説明、付属品、受け渡し方法を返信してください。",
+      "promptEn": "A buyer asked about your used camera listing — condition and whether you would lower the price. Reply describing any scratches, what is included, and how you can hand it over.",
+      "incomingEmailJa": "件名: カメラの出品について\n\nCanonのカメラ、まだありますか。背面に小さな傷があると書いてありましたが、写真を追加してもらえますか。5000円値下げ可能ですか。\n\nBuyer",
+      "incomingEmailEn": "Subject: About your camera listing\n\nIs the Canon camera still available? You mentioned a small scratch on the back — could you add a photo? Would you accept a 5,000 yen discount?\n\nBuyer"
+    },
+    {
+      "id": "friend-visiting-town",
+      "type": "reply",
+      "titleJa": "久しぶりの来訪",
+      "promptJa": "昔の友人が出張であなたの街に来るので会いたいとメールがありました。会える日時、おすすめのランチ場所、当日連絡先を返信してください。",
+      "promptEn": "An old friend emailed saying they will be in your city on business and would like to meet. Reply with when you are free, a lunch spot suggestion, and how to reach you on the day.",
+      "incomingEmailJa": "件名: 来週東京に行くので\n\n3年ぶり！来週水曜、東京に出張がある。昼間なら会えない？久しぶりに話したい。\n\nChris",
+      "incomingEmailEn": "Subject: I'll be in Tokyo next week\n\nIt's been three years! I have a business trip next Wednesday — could we meet during the day? Would love to catch up.\n\nChris"
+    },
+    {
+      "id": "parent-visit",
+      "type": "reply",
+      "titleJa": "実家への帰省",
+      "promptJa": "両親から「いつ帰って来られる？」とメールがありました。来月末の3連休に帰る予定、到着日時、食べたいものがあれば聞く返信を書いてください。",
+      "promptEn": "Your parents emailed asking when you can visit home. Reply that you plan to come at the end of next month for the long weekend, give your arrival date and time, and ask if they want you to bring anything.",
+      "incomingEmailJa": "件名: そろそろ帰ってこない？\n\nお元気？来月か来々月、連休のとき帰ってこれない？お母さんの煮物、食べたいでしょ。\n\n母",
+      "incomingEmailEn": "Subject: When can you come home?\n\nHow are you? Can you visit next month or the month after, during a long weekend? You must miss my home cooking.\n\nMom"
+    },
+    {
+      "id": "language-exchange",
+      "type": "reply",
+      "titleJa": "言語交換パートナー",
+      "promptJa": "言語交換のアプリでマッチした相手から、初回はオンライン30分で英語と日本語を半分ずつ話したいとメールがありました。了承、候補日時、使うツールを返信してください。",
+      "promptEn": "A language exchange partner matched with you on an app emailed suggesting a 30-minute online session split between English and Japanese. Reply agreeing, offer two possible times, and suggest a video tool.",
+      "incomingEmailJa": "件名: 初回セッションの提案\n\nはじめまして！来週、オンライン30分、英語15分・日本語15分で話しませんか。ZoomかMeetどちらでもOKです。\n\nAlex",
+      "incomingEmailEn": "Subject: First session proposal\n\nNice to meet you! Would you like a 30-minute online session next week — 15 minutes in English and 15 in Japanese? Zoom or Meet is fine.\n\nAlex"
+    },
+    {
+      "id": "lost-item-hotel",
+      "type": "reply",
+      "titleJa": "ホテルへの忘れ物",
+      "promptJa": "旅行から帰った後、ホテルに充電器を忘れたことに気づき、問い合わせメールが届きました。忘れ物の詳細（色・場所）、送付先住所、着払い可否への返答を書いてください。",
+      "promptEn": "You realized you left a charger at a hotel and emailed them. They replied asking for details. Write a reply describing the charger, where you think you left it, your shipping address, and whether cash-on-delivery is acceptable.",
+      "incomingEmailJa": "件名: Re: お忘れ物のお問い合わせ\n\nお問い合わせありがとうございます。充電器の色・型番・おおよその場所を教えていただけますか。見つかり次第、着払いにて発送可能です。\n\nGrand Hotel",
+      "incomingEmailEn": "Subject: Re: Lost item inquiry\n\nThank you for contacting us. Could you tell us the color, model, and approximate location of the charger? If we find it, we can ship it cash-on-delivery.\n\nGrand Hotel"
     }
   ]
 }

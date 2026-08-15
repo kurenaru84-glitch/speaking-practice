@@ -17,6 +17,9 @@ export async function POST(request: Request) {
     scenarioPromptEn?: string;
     compareLabelA?: string;
     compareLabelB?: string;
+    emailType?: "compose" | "reply";
+    incomingEmailJa?: string;
+    incomingEmailEn?: string;
   };
 
   const text = body.text?.trim() ?? "";
@@ -31,7 +34,7 @@ export async function POST(request: Request) {
   let imageInputs: Array<{ base64: string; mimeType: string }> = [];
 
   try {
-    if (pattern.imageLayout === "interview") {
+    if (pattern.imageLayout === "interview" || pattern.imageLayout === "email") {
       imageInputs = [];
     } else if (pattern.multiImage) {
       const urls = body.images ?? [];
@@ -69,6 +72,9 @@ export async function POST(request: Request) {
               promptEn: body.scenarioPromptEn?.trim() ?? "",
               labelA: body.compareLabelA?.trim(),
               labelB: body.compareLabelB?.trim(),
+              emailType: body.emailType,
+              incomingEmailJa: body.incomingEmailJa?.trim(),
+              incomingEmailEn: body.incomingEmailEn?.trim(),
             }
           : undefined,
     });

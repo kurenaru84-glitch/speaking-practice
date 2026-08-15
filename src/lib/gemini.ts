@@ -183,7 +183,15 @@ export async function getSpeakingFeedback(params: {
   nativeLanguageName: string;
   nativeLanguageId: string;
   patternId: PatternId;
-  scenario?: { promptJa: string; promptEn: string; labelA?: string; labelB?: string };
+  scenario?: {
+    promptJa: string;
+    promptEn: string;
+    labelA?: string;
+    labelB?: string;
+    emailType?: "compose" | "reply";
+    incomingEmailJa?: string;
+    incomingEmailEn?: string;
+  };
 }): Promise<FeedbackResult> {
   const prompt = buildFeedbackPrompt(
     params.patternId,

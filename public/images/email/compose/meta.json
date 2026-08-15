@@ -1,0 +1,76 @@
+{
+  "categoryJa": "新規作成",
+  "categoryEn": "Compose from scratch",
+  "scenarios": [
+    {
+      "id": "school-absence",
+      "type": "compose",
+      "titleJa": "語学学校を休む",
+      "promptJa": "あなたは今日、語学学校を休むためにメールを書くことにしました。休む理由を明示して、学校の先生に丁寧なメールを書いてください。",
+      "promptEn": "You have decided to email your language school teacher to say you cannot attend class today. Write a polite email stating your reason for the absence."
+    },
+    {
+      "id": "meeting-reschedule",
+      "type": "compose",
+      "titleJa": "面談の日程変更",
+      "promptJa": "来週予定していた教授との面談を、体調不良のため1週間後に変更したいです。事情を説明し、代替日程を提案するメールを書いてください。",
+      "promptEn": "You need to reschedule a meeting with your professor that was planned for next week because you are unwell. Write an email explaining the situation and suggesting a new date one week later."
+    },
+    {
+      "id": "thank-you-interview",
+      "type": "compose",
+      "titleJa": "面接のお礼",
+      "promptJa": "昨日参加した就職面接の担当者に、お礼のメールを書いてください。印象に残った点と、改めて志望意欲を伝えてください。",
+      "promptEn": "Write a thank-you email to the interviewer you met yesterday. Mention something memorable from the interview and restate your interest in the position."
+    },
+    {
+      "id": "deadline-extension",
+      "type": "compose",
+      "titleJa": "レポート期限の延長依頼",
+      "promptJa": "来週提出のレポートが、データ収集の遅れで間に合いそうにありません。期限を3日延ばしてほしいと、理由を添えて依頼するメールを書いてください。",
+      "promptEn": "You will not finish a report due next week because data collection is delayed. Write an email politely asking for a three-day extension and explain why."
+    },
+    {
+      "id": "lunch-invitation",
+      "type": "compose",
+      "titleJa": "同僚をランチに誘う",
+      "promptJa": "新しく入った同僚を、来週の水曜日に近くのレストランでランチに誘うメールを書いてください。カジュアルだが丁寧なトーンで。",
+      "promptEn": "Write an email inviting a new colleague to lunch at a nearby restaurant next Wednesday. Use a friendly but professional tone."
+    },
+    {
+      "id": "wrong-order-complaint",
+      "type": "compose",
+      "titleJa": "注文ミスの連絡",
+      "promptJa": "オンラインショップで注文した商品が、色違いのものが届きました。返品または交換をお願いする、礼儀正しいクレームメールを書いてください。",
+      "promptEn": "You received the wrong color of an item from an online shop. Write a polite complaint email asking for a return or exchange."
+    },
+    {
+      "id": "repair-request",
+      "type": "compose",
+      "titleJa": "修理依頼",
+      "promptJa": "アパートのキッチン蛇口から水が漏れています。大家さん（または管理会社）に修理を依頼するメールを書いてください。いつから、どの程度かも伝えてください。",
+      "promptEn": "The kitchen faucet in your apartment is leaking. Write an email to your landlord or property manager requesting a repair. Mention when it started and how serious it is."
+    },
+    {
+      "id": "rsvp-decline",
+      "type": "compose",
+      "titleJa": "招待をお断り",
+      "promptJa": "友人の結婚式の招待状が届きましたが、海外出張のため出席できません。お祝いの気持ちを伝えつつ、丁寧にお断りするメールを書いてください。",
+      "promptEn": "You received a wedding invitation but cannot attend because of an overseas business trip. Write a polite decline email with your congratulations."
+    },
+    {
+      "id": "hotel-booking",
+      "type": "compose",
+      "titleJa": "ホテル予約の問い合わせ",
+      "promptJa": "来月の週末、家族4人で2泊したいです。禁煙のツインルームが空いているか、朝食込みの料金、チェックイン時間を確認するメールを書いてください。",
+      "promptEn": "You want to stay two nights next month with your family of four. Write an email asking about availability of a non-smoking twin room, breakfast-inclusive rates, and check-in time."
+    },
+    {
+      "id": "reference-request",
+      "type": "compose",
+      "titleJa": "推薦状の依頼",
+      "promptJa": "大学院出願のため、以前指導してくださった教授に推薦状をお願いしたいです。出願先、締切、これまでの関係を簡潔に伝える依頼メールを書いてください。",
+      "promptEn": "You need a recommendation letter from a former professor for graduate school applications. Write an email requesting the letter, including the program, deadline, and your relationship briefly."
+    }
+  ]
+}

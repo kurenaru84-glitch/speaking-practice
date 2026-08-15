@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getPatternImageDir, isImageFile } from "@/lib/images";
 import { getPattern } from "@/lib/patterns";
 import { listCompareSets } from "@/lib/compare";
+import { listEmailScenarios } from "@/lib/email";
 import { listInterviewQuestions } from "@/lib/interview";
 import { listRoleplayScenarios } from "@/lib/roleplay";
 import type { StorySet } from "@/lib/types";
@@ -53,6 +54,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ interviewQuestions, pattern: pattern.id });
     }
 
+    if (pattern.imageLayout === "email") {
+      const emailScenarios = await listEmailScenarios();
+      return NextResponse.json({ emailScenarios, pattern: pattern.id });
+    }
+
     if (pattern.imageLayout === "compare") {
       const compareSets = await listCompareSets();
       return NextResponse.json({ compareSets, pattern: pattern.id });
@@ -76,6 +82,9 @@ export async function GET(request: Request) {
     }
     if (pattern.imageLayout === "interview") {
       return NextResponse.json({ interviewQuestions: [], pattern: pattern.id });
+    }
+    if (pattern.imageLayout === "email") {
+      return NextResponse.json({ emailScenarios: [], pattern: pattern.id });
     }
     if (pattern.imageLayout === "compare") {
       return NextResponse.json({ compareSets: [], pattern: pattern.id });

@@ -20,7 +20,15 @@ import {
 } from "@/lib/session-usage";
 import { canUseWordList, getPlan } from "@/lib/plan";
 import { useWordList } from "@/lib/use-word-list";
-import type { FeedbackResult, ImagesResponse, CompareSet, InterviewQuestion, RoleplayScenario, StorySet } from "@/lib/types";
+import type {
+  FeedbackResult,
+  ImagesResponse,
+  CompareSet,
+  EmailScenario,
+  InterviewQuestion,
+  RoleplayScenario,
+  StorySet,
+} from "@/lib/types";
 import { SelectableText } from "@/components/SelectableText";
 
 const RECORD_SECONDS = 60;
@@ -32,6 +40,7 @@ export function SpeakingPractice() {
   const [compareSets, setCompareSets] = useState<CompareSet[]>([]);
   const [roleplayScenarios, setRoleplayScenarios] = useState<RoleplayScenario[]>([]);
   const [interviewQuestions, setInterviewQuestions] = useState<InterviewQuestion[]>([]);
+  const [emailScenarios, setEmailScenarios] = useState<EmailScenario[]>([]);
   const [index, setIndex] = useState(0);
   const { settings, ready: settingsReady } = useSettings();
   const learningLanguage = settings.learningLanguage;
@@ -62,12 +71,15 @@ export function SpeakingPractice() {
   const isCompare = pattern.imageLayout === "compare";
   const isRoleplay = pattern.imageLayout === "roleplay";
   const isInterview = pattern.imageLayout === "interview";
+  const isEmail = pattern.imageLayout === "email";
+  const isTextPractice = isInterview || isEmail;
   const isStory = pattern.imageLayout === "sequence";
   const isMultiVisual = isStory || isCompare;
   const currentSet = isStory ? stories[index] : null;
   const currentCompare = isCompare ? compareSets[index] : null;
   const currentScenario = isRoleplay ? roleplayScenarios[index] : null;
   const currentInterview = isInterview ? interviewQuestions[index] : null;
+  const currentEmail = isEmail ? emailScenarios[index] : null;
   const currentImages = isCompare
     ? (currentCompare?.images ?? [])
     : isStory
@@ -80,7 +92,11 @@ export function SpeakingPractice() {
           ? [images[index]]
           : [];
   const hasVisual = currentImages.length > 0;
-  const hasPracticeItem = isInterview ? !!currentInterview : hasVisual;
+  const hasPracticeItem = isTextPractice
+    ? isInterview
+      ? !!currentInterview
+      : !!currentEmail
+    : hasVisual;
   const busy = recording || transcribing || loading;
   const mixedLanguage = containsNativeLanguage(text, nativeLanguage);
   const itemCount = isCompare
@@ -89,19 +105,24 @@ export function SpeakingPractice() {
       ? roleplayScenarios.length
       : isInterview
         ? interviewQuestions.length
-        : isStory
+        : isEmail
+          ? emailScenarios.length
+          : isStory
           ? stories.length
           : images.length;
   const taskJa =
     currentCompare?.promptJa ??
     currentScenario?.promptJa ??
     currentInterview?.promptJa ??
+    currentEmail?.promptJa ??
     pattern.taskJa;
   const taskEn =
     currentCompare?.promptEn ??
     currentScenario?.promptEn ??
     currentInterview?.promptEn ??
+    currentEmail?.promptEn ??
     pattern.taskEn;
+  const outputLabel = isEmail ? "あなたのメール" : "あなたの説明";
 
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
@@ -111,11 +132,20 @@ export function SpeakingPractice() {
         if ("roleplayScenarios" in data) {
           setRoleplayScenarios(data.roleplayScenarios ?? []);
           setInterviewQuestions([]);
+          setEmailScenarios([]);
           setCompareSets([]);
           setStories([]);
           setImages([]);
         } else if ("interviewQuestions" in data) {
           setInterviewQuestions(data.interviewQuestions ?? []);
+          setEmailScenarios([]);
+          setRoleplayScenarios([]);
+          setCompareSets([]);
+          setStories([]);
+          setImages([]);
+        } else if ("emailScenarios" in data) {
+          setEmailScenarios(data.emailScenarios ?? []);
+          setInterviewQuestions([]);
           setRoleplayScenarios([]);
           setCompareSets([]);
           setStories([]);
@@ -124,6 +154,7 @@ export function SpeakingPractice() {
           setCompareSets(data.compareSets ?? []);
           setRoleplayScenarios([]);
           setInterviewQuestions([]);
+          setEmailScenarios([]);
           setStories([]);
           setImages([]);
         } else if ("stories" in data && data.stories) {
@@ -131,6 +162,7 @@ export function SpeakingPractice() {
           setCompareSets([]);
           setRoleplayScenarios([]);
           setInterviewQuestions([]);
+          setEmailScenarios([]);
           setImages([]);
         } else {
           setImages(data.images ?? []);
@@ -138,6 +170,7 @@ export function SpeakingPractice() {
           setCompareSets([]);
           setRoleplayScenarios([]);
           setInterviewQuestions([]);
+          setEmailScenarios([]);
         }
         setIndex(0);
         setText("");
@@ -268,7 +301,7 @@ export function SpeakingPractice() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...(isInterview
+          ...(isTextPractice
             ? {}
             : isMultiVisual
               ? { images: currentImages }
@@ -294,7 +327,15 @@ export function SpeakingPractice() {
                     scenarioPromptJa: currentInterview.promptJa,
                     scenarioPromptEn: currentInterview.promptEn,
                   }
-                : {}),
+                : currentEmail
+                  ? {
+                      scenarioPromptJa: currentEmail.promptJa,
+                      scenarioPromptEn: currentEmail.promptEn,
+                      emailType: currentEmail.type,
+                      incomingEmailJa: currentEmail.incomingEmailJa,
+                      incomingEmailEn: currentEmail.incomingEmailEn,
+                    }
+                  : {}),
         }),
       });
       const data = await res.json();
@@ -370,7 +411,7 @@ export function SpeakingPractice() {
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
         <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-stone-200">
-          <div className={`relative bg-stone-100 ${isMultiVisual || isInterview ? "p-3" : "aspect-[4/3]"}`}>
+          <div className={`relative bg-stone-100 ${isMultiVisual || isTextPractice ? "p-3" : "aspect-[4/3]"}`}>
             {isInterview ? (
               currentInterview ? (
                 <div className="flex min-h-[280px] flex-col justify-center rounded-2xl bg-white px-6 py-8 shadow-sm ring-1 ring-stone-200">
@@ -382,6 +423,39 @@ export function SpeakingPractice() {
                   <p className="mt-4 border-t border-stone-100 pt-4 text-sm leading-6 text-stone-500">
                     {currentInterview.promptEn}
                   </p>
+                </div>
+              ) : (
+                <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
+                  {pattern.emptyImageHint}
+                </div>
+              )
+            ) : isEmail ? (
+              currentEmail ? (
+                <div className="flex min-h-[280px] flex-col rounded-2xl bg-white px-6 py-8 shadow-sm ring-1 ring-stone-200">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="inline-flex rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
+                      {currentEmail.categoryJa}
+                    </p>
+                    <p className="inline-flex rounded-full bg-stone-100 px-3 py-0.5 text-xs font-medium text-stone-700">
+                      {currentEmail.type === "reply" ? "返信" : "新規作成"}
+                    </p>
+                  </div>
+                  <h2 className="mt-4 text-xl font-semibold text-stone-900">{currentEmail.titleJa}</h2>
+                  <p className="mt-4 text-base leading-7 text-stone-800">{currentEmail.promptJa}</p>
+                  <p className="mt-3 text-sm leading-6 text-stone-500">{currentEmail.promptEn}</p>
+                  {currentEmail.type === "reply" && currentEmail.incomingEmailJa && (
+                    <div className="mt-6 rounded-xl border border-stone-200 bg-stone-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">届いたメール</p>
+                      <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-6 text-stone-800">
+                        {currentEmail.incomingEmailJa}
+                      </pre>
+                      {currentEmail.incomingEmailEn && (
+                        <pre className="mt-4 whitespace-pre-wrap border-t border-stone-200 pt-4 font-sans text-sm leading-6 text-stone-500">
+                          {currentEmail.incomingEmailEn}
+                        </pre>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
@@ -453,7 +527,9 @@ export function SpeakingPractice() {
                     ? ` · ${currentScenario.categoryJa}`
                     : isInterview && currentInterview
                       ? ` · ${currentInterview.titleJa}`
-                      : ""}
+                      : isEmail && currentEmail
+                        ? ` · ${currentEmail.titleJa}`
+                        : ""}
             </p>
             <button type="button" className="btn-ghost" onClick={() => void nextItem(1)} disabled={busy}>
               {isCompare
@@ -464,7 +540,9 @@ export function SpeakingPractice() {
                     ? "次のシーン"
                     : isInterview
                       ? "次の質問"
-                      : "次の画像"}
+                      : isEmail
+                        ? "次のメール"
+                        : "次の画像"}
             </button>
           </div>
         </section>
@@ -485,6 +563,12 @@ export function SpeakingPractice() {
             {isInterview && currentInterview && (
               <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
                 {currentInterview.titleJa}
+              </p>
+            )}
+            {isEmail && currentEmail && (
+              <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
+                {currentEmail.titleJa}
+                {currentEmail.type === "reply" ? "（返信）" : "（新規作成）"}
               </p>
             )}
             <p className="mt-1">{taskJa}</p>
@@ -558,7 +642,7 @@ export function SpeakingPractice() {
 
           <label className="flex flex-1 flex-col gap-1 text-sm">
             <span className="font-medium text-stone-700">
-              あなたの説明
+              {outputLabel}
               {livePreview && (
                 <span className="ml-2 text-xs font-normal text-amber-700">プレビュー（確定版は録音後）</span>
               )}
@@ -580,9 +664,11 @@ export function SpeakingPractice() {
                     : "border-stone-200 bg-stone-50"
                 }`}
                 placeholder={
-                  mobile
-                    ? "録音を止めると Gemini がここへ文字起こしします。忘れた語は母国語で話してもOKです。"
-                    : "話している間ここに文字が出ます。忘れた語は母国語で話してもOK — 録音後に Gemini が確定版に更新します。"
+                  isEmail
+                    ? "件名・挨拶・本文・結びを意識してメールを書いてください。録音も使えます。"
+                    : mobile
+                      ? "録音を止めると Gemini がここへ文字起こしします。忘れた語は母国語で話してもOKです。"
+                      : "話している間ここに文字が出ます。忘れた語は母国語で話してもOK — 録音後に Gemini が確定版に更新します。"
                 }
                 value={text}
                 readOnly={livePreview || transcribing}

@@ -1,6 +1,6 @@
 import { codeSwitchFeedbackRules, containsNativeLanguage } from "@/lib/code-switch";
 
-export type PatternId = "describe" | "story" | "speculate" | "roleplay" | "compare" | "interview";
+export type PatternId = "describe" | "story" | "speculate" | "roleplay" | "compare" | "interview" | "email";
 
 export type Pattern = {
   id: PatternId;
@@ -11,7 +11,7 @@ export type Pattern = {
   taskEn: string;
   imageFolder: string;
   multiImage: boolean;
-  imageLayout: "single" | "sequence" | "compare" | "roleplay" | "interview";
+  imageLayout: "single" | "sequence" | "compare" | "roleplay" | "interview" | "email";
   feedbackButton: string;
   naturalTitle: string;
   emptyImageHint: string;
@@ -117,6 +117,21 @@ export const PATTERNS: Pattern[] = [
     emptyImageHint: "public/images/interview/カテゴリ名/meta.json に質問を追加してください",
     navLabel: "前の質問",
   },
+  {
+    id: "email",
+    label: "メール",
+    title: "ビジネスメール練習",
+    description: "場面に合わせてメールを書く、または届いたメールに返信する練習です。件名・挨拶・本文・結びを意識してください。",
+    taskJa: "指示に従って、適切なトーンでメールを書いてください。",
+    taskEn: "Write an email following the instructions, using an appropriate tone and clear structure.",
+    imageFolder: "email",
+    multiImage: false,
+    imageLayout: "email",
+    feedbackButton: "メールの構成と表現をチェック",
+    naturalTitle: "こう書くともっと自然",
+    emptyImageHint: "public/images/email/カテゴリ名/meta.json にシナリオを追加してください",
+    navLabel: "前のメール",
+  },
 ];
 
 export function getPattern(id: string): Pattern {
@@ -184,7 +199,15 @@ export function buildFeedbackPrompt(
   nativeLanguageName: string,
   nativeLanguageId: string,
   userText: string,
-  scenario?: { promptJa: string; promptEn: string; labelA?: string; labelB?: string }
+  scenario?: {
+    promptJa: string;
+    promptEn: string;
+    labelA?: string;
+    labelB?: string;
+    emailType?: "compose" | "reply";
+    incomingEmailJa?: string;
+    incomingEmailEn?: string;
+  }
 ): string {
   const codeSwitchNote = containsNativeLanguage(userText, nativeLanguageId)
     ? `\nThis transcript contains ${nativeLanguageName} mixed in — the learner likely forgot vocabulary. Help them express it in the target language.\n`
@@ -295,6 +318,47 @@ ${buildJsonShape(
 
 Focus sentence comments on: vague answers, missing examples, weak connectors, off-topic content.
 Vocabulary: interview phrases, opinion words, and topic-specific terms the learner could use.
+${sharedRules(languageName, nativeLanguageName)}`;
+  }
+
+  if (patternId === "email") {
+    const isReply = scenario?.emailType === "reply";
+    const emailBlock = scenario
+      ? `
+Email task shown to the learner:
+- Type: ${isReply ? "Reply to an incoming email" : "Write a new email from scratch"}
+- Japanese instruction: ${scenario.promptJa}
+- English instruction: ${scenario.promptEn}${
+          isReply && scenario.incomingEmailEn
+            ? `
+
+Incoming email the learner must reply to:
+"""
+${scenario.incomingEmailEn}
+"""`
+            : ""
+        }
+
+Evaluate whether the learner's email fits THIS task. Check subject line (if included), greeting, purpose, body structure, tone/register, and closing.${
+          isReply ? " Every question or request in the incoming email must be answered clearly." : ""
+        }`
+      : "";
+
+    return `${intro}
+${emailBlock}
+
+The learner wrote an email in ${languageName}.
+
+Return JSON only:
+${buildJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A complete model email in ${languageName} with Subject line, greeting, clear body paragraphs, and professional closing. Appropriate register for the situation. 80-200 words.`,
+  `2-4 sentences in ${nativeLanguageName} on email structure, tone, completeness, and business/formal expressions`
+)}
+
+Focus sentence comments on: missing subject, weak greeting/closing, unclear purpose, unanswered points (for replies), register mistakes.
+Vocabulary: useful email phrases and situation-specific expressions (not generic words).
 ${sharedRules(languageName, nativeLanguageName)}`;
   }
 

@@ -59,9 +59,23 @@ export type InterviewQuestion = {
   promptEn: string;
 };
 
+export type EmailScenario = {
+  id: string;
+  categoryId: string;
+  categoryJa: string;
+  categoryEn: string;
+  type: "compose" | "reply";
+  titleJa: string;
+  promptJa: string;
+  promptEn: string;
+  incomingEmailJa?: string;
+  incomingEmailEn?: string;
+};
+
 export type ImagesResponse =
-  | { pattern: string; images: string[]; stories?: undefined; compareSets?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined }
-  | { pattern: string; stories: StorySet[]; images?: undefined; compareSets?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined }
-  | { pattern: string; compareSets: CompareSet[]; images?: undefined; stories?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined }
-  | { pattern: string; roleplayScenarios: RoleplayScenario[]; images?: undefined; stories?: undefined; compareSets?: undefined; interviewQuestions?: undefined }
-  | { pattern: string; interviewQuestions: InterviewQuestion[]; images?: undefined; stories?: undefined; compareSets?: undefined; roleplayScenarios?: undefined };
+  | { pattern: string; images: string[]; stories?: undefined; compareSets?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined; emailScenarios?: undefined }
+  | { pattern: string; stories: StorySet[]; images?: undefined; compareSets?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined; emailScenarios?: undefined }
+  | { pattern: string; compareSets: CompareSet[]; images?: undefined; stories?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined; emailScenarios?: undefined }
+  | { pattern: string; roleplayScenarios: RoleplayScenario[]; images?: undefined; stories?: undefined; compareSets?: undefined; interviewQuestions?: undefined; emailScenarios?: undefined }
+  | { pattern: string; interviewQuestions: InterviewQuestion[]; images?: undefined; stories?: undefined; compareSets?: undefined; roleplayScenarios?: undefined; emailScenarios?: undefined }
+  | { pattern: string; emailScenarios: EmailScenario[]; images?: undefined; stories?: undefined; compareSets?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined };

@@ -91,6 +91,96 @@
       "titleJa": "お気に入りの場所",
       "promptJa": "よく行くお気に入りの場所（カフェ、公園、お店など）を教えてください。そこが好きな理由は何ですか？",
       "promptEn": "Tell me about a favorite place you like to visit, such as a café, park, or shop. Why do you like it?"
+    },
+    {
+      "id": "memorable-event",
+      "titleJa": "印象に残っている出来事",
+      "promptJa": "これまでで最も印象に残っている出来事を教えてください。いつ、どこで、何が起きて、なぜ印象に残っていますか？",
+      "promptEn": "Tell me about the most memorable event in your life. When and where did it happen, and why does it stay with you?"
+    },
+    {
+      "id": "teamwork",
+      "titleJa": "チームでの経験",
+      "promptJa": "チームやグループで取り組んだ経験について教えてください。あなたの役割と、うまくいった点・難しかった点は何ですか？",
+      "promptEn": "Tell me about an experience working in a team or group. What was your role, and what went well or was challenging?"
+    },
+    {
+      "id": "failure-lesson",
+      "titleJa": "失敗から学んだこと",
+      "promptJa": "失敗した経験と、そこから学んだことを教えてください。当時どう感じ、今はどう活かしていますか？",
+      "promptEn": "Tell me about a time you failed and what you learned from it. How did you feel then, and how do you use that lesson now?"
+    },
+    {
+      "id": "book-recommendation",
+      "titleJa": "おすすめの本",
+      "promptJa": "誰かにおすすめしたい本を1冊選んでください。どんな内容で、なぜおすすめなのか教えてください。",
+      "promptEn": "Choose a book you would recommend to someone. What is it about, and why would you recommend it?"
+    },
+    {
+      "id": "morning-routine",
+      "titleJa": "朝のルーティン",
+      "promptJa": "平日の朝、普段どのようなルーティンで過ごしていますか？その順番と、大切にしている理由を教えてください。",
+      "promptEn": "What is your usual morning routine on a weekday? Walk me through it and explain why those habits matter to you."
+    },
+    {
+      "id": "language-motivation",
+      "titleJa": "語学学習のきっかけ",
+      "promptJa": "外国語を学び始めたきっかけは何ですか？今も続けている理由を教えてください。",
+      "promptEn": "What made you start learning a foreign language? Why do you keep studying it today?"
+    },
+    {
+      "id": "tough-decision",
+      "titleJa": "難しい決断",
+      "promptJa": "過去に下した難しい決断について教えてください。何を選び、なぜその決断をしましたか？",
+      "promptEn": "Tell me about a difficult decision you had to make. What did you choose, and why?"
+    },
+    {
+      "id": "holiday-memory",
+      "titleJa": "休暇の思い出",
+      "promptJa": "忘れられない休暇や長期休みの思い出を教えてください。誰と、どこで、何をして楽しみましたか？",
+      "promptEn": "Tell me about a holiday or long break you will never forget. Who were you with, where did you go, and what did you enjoy?"
+    },
+    {
+      "id": "stay-organized",
+      "titleJa": "整理整頓の方法",
+      "promptJa": "忙しいとき、仕事や勉強をどうやって整理・管理していますか？うまくいくコツがあれば教えてください。",
+      "promptEn": "When you are busy, how do you stay organized with work or study? Share any tips that work for you."
+    },
+    {
+      "id": "city-or-country",
+      "titleJa": "都市と田舎",
+      "promptJa": "住むなら都市と田舎、どちらが好きですか？メリット・デメリットを挙げて理由も説明してください。",
+      "promptEn": "Would you prefer to live in a city or in the countryside? Compare the pros and cons and explain your choice."
+    },
+    {
+      "id": "music",
+      "titleJa": "好きな音楽",
+      "promptJa": "好きな音楽やアーティストについて教えてください。いつ、どんな場面で聴くことが多いですか？",
+      "promptEn": "Tell me about music or an artist you like. When and in what situations do you usually listen to it?"
+    },
+    {
+      "id": "social-media",
+      "titleJa": "SNSの使い方",
+      "promptJa": "SNSを使っていますか？使う目的や、普段どんな内容を見たり投稿したりするか教えてください。",
+      "promptEn": "Do you use social media? What do you use it for, and what kind of content do you usually view or post?"
+    },
+    {
+      "id": "advice-younger-self",
+      "titleJa": "若い頃の自分へ",
+      "promptJa": "10年前の自分にアドバイスできるとしたら、何と言いますか？なぜそのアドバイスを選びますか？",
+      "promptEn": "If you could give advice to yourself ten years ago, what would you say and why?"
+    },
+    {
+      "id": "five-year-goal",
+      "titleJa": "5年後の目標",
+      "promptJa": "5年後、どんな自分になっていたいですか？そのために今取り組んでいることはありますか？",
+      "promptEn": "Where do you see yourself in five years? What are you doing now to move toward that goal?"
+    },
+    {
+      "id": "meaningful-gift",
+      "titleJa": "意味のある贈り物",
+      "promptJa": "これまでにもらってうれしかった贈り物、または誰かに贈ってよかったものを教えてください。なぜそれが特別でしたか？",
+      "promptEn": "Tell me about a gift you received that meant a lot to you, or one you were glad to give someone. Why was it special?"
     }
   ]
 }

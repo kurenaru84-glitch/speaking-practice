@@ -1,0 +1,96 @@
+{
+  "categoryJa": "返信",
+  "categoryEn": "Reply to email",
+  "scenarios": [
+    {
+      "id": "stock-inquiry",
+      "type": "reply",
+      "titleJa": "在庫・納期の問い合わせ",
+      "promptJa": "以下のメールに返信してください。在庫の有無、最短納期、見積もり送付の可否を明確に答えてください。",
+      "promptEn": "Reply to the email below. Clearly answer whether the item is in stock, the earliest delivery date, and whether you can send a quote.",
+      "incomingEmailJa": "件名: Product AA 500個の在庫について\n\nお世話になっております。ABC商事の田中です。\n\n貴社のProduct AAを500個注文したいのですが、現在在庫はございますでしょうか。最短の納期が分かり次第、メールにてお知らせいただけますと幸いです。\n\nよろしくお願いいたします。\n田中",
+      "incomingEmailEn": "Subject: Inquiry about stock for Product AA (500 units)\n\nDear Sales Team,\n\nThis is Tanaka from ABC Trading.\n\nWe would like to order 500 units of Product AA. Could you let us know if you currently have enough stock? Once you confirm the earliest possible delivery date, please reply by email.\n\nBest regards,\nTanaka"
+    },
+    {
+      "id": "meeting-confirm",
+      "type": "reply",
+      "titleJa": "会議日程の確認",
+      "promptJa": "以下のメールに返信してください。提案された日時で問題ないこと、オンライン参加であること、必要資料を事前に送る旨を伝えてください。",
+      "promptEn": "Reply to the email below. Confirm the proposed time works, mention you will join online, and say you will send required materials in advance.",
+      "incomingEmailJa": "件名: 来週のプロジェクト打ち合わせ\n\nお疲れ様です。来週火曜15:00から打ち合わせを予定していますが、ご都合いかがでしょうか。場所は会議室B、難しければオンラインでも構いません。\n\n佐藤",
+      "incomingEmailEn": "Subject: Project meeting next week\n\nHi,\n\nWe have scheduled a project meeting for next Tuesday at 3:00 p.m. Does that time work for you? We will use Meeting Room B, but online is fine if that is easier.\n\nSato"
+    },
+    {
+      "id": "refund-request",
+      "type": "reply",
+      "titleJa": "返金依頼への対応",
+      "promptJa": "以下の顧客からの返金依頼メールに返信してください。返金条件を確認したうえで、必要書類と処理にかかる日数を案内してください。",
+      "promptEn": "Reply to the customer refund request below. Confirm the refund policy, list any documents needed, and explain how long processing will take.",
+      "incomingEmailJa": "件名: 注文#45821の返金について\n\n先月購入したワイヤレスイヤホンが届いてから3日で充電できなくなりました。返金をお願いできますか。注文番号は45821です。\n\n山田",
+      "incomingEmailEn": "Subject: Refund for order #45821\n\nThe wireless earbuds I bought last month stopped charging after three days. Could I request a refund? My order number is 45821.\n\nYamada"
+    },
+    {
+      "id": "report-status",
+      "type": "reply",
+      "titleJa": "進捗確認への返信",
+      "promptJa": "上司からの進捗確認メールに返信してください。現在の進捗率、残タスク、金曜提出可能であることを伝えてください。",
+      "promptEn": "Reply to your manager's progress check email. Share current progress, remaining tasks, and confirm you can submit by Friday.",
+      "incomingEmailJa": "件名: Q2レポートの進捗\n\nお疲れ様です。先週お願いした四半期レポート、現在どのくらい進んでいますか。遅れそうなら早めに教えてください。\n\n部長",
+      "incomingEmailEn": "Subject: Q2 report progress\n\nHi,\n\nHow far along are you with the quarterly report I asked for last week? Please let me know early if there will be any delay.\n\nManager"
+    },
+    {
+      "id": "delivery-address-change",
+      "type": "reply",
+      "titleJa": "配送先変更の依頼",
+      "promptJa": "以下のメールに返信してください。変更可能かどうか、可能なら必要な情報（注文番号・新住所）を確認する内容にしてください。",
+      "promptEn": "Reply to the email below. Explain whether the delivery address can be changed and, if yes, ask for the order number and new address.",
+      "incomingEmailJa": "件名: 配送先の変更\n\n先ほど注文した商品の配送先を、会社ではなく自宅に変更したいのですが可能でしょうか。まだ発送前であればお願いします。\n\n鈴木",
+      "incomingEmailEn": "Subject: Change delivery address\n\nI just placed an order and would like to change the delivery address from my office to my home. Is that possible if it has not shipped yet?\n\nSuzuki"
+    },
+    {
+      "id": "document-submission",
+      "type": "reply",
+      "titleJa": "書類提出の案内",
+      "promptJa": "人事部からの書類依頼メールに返信してください。提出予定日、添付形式（PDF）、不明点があれば質問する旨を書いてください。",
+      "promptEn": "Reply to HR's document request. State when you will submit, confirm PDF format, and ask if anything is unclear.",
+      "incomingEmailJa": "件名: 入社書類のご提出\n\nこの度は内定おめでとうございます。来週金曜までに身分証明書のコピーと銀行口座情報をメールでお送りください。\n\n人事部",
+      "incomingEmailEn": "Subject: Onboarding documents\n\nCongratulations on your offer. Please email a copy of your ID and your bank account details by next Friday.\n\nHR Team"
+    },
+    {
+      "id": "price-negotiation",
+      "type": "reply",
+      "titleJa": "見積もりへの返信",
+      "promptJa": "以下の見積もりメールに返信してください。数量を300個に減らした場合の再見積もりを依頼し、納期は変わらないか確認してください。",
+      "promptEn": "Reply to the quote below. Ask for a revised quote for 300 units instead of 500, and confirm whether the delivery date would change.",
+      "incomingEmailJa": "件名: Product AA 見積もり\n\nProduct AA 500個のお見積もりです。単価$12、合計$6,000、納期はご発注後14営業日となります。\n\n営業部",
+      "incomingEmailEn": "Subject: Quote for Product AA\n\nPlease find our quote for 500 units of Product AA: unit price $12, total $6,000, delivery 14 business days after order confirmation.\n\nSales Team"
+    },
+    {
+      "id": "homework-clarification",
+      "type": "reply",
+      "titleJa": "課題の質問への返信",
+      "promptJa": "以下は生徒からの課題に関する質問メールです。教師として、提出形式と字数、引用ルールを分かりやすく返信してください。",
+      "promptEn": "The email below is from a student asking about an assignment. Reply as the teacher with clear guidance on format, word count, and citation rules.",
+      "incomingEmailJa": "件名: Essay課題について\n\n先生、来週提出のEssayですが、字数は何語必要ですか。またAPA形式は必須でしょうか。\n\n学生A",
+      "incomingEmailEn": "Subject: Question about the essay assignment\n\nDear Professor,\n\nFor the essay due next week, how many words are required? Is APA format mandatory?\n\nStudent A"
+    },
+    {
+      "id": "conference-registration",
+      "type": "reply",
+      "titleJa": "カンファレンス登録の問い合わせ",
+      "promptJa": "以下のメールに返信してください。学生割引の有無、登録締切、支払い方法（請求書対応可否）を案内してください。",
+      "promptEn": "Reply to the email below with information about student discounts, registration deadline, and payment options including invoice billing.",
+      "incomingEmailJa": "件名: International Language Conference 参加について\n\n大学院生です。学生割引はありますか。登録締切と、請求書払いが可能か教えてください。\n\nLee",
+      "incomingEmailEn": "Subject: International Language Conference registration\n\nI am a graduate student. Is there a student discount? Please also tell me the registration deadline and whether invoice payment is available.\n\nLee"
+    },
+    {
+      "id": "leave-approval",
+      "type": "reply",
+      "titleJa": "休暇申請への返信",
+      "promptJa": "部下からの有休申請メールに、上司として返信してください。承認する旨、引き継ぎ事項の確認、復帰日の挨拶を含めてください。",
+      "promptEn": "Reply as a manager to your team member's paid-leave request. Approve the leave, confirm handover items, and acknowledge their return date.",
+      "incomingEmailJa": "件名: 8/20-8/22 有休申請\n\n8月20日から22日まで有休を取得したいです。進行中のA案件は同僚の田中さんに引き継ぎます。ご承認よろしくお願いします。\n\n伊藤",
+      "incomingEmailEn": "Subject: Paid leave request Aug 20–22\n\nI would like to take paid leave from August 20 to 22. I will hand over Project A to Tanaka on my team. Please approve.\n\nIto"
+    }
+  ]
+}

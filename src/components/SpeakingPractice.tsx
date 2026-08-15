@@ -326,7 +326,7 @@ export function SpeakingPractice() {
             {hasVisual ? (
               isMultiVisual ? (
                 isCompare ? (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-2">
                     {currentImages.slice(0, 2).map((src, i) => (
                       <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

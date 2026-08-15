@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
-import { getLanguage } from "@/lib/languages";
-import { translateToJapanese } from "@/lib/gemini";
+import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
+import { translateToNative } from "@/lib/gemini";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { text?: string; language?: string };
+  const body = (await request.json()) as {
+    text?: string;
+    language?: string;
+    nativeLanguage?: string;
+  };
   const text = body.text?.trim() ?? "";
   if (!text) {
     return NextResponse.json({ error: "翻訳するテキストが空です。" }, { status: 400 });
@@ -12,12 +16,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "翻訳は300文字以内にしてください。" }, { status: 400 });
   }
 
-  const language = getLanguage(body.language ?? "en-US");
+  const learning = getLearningLanguage(body.language ?? "en-US");
+  const native = getNativeLanguage(body.nativeLanguage ?? "ja-JP");
 
   try {
-    const translationJa = await translateToJapanese({
+    const translationJa = await translateToNative({
       text,
-      languageName: language.promptName,
+      languageName: learning.promptName,
+      nativeLanguageName: native.promptName,
     });
     return NextResponse.json({ translationJa });
   } catch (error) {

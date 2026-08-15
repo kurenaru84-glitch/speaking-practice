@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { containsJapanese } from "@/lib/code-switch";
-import { LANGUAGES, type LanguageId } from "@/lib/languages";
+import { containsNativeLanguage } from "@/lib/code-switch";
+import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
+import { useSettings } from "@/lib/use-settings";
 import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
@@ -31,7 +32,11 @@ export function SpeakingPractice() {
   const [compareSets, setCompareSets] = useState<CompareSet[]>([]);
   const [roleplayScenarios, setRoleplayScenarios] = useState<RoleplayScenario[]>([]);
   const [index, setIndex] = useState(0);
-  const [language, setLanguage] = useState<LanguageId>("en-US");
+  const { settings, ready: settingsReady } = useSettings();
+  const learningLanguage = settings.learningLanguage;
+  const nativeLanguage = settings.nativeLanguage;
+  const learningLabel = getLearningLanguage(learningLanguage).label;
+  const nativeLabel = getNativeLanguage(nativeLanguage).label;
   const [text, setText] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(RECORD_SECONDS);
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null);
@@ -73,7 +78,7 @@ export function SpeakingPractice() {
           : [];
   const hasVisual = currentImages.length > 0;
   const busy = recording || transcribing || loading;
-  const mixedLanguage = containsJapanese(text);
+  const mixedLanguage = containsNativeLanguage(text, nativeLanguage);
   const itemCount = isCompare
     ? compareSets.length
     : isRoleplay
@@ -132,7 +137,8 @@ export function SpeakingPractice() {
     try {
       const formData = new FormData();
       formData.append("audio", blob, "recording.webm");
-      formData.append("language", language);
+      formData.append("language", learningLanguage);
+      formData.append("nativeLanguage", nativeLanguage);
 
       const res = await fetch("/api/transcribe", {
         method: "POST",
@@ -147,7 +153,7 @@ export function SpeakingPractice() {
       setTranscribing(false);
       setLivePreview(false);
     }
-  }, [language]);
+  }, [learningLanguage, nativeLanguage]);
 
   const finishRecording = useCallback(async () => {
     clearTimer();
@@ -180,7 +186,7 @@ export function SpeakingPractice() {
     const result = addEntry({
       term,
       note,
-      language,
+      language: learningLanguage,
       source: "この場面で使える語彙",
       autoTranslate: false,
     });
@@ -210,7 +216,7 @@ export function SpeakingPractice() {
       return;
     }
 
-    const previewStarted = startPreview(language, setText);
+    const previewStarted = startPreview(learningLanguage, setText);
     setLivePreview(previewStarted);
 
     clearTimer();
@@ -240,7 +246,8 @@ export function SpeakingPractice() {
         body: JSON.stringify({
           ...(isMultiVisual ? { images: currentImages } : { image: currentImages[0] }),
           text: text.trim(),
-          language,
+          language: learningLanguage,
+          nativeLanguage,
           pattern: patternId,
           ...(currentCompare
             ? {
@@ -287,16 +294,24 @@ export function SpeakingPractice() {
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-medium tracking-wide text-amber-800">Picture Speaking</p>
-          <Link
-            href="/word-list"
-            className={`rounded-full px-4 py-2 text-sm font-medium ring-1 transition ${
-              wordListEnabled
-                ? "bg-white text-stone-700 ring-stone-200 hover:bg-stone-50"
-                : "bg-stone-100 text-stone-500 ring-stone-200"
-            }`}
-          >
-            単語リスト{!wordListEnabled ? " 🔒" : ""}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/settings"
+              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50"
+            >
+              設定
+            </Link>
+            <Link
+              href="/word-list"
+              className={`rounded-full px-4 py-2 text-sm font-medium ring-1 transition ${
+                wordListEnabled
+                  ? "bg-white text-stone-700 ring-stone-200 hover:bg-stone-50"
+                  : "bg-stone-100 text-stone-500 ring-stone-200"
+              }`}
+            >
+              単語リスト{!wordListEnabled ? " 🔒" : ""}
+            </Link>
+          </div>
         </div>
         <h1 className="text-2xl font-semibold text-stone-900 md:text-3xl">{pattern.title}</h1>
         <p className="max-w-2xl text-sm leading-6 text-stone-600">{pattern.description}</p>
@@ -417,21 +432,21 @@ export function SpeakingPractice() {
             <p className="mt-2 text-xs text-stone-500">{taskEn}</p>
           </div>
 
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-stone-700">話す言語</span>
-            <select
-              className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2"
-              value={language}
-              disabled={busy}
-              onChange={(e) => setLanguage(e.target.value as LanguageId)}
-            >
-              {LANGUAGES.map((lang) => (
-                <option key={lang.id} value={lang.id}>
-                  {lang.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-medium text-stone-500">学ぶ言語</p>
+                <p className="font-medium text-stone-900">{settingsReady ? learningLabel : "…"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-stone-500">母国語（解説）</p>
+                <p className="font-medium text-stone-900">{settingsReady ? nativeLabel : "…"}</p>
+              </div>
+              <Link href="/settings" className="text-xs font-medium text-amber-800 hover:underline">
+                変更
+              </Link>
+            </div>
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {recording ? (
@@ -489,7 +504,7 @@ export function SpeakingPractice() {
                 <span className="ml-2 text-xs font-normal text-amber-700">プレビュー（確定版は録音後）</span>
               )}
               {livePreview && (
-                <span className="ml-2 text-xs font-normal text-stone-500">日本語は録音後に反映</span>
+                <span className="ml-2 text-xs font-normal text-stone-500">母国語は録音後に反映</span>
               )}
             </span>
             {recording && !livePreview ? (
@@ -507,8 +522,8 @@ export function SpeakingPractice() {
                 }`}
                 placeholder={
                   mobile
-                    ? "録音を止めると Gemini がここへ文字起こしします。忘れた語は日本語で話してもOKです。"
-                    : "話している間ここに文字が出ます。忘れた語は日本語で話してもOK — 録音後に Gemini が確定版に更新します。"
+                    ? "録音を止めると Gemini がここへ文字起こしします。忘れた語は母国語で話してもOKです。"
+                    : "話している間ここに文字が出ます。忘れた語は母国語で話してもOK — 録音後に Gemini が確定版に更新します。"
                 }
                 value={text}
                 readOnly={livePreview || transcribing}
@@ -519,7 +534,7 @@ export function SpeakingPractice() {
 
           {mixedLanguage && !recording && (
             <p className="rounded-xl bg-sky-50 px-3 py-2 text-sm text-sky-900">
-              日本語混在を検出しました。添削で学習言語の言い方を確認できます。
+              母国語混在を検出しました。添削で学ぶ言語の言い方を確認できます。
             </p>
           )}
 
@@ -568,7 +583,7 @@ export function SpeakingPractice() {
                   <li key={`${item.original}-${i}`} className="rounded-2xl bg-stone-50 p-3 text-sm">
                     <SelectableText
                       text={item.original}
-                      language={language}
+                      language={learningLanguage}
                       source="フィードバック（原文）"
                       className="font-medium text-stone-800"
                       allowAdd={wordListEnabled}
@@ -579,7 +594,7 @@ export function SpeakingPractice() {
                         →{" "}
                         <SelectableText
                           text={item.fixed}
-                          language={language}
+                          language={learningLanguage}
                           source="フィードバック（修正例）"
                           inline
                           allowAdd={wordListEnabled}
@@ -596,7 +611,7 @@ export function SpeakingPractice() {
             </ul>
             <SelectableText
               text={feedback.summary}
-              language={language}
+              language={learningLanguage}
               source="総評"
               className="mt-4 text-sm leading-6 text-stone-600"
               allowAdd={wordListEnabled}
@@ -621,7 +636,7 @@ export function SpeakingPractice() {
                     <p className="mb-2 text-xs font-medium text-amber-900">例 {i + 1}</p>
                     <SelectableText
                       text={example.text}
-                      language={language}
+                      language={learningLanguage}
                       source={`${pattern.naturalTitle} 例${i + 1}`}
                       className="whitespace-pre-wrap text-sm leading-7 text-stone-800"
                       allowAdd={wordListEnabled}

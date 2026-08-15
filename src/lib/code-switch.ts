@@ -1,23 +1,35 @@
 /** Hiragana, katakana, or CJK — used to detect Japanese mixed into target-language speech. */
 const JAPANESE_RE = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/;
+const KOREAN_RE = /[\uAC00-\uD7AF]/;
 
 export function containsJapanese(text: string): boolean {
   return JAPANESE_RE.test(text);
 }
 
-export function buildTranscribePrompt(languageName: string): string {
+export function containsKorean(text: string): boolean {
+  return KOREAN_RE.test(text);
+}
+
+export function containsNativeLanguage(text: string, nativeLanguageId: string): boolean {
+  if (nativeLanguageId === "ja-JP") return containsJapanese(text);
+  if (nativeLanguageId === "ko-KR") return containsKorean(text);
+  if (nativeLanguageId === "zh-CN") return /[\u4E00-\u9FFF]/.test(text) && !containsJapanese(text);
+  return false;
+}
+
+export function buildTranscribePrompt(languageName: string, nativeLanguageName: string): string {
   return `Transcribe this spoken audio accurately for a language-learning app.
-The learner is practicing ${languageName} and may mix in Japanese when they forget a word (e.g. "There is a table. I can see 赤い車").
+The learner is practicing ${languageName}. Their native language is ${nativeLanguageName}.
+They may mix in ${nativeLanguageName} when they forget a word.
 
 Rules:
 - Write ${languageName} parts in ${languageName}.
-- Keep any Japanese words or phrases exactly as spoken (hiragana, katakana, or kanji). Do NOT translate Japanese into ${languageName}.
+- Keep any ${nativeLanguageName} words or phrases exactly as spoken. Do NOT translate them into ${languageName}.
 - Add proper punctuation and split into multiple sentences. Put each sentence on its own line.
 - Break at natural speech pauses, breaths, and thought boundaries — not only at the very end.
 - Use periods (.), question marks (?), exclamation marks (!), and commas (,) where the speaker pauses or shifts idea.
-- Break before/after discourse markers and connectors when spoken (e.g. and, but, because, so, first, then, however, also).
+- Break before/after discourse markers and connectors when spoken.
 - Do NOT return the whole recording as one long sentence unless it was truly one short utterance.
-- Keep filler words if clearly spoken (um, uh, like), but still punctuate around them.
 - Return only the transcription text. No commentary or translation notes.`;
 }
 
@@ -47,9 +59,9 @@ export function buildFormatTranscriptPrompt(languageName: string, text: string):
 Add punctuation and split it into natural sentences for feedback review.
 Rules:
 - Do NOT change, remove, or add words except punctuation.
-- Keep any Japanese fragments exactly as written.
+- Keep any non-${languageName} fragments exactly as written.
 - Put each sentence on its own line.
-- Break at pauses, clause boundaries, and connectors (and, but, because, so, first, then, etc.).
+- Break at pauses, clause boundaries, and connectors.
 - Return only the formatted transcription. No commentary.
 
 Text:
@@ -58,12 +70,15 @@ ${text}
 """`;
 }
 
-export function codeSwitchFeedbackRules(languageName: string): string {
+export function codeSwitchFeedbackRules(
+  languageName: string,
+  nativeLanguageName: string
+): string {
   return `
-Code-switching rules (Japanese mixed into ${languageName}):
-- The learner may insert Japanese when they forgot a word. Treat it as "wanted to say something in ${languageName}", not as something to ignore.
-- Keep "original" exactly as the learner said/wrote, including any Japanese fragments.
-- In "fixed", replace Japanese fragments with natural ${languageName} (e.g. 赤い車 → a red car). The full sentence should be entirely in ${languageName}.
-- In "comment", when Japanese appears, briefly teach the phrase they needed (e.g. 「赤い車」は *a red car* と言えます).
-- Add vocabulary items for words the learner expressed in Japanese: "term" in ${languageName}, "note" mentions the Japanese they used.`;
+Code-switching rules (${nativeLanguageName} mixed into ${languageName}):
+- The learner may insert ${nativeLanguageName} when they forgot a word. Treat it as "wanted to say something in ${languageName}", not as something to ignore.
+- Keep "original" exactly as the learner said/wrote, including any ${nativeLanguageName} fragments.
+- In "fixed", replace ${nativeLanguageName} fragments with natural ${languageName}. The full sentence should be entirely in ${languageName}.
+- In "comment", when ${nativeLanguageName} appears, briefly teach the phrase they needed in ${languageName}.
+- Add vocabulary items for words the learner expressed in ${nativeLanguageName}: "term" in ${languageName}, "note" explains it in ${nativeLanguageName}.`;
 }

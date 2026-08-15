@@ -87,7 +87,7 @@ export function WordListView() {
         </Link>
         <h1 className="text-2xl font-semibold text-stone-900">単語リスト</h1>
         <p className="text-sm leading-6 text-stone-600">
-          練習から追加した語句や、自分で入力した語句を管理できます。メモが空の項目は自動で日本語訳を付けます。
+          練習から追加した語句や、自分で入力した語句を管理できます。メモが空の項目は設定の母国語で自動訳を付けます。
         </p>
       </header>
 

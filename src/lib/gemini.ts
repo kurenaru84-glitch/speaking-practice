@@ -54,8 +54,9 @@ export async function transcribeAudio(params: {
   audioBase64: string;
   mimeType: string;
   languageName: string;
+  nativeLanguageName: string;
 }): Promise<string> {
-  const prompt = buildTranscribePrompt(params.languageName);
+  const prompt = buildTranscribePrompt(params.languageName, params.nativeLanguageName);
 
   let text = await callGemini({
     contents: [
@@ -101,16 +102,17 @@ export async function transcribeAudio(params: {
   return text.trim();
 }
 
-export async function translateToJapanese(params: {
+export async function translateToNative(params: {
   text: string;
   languageName: string;
+  nativeLanguageName: string;
 }): Promise<string> {
   const phrase = params.text.trim();
   if (!phrase) throw new Error("翻訳するテキストが空です。");
 
-  const prompt = `Translate the following ${params.languageName} phrase into natural Japanese for a language learner's vocabulary memo.
-Use a concise, natural Japanese meaning (not word-for-word if unnatural).
-Return only the Japanese translation, with no quotes or explanation.
+  const prompt = `Translate the following ${params.languageName} phrase into natural ${params.nativeLanguageName} for a language learner's vocabulary memo.
+Use a concise, natural meaning in ${params.nativeLanguageName} (not word-for-word if unnatural).
+Return only the ${params.nativeLanguageName} translation, with no quotes or explanation.
 
 Phrase:
 """
@@ -178,12 +180,16 @@ export async function getSpeakingFeedback(params: {
   images: Array<{ base64: string; mimeType: string }>;
   userText: string;
   languageName: string;
+  nativeLanguageName: string;
+  nativeLanguageId: string;
   patternId: PatternId;
   scenario?: { promptJa: string; promptEn: string; labelA?: string; labelB?: string };
 }): Promise<FeedbackResult> {
   const prompt = buildFeedbackPrompt(
     params.patternId,
     params.languageName,
+    params.nativeLanguageName,
+    params.nativeLanguageId,
     params.userText,
     params.scenario
   );

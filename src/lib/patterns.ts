@@ -1,4 +1,4 @@
-import { codeSwitchFeedbackRules, containsJapanese } from "@/lib/code-switch";
+import { codeSwitchFeedbackRules, containsNativeLanguage } from "@/lib/code-switch";
 
 export type PatternId = "describe" | "story" | "speculate" | "roleplay" | "compare";
 
@@ -108,51 +108,56 @@ export function getPattern(id: string): Pattern {
   return PATTERNS.find((p) => p.id === id) ?? PATTERNS[0];
 }
 
-const SHARED_RULES = `
+const SHARED_RULES = (nativeLanguageName: string) => `
 Sentence feedback rules:
 - Split the learner text into sentences. Create one "sentences" entry per sentence. Never skip a sentence.
-- "comment" is always in Japanese (1-2 short sentences).
-- If the sentence is good, set "fixed" equal to "original" and praise in comment (e.g. よくできていますね / 自然です).
+- "comment" is always in ${nativeLanguageName} (1-2 short sentences).
+- If the sentence is good, set "fixed" equal to "original" and praise in comment.
 - If correction is needed, put the corrected sentence in "fixed" and explain why in "comment".
 - You may also give brief advice in "comment" even when grammar is fine.
 
 Vocabulary rules:
 - Add 5-10 "vocabulary" items: words or short phrases in the target language that fit THIS image/scene.
-- "term" is in the learner's target language. "note" is a short Japanese explanation (what it means or when to use it).
+- "term" is in the learner's target language. "note" is a short ${nativeLanguageName} explanation (what it means or when to use it).
 - Pick practical scene vocabulary (people, objects, actions, places), not generic words.
 
 Natural examples rules:
 - Provide exactly 2 entries in "natural". Two different but equally good ways to say it (different wording or emphasis).
-- Each entry has "text" in the target language and "translationJa": a natural Japanese translation of that example (not word-for-word if unnatural).
+- Each entry has "text" in the target language and "translationJa": a natural ${nativeLanguageName} translation of that example (not word-for-word if unnatural).
 
 General:
 - Do not wrap JSON in markdown.`;
 
-function sharedRules(languageName: string): string {
-  return `${SHARED_RULES}${codeSwitchFeedbackRules(languageName)}`;
+function sharedRules(languageName: string, nativeLanguageName: string): string {
+  return `${SHARED_RULES(nativeLanguageName)}${codeSwitchFeedbackRules(languageName, nativeLanguageName)}`;
 }
 
-function buildJsonShape(languageName: string, naturalHint: string, summaryHint: string) {
+function buildJsonShape(
+  languageName: string,
+  nativeLanguageName: string,
+  naturalHint: string,
+  summaryHint: string
+) {
   return `{
   "sentences": [
     {
       "original": "one learner sentence exactly as spoken/written",
       "fixed": "corrected sentence in ${languageName}, or same as original if already good",
-      "comment": "reaction in Japanese: correction, advice, or praise"
+      "comment": "reaction in ${nativeLanguageName}: correction, advice, or praise"
     }
   ],
   "natural": [
     {
       "text": "${naturalHint}",
-      "translationJa": "natural Japanese translation of example 1"
+      "translationJa": "natural ${nativeLanguageName} translation of example 1"
     },
     {
       "text": "A second alternative natural example in ${languageName}. Different wording or angle from the first, same quality. 80-140 words, spoken style.",
-      "translationJa": "natural Japanese translation of example 2"
+      "translationJa": "natural ${nativeLanguageName} translation of example 2"
     }
   ],
   "vocabulary": [
-    { "term": "useful word or phrase in ${languageName}", "note": "short Japanese explanation" }
+    { "term": "useful word or phrase in ${languageName}", "note": "short ${nativeLanguageName} explanation" }
   ],
   "summary": "${summaryHint}"
 }`;
@@ -161,14 +166,17 @@ function buildJsonShape(languageName: string, naturalHint: string, summaryHint: 
 export function buildFeedbackPrompt(
   patternId: PatternId,
   languageName: string,
+  nativeLanguageName: string,
+  nativeLanguageId: string,
   userText: string,
   scenario?: { promptJa: string; promptEn: string; labelA?: string; labelB?: string }
 ): string {
-  const codeSwitchNote = containsJapanese(userText)
-    ? "\nThis transcript contains Japanese mixed in — the learner likely forgot vocabulary. Help them express it in the target language.\n"
+  const codeSwitchNote = containsNativeLanguage(userText, nativeLanguageId)
+    ? `\nThis transcript contains ${nativeLanguageName} mixed in — the learner likely forgot vocabulary. Help them express it in the target language.\n`
     : "";
 
   const intro = `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
+The learner's native language is ${nativeLanguageName}. All comments, notes, summaries, and translationJa fields must be in ${nativeLanguageName}.
 ${codeSwitchNote}
 Learner text:
 """
@@ -183,12 +191,13 @@ The learner saw photos in order (panel 1 → 2 → 3 → 4) and told the story i
 Return JSON only:
 ${buildJsonShape(
   languageName,
+  nativeLanguageName,
   `A natural 60-second spoken story covering ALL panels in order in ${languageName}. Use First, Then, After that, Eventually, However. 80-160 words, spoken style.`,
-  "2-4 sentences in Japanese on connectors, tense consistency, and cause-effect logic"
+  `2-4 sentences in ${nativeLanguageName} on connectors, tense consistency, and cause-effect logic`
 )}
 
 Focus sentence comments on: connectors, tense, causal links, story gaps.
-${sharedRules(languageName)}`;
+${sharedRules(languageName, nativeLanguageName)}`;
   }
 
   if (patternId === "compare") {
@@ -209,13 +218,14 @@ The learner compared Image A and Image B in ${languageName} and stated a prefere
 Return JSON only:
 ${buildJsonShape(
   languageName,
+  nativeLanguageName,
   `A natural 60-second comparison in ${languageName}. Choose A or B clearly. Use On the one hand... On the other hand... Therefore... 80-140 words.`,
-  "2-4 sentences in Japanese on comparison structure, vocabulary specificity, and clear reasoning"
+  `2-4 sentences in ${nativeLanguageName} on comparison structure, vocabulary specificity, and clear reasoning`
 )}
 
 Focus sentence comments on: comparison phrases, vague words, missing conclusion.
 Vocabulary: comparison words and scene-specific terms for both images.
-${sharedRules(languageName)}`;
+${sharedRules(languageName, nativeLanguageName)}`;
   }
 
   if (patternId === "roleplay") {
@@ -236,12 +246,13 @@ The learner did role-play or gave advice about the photo in ${languageName}.
 Return JSON only:
 ${buildJsonShape(
   languageName,
+  nativeLanguageName,
   `A natural 60-second role-play in ${languageName}. Use If I were... / I would... and direct speech. Polite and practical. 80-140 words.`,
-  "2-4 sentences in Japanese on subjunctive, tone, and situational fit"
+  `2-4 sentences in ${nativeLanguageName} on subjunctive, tone, and situational fit`
 )}
 
 Focus sentence comments on: subjunctive, direct address, register, realism.
-${sharedRules(languageName)}`;
+${sharedRules(languageName, nativeLanguageName)}`;
   }
 
   if (patternId === "speculate") {
@@ -252,12 +263,13 @@ The learner speculated about the photo in ${languageName} (why, before, next).
 Return JSON only:
 ${buildJsonShape(
   languageName,
+  nativeLanguageName,
   `A natural 60-second speculation in ${languageName}. Use must/might/could with visible evidence. 80-140 words.`,
-  "2-4 sentences in Japanese on modality usage and logical grounding"
+  `2-4 sentences in ${nativeLanguageName} on modality usage and logical grounding`
 )}
 
 Focus sentence comments on: modal verbs, unsupported leaps.
-${sharedRules(languageName)}`;
+${sharedRules(languageName, nativeLanguageName)}`;
   }
 
   return `${intro}
@@ -267,10 +279,11 @@ The learner described the photo in ${languageName}.
 Return JSON only:
 ${buildJsonShape(
   languageName,
+  nativeLanguageName,
   `A natural 60-second description of THIS photo in ${languageName}. 80-140 words, spoken style.`,
-  "2-4 sentences of overall feedback in Japanese"
+  `2-4 sentences of overall feedback in ${nativeLanguageName}`
 )}
 
 Focus sentence comments on grammar, word choice, and clarity.
-${sharedRules(languageName)}`;
+${sharedRules(languageName, nativeLanguageName)}`;
 }

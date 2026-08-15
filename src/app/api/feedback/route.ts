@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
-import { getLanguage } from "@/lib/languages";
+import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
 import { getSpeakingFeedback } from "@/lib/gemini";
 import { parseImageUrl, parseSetImageUrls } from "@/lib/images";
 import { getPattern, type PatternId } from "@/lib/patterns";
@@ -11,6 +11,7 @@ export async function POST(request: Request) {
     images?: string[];
     text?: string;
     language?: string;
+    nativeLanguage?: string;
     pattern?: string;
     scenarioPromptJa?: string;
     scenarioPromptEn?: string;
@@ -24,7 +25,8 @@ export async function POST(request: Request) {
   }
 
   const pattern = getPattern(body.pattern ?? "describe");
-  const language = getLanguage(body.language ?? "en-US");
+  const learning = getLearningLanguage(body.language ?? "en-US");
+  const native = getNativeLanguage(body.nativeLanguage ?? "ja-JP");
 
   let imageInputs: Array<{ base64: string; mimeType: string }>;
 
@@ -54,7 +56,9 @@ export async function POST(request: Request) {
     const feedback = await getSpeakingFeedback({
       images: imageInputs,
       userText: text,
-      languageName: language.promptName,
+      languageName: learning.promptName,
+      nativeLanguageName: native.promptName,
+      nativeLanguageId: native.id,
       patternId: pattern.id as PatternId,
       scenario:
         body.scenarioPromptJa?.trim()

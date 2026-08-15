@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LanguageId } from "@/lib/languages";
-import { fetchJapaneseTranslation } from "@/lib/fetch-translation";
+import { getSettings } from "@/lib/settings";
+import { fetchNativeTranslation } from "@/lib/fetch-translation";
 import {
   addWordListEntry,
   loadWordList,
@@ -29,7 +30,8 @@ export function useWordList() {
       if (translatingRef.current.has(id)) return;
       translatingRef.current.add(id);
       try {
-        const translationJa = await fetchJapaneseTranslation(term, language);
+        const { nativeLanguage } = getSettings();
+        const translationJa = await fetchNativeTranslation(term, language, nativeLanguage);
         updateWordListNote(id, translationJa);
         refresh();
       } finally {

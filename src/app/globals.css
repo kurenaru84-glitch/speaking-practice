@@ -23,3 +23,10 @@ body {
 .btn-ghost {
   @apply rounded-full px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100;
 }
+
+.select-text {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+  cursor: text;
+}

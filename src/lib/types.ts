@@ -49,8 +49,19 @@ export type RoleplayScenario = {
   promptEn: string;
 };
 
+export type InterviewQuestion = {
+  id: string;
+  categoryId: string;
+  categoryJa: string;
+  categoryEn: string;
+  titleJa: string;
+  promptJa: string;
+  promptEn: string;
+};
+
 export type ImagesResponse =
-  | { pattern: string; images: string[]; stories?: undefined; compareSets?: undefined; roleplayScenarios?: undefined }
-  | { pattern: string; stories: StorySet[]; images?: undefined; compareSets?: undefined; roleplayScenarios?: undefined }
-  | { pattern: string; compareSets: CompareSet[]; images?: undefined; stories?: undefined; roleplayScenarios?: undefined }
-  | { pattern: string; roleplayScenarios: RoleplayScenario[]; images?: undefined; stories?: undefined; compareSets?: undefined };
+  | { pattern: string; images: string[]; stories?: undefined; compareSets?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined }
+  | { pattern: string; stories: StorySet[]; images?: undefined; compareSets?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined }
+  | { pattern: string; compareSets: CompareSet[]; images?: undefined; stories?: undefined; roleplayScenarios?: undefined; interviewQuestions?: undefined }
+  | { pattern: string; roleplayScenarios: RoleplayScenario[]; images?: undefined; stories?: undefined; compareSets?: undefined; interviewQuestions?: undefined }
+  | { pattern: string; interviewQuestions: InterviewQuestion[]; images?: undefined; stories?: undefined; compareSets?: undefined; roleplayScenarios?: undefined };

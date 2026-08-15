@@ -1,0 +1,96 @@
+{
+  "categoryJa": "カジュアルインタビュー",
+  "categoryEn": "Casual interview",
+  "questions": [
+    {
+      "id": "hometown",
+      "titleJa": "出身地",
+      "promptJa": "あなたの出身地について詳しく教えてください。どんなところですか？そこが好きな点は何ですか？",
+      "promptEn": "Could you tell me about your hometown in detail? What kind of place is it, and what do you like about it?"
+    },
+    {
+      "id": "travel-recommendation",
+      "titleJa": "旅行のおすすめ",
+      "promptJa": "これまで行った旅行先でおすすめの場所を教えてください。その場所の魅力と、なぜおすすめなのかも話してください。",
+      "promptEn": "What is a travel destination you would recommend? Please describe what makes it special and why you recommend it."
+    },
+    {
+      "id": "hobby-origin",
+      "titleJa": "趣味",
+      "promptJa": "今の趣味について教えてください。どうやって始めましたか？今どのくらいの頻度で楽しんでいますか？",
+      "promptEn": "Tell me about your hobby. How did you get started, and how often do you enjoy it now?"
+    },
+    {
+      "id": "favorite-movie",
+      "titleJa": "好きな映画",
+      "promptJa": "好きな映画を1本選んで、その簡単なあらすじと、好きな理由を教えてください。",
+      "promptEn": "Choose a favorite movie and tell me a brief summary of the story and why you like it."
+    },
+    {
+      "id": "student-effort",
+      "titleJa": "学生時代の努力",
+      "promptJa": "学生時代（または昔）に頑張ったことについて教えてください。どんな目的があって、どう取り組みましたか？",
+      "promptEn": "Tell me about something you worked hard on when you were a student. What was your goal, and how did you approach it?"
+    },
+    {
+      "id": "ideal-weekend",
+      "titleJa": "理想の週末",
+      "promptJa": "理想的な週末の過ごし方を教えてください。誰と、どこで、何をして、なぜそれが理想ですか？",
+      "promptEn": "Describe your ideal way to spend a weekend. Who would you be with, what would you do, and why?"
+    },
+    {
+      "id": "comfort-food",
+      "titleJa": "心が落ち着く食べ物",
+      "promptJa": "あなたにとって「心が落ち着く食べ物」は何ですか？どんな思い出や理由がありますか？",
+      "promptEn": "What is comfort food for you? What memories or reasons are connected to it?"
+    },
+    {
+      "id": "person-you-admire",
+      "titleJa": "尊敬する人",
+      "promptJa": "尊敬する人について教えてください。その人のどんなところに惹かれますか？具体例があれば話してください。",
+      "promptEn": "Tell me about someone you admire. What qualities do you respect about them? Give a specific example if you can."
+    },
+    {
+      "id": "recent-interest",
+      "titleJa": "最近の興味",
+      "promptJa": "最近ハマっていること、または最近興味を持ったニュース・トレンドについて教えてください。なぜそれに興味を持ちましたか？",
+      "promptEn": "What have you been into recently, or what news or trend caught your interest? Why did it interest you?"
+    },
+    {
+      "id": "new-skill",
+      "titleJa": "学びたいスキル",
+      "promptJa": "もし時間とお金が無限にあったら、新しく学んでみたいスキルや経験は何ですか？なぜそれを選びますか？",
+      "promptEn": "If you had unlimited time and money, what new skill or experience would you like to try? Why?"
+    },
+    {
+      "id": "favorite-season",
+      "titleJa": "好きな季節",
+      "promptJa": "一年で好きな季節はいつですか？その季節に好きな活動や思い出があれば教えてください。",
+      "promptEn": "What is your favorite season of the year? What activities or memories do you associate with it?"
+    },
+    {
+      "id": "stress-relief",
+      "titleJa": "ストレス解消",
+      "promptJa": "ストレスを感じたとき、普段どうやってリラックスしますか？うまくいく理由も含めて教えてください。",
+      "promptEn": "When you feel stressed, how do you usually relax? Explain why it works for you."
+    },
+    {
+      "id": "core-value",
+      "titleJa": "大切にしていること",
+      "promptJa": "あなたが人生で大切にしている価値観やルールは何ですか？具体例を交えて説明してください。",
+      "promptEn": "What values or principles are important to you in life? Explain with a specific example."
+    },
+    {
+      "id": "childhood-dream",
+      "titleJa": "子どもの頃の夢",
+      "promptJa": "子どもの頃の夢は何でしたか？今の自分とどう関係していますか？",
+      "promptEn": "What did you dream of becoming when you were a child? How does that relate to who you are now?"
+    },
+    {
+      "id": "favorite-place",
+      "titleJa": "お気に入りの場所",
+      "promptJa": "よく行くお気に入りの場所（カフェ、公園、お店など）を教えてください。そこが好きな理由は何ですか？",
+      "promptEn": "Tell me about a favorite place you like to visit, such as a café, park, or shop. Why do you like it?"
+    }
+  ]
+}

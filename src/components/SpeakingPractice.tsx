@@ -20,7 +20,7 @@ import {
 } from "@/lib/session-usage";
 import { canUseWordList, getPlan } from "@/lib/plan";
 import { useWordList } from "@/lib/use-word-list";
-import type { FeedbackResult, ImagesResponse, CompareSet, RoleplayScenario, StorySet } from "@/lib/types";
+import type { FeedbackResult, ImagesResponse, CompareSet, InterviewQuestion, RoleplayScenario, StorySet } from "@/lib/types";
 import { SelectableText } from "@/components/SelectableText";
 
 const RECORD_SECONDS = 60;
@@ -31,6 +31,7 @@ export function SpeakingPractice() {
   const [stories, setStories] = useState<StorySet[]>([]);
   const [compareSets, setCompareSets] = useState<CompareSet[]>([]);
   const [roleplayScenarios, setRoleplayScenarios] = useState<RoleplayScenario[]>([]);
+  const [interviewQuestions, setInterviewQuestions] = useState<InterviewQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const { settings, ready: settingsReady } = useSettings();
   const learningLanguage = settings.learningLanguage;
@@ -60,11 +61,13 @@ export function SpeakingPractice() {
   const pattern = getPattern(patternId);
   const isCompare = pattern.imageLayout === "compare";
   const isRoleplay = pattern.imageLayout === "roleplay";
+  const isInterview = pattern.imageLayout === "interview";
   const isStory = pattern.imageLayout === "sequence";
   const isMultiVisual = isStory || isCompare;
   const currentSet = isStory ? stories[index] : null;
   const currentCompare = isCompare ? compareSets[index] : null;
   const currentScenario = isRoleplay ? roleplayScenarios[index] : null;
+  const currentInterview = isInterview ? interviewQuestions[index] : null;
   const currentImages = isCompare
     ? (currentCompare?.images ?? [])
     : isStory
@@ -77,17 +80,28 @@ export function SpeakingPractice() {
           ? [images[index]]
           : [];
   const hasVisual = currentImages.length > 0;
+  const hasPracticeItem = isInterview ? !!currentInterview : hasVisual;
   const busy = recording || transcribing || loading;
   const mixedLanguage = containsNativeLanguage(text, nativeLanguage);
   const itemCount = isCompare
     ? compareSets.length
     : isRoleplay
       ? roleplayScenarios.length
-      : isStory
-        ? stories.length
-        : images.length;
-  const taskJa = currentCompare?.promptJa ?? currentScenario?.promptJa ?? pattern.taskJa;
-  const taskEn = currentCompare?.promptEn ?? currentScenario?.promptEn ?? pattern.taskEn;
+      : isInterview
+        ? interviewQuestions.length
+        : isStory
+          ? stories.length
+          : images.length;
+  const taskJa =
+    currentCompare?.promptJa ??
+    currentScenario?.promptJa ??
+    currentInterview?.promptJa ??
+    pattern.taskJa;
+  const taskEn =
+    currentCompare?.promptEn ??
+    currentScenario?.promptEn ??
+    currentInterview?.promptEn ??
+    pattern.taskEn;
 
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
@@ -96,24 +110,34 @@ export function SpeakingPractice() {
       .then((data: ImagesResponse) => {
         if ("roleplayScenarios" in data) {
           setRoleplayScenarios(data.roleplayScenarios ?? []);
+          setInterviewQuestions([]);
+          setCompareSets([]);
+          setStories([]);
+          setImages([]);
+        } else if ("interviewQuestions" in data) {
+          setInterviewQuestions(data.interviewQuestions ?? []);
+          setRoleplayScenarios([]);
           setCompareSets([]);
           setStories([]);
           setImages([]);
         } else if ("compareSets" in data) {
           setCompareSets(data.compareSets ?? []);
           setRoleplayScenarios([]);
+          setInterviewQuestions([]);
           setStories([]);
           setImages([]);
         } else if ("stories" in data && data.stories) {
           setStories(data.stories);
           setCompareSets([]);
           setRoleplayScenarios([]);
+          setInterviewQuestions([]);
           setImages([]);
         } else {
           setImages(data.images ?? []);
           setStories([]);
           setCompareSets([]);
           setRoleplayScenarios([]);
+          setInterviewQuestions([]);
         }
         setIndex(0);
         setText("");
@@ -226,7 +250,7 @@ export function SpeakingPractice() {
   }
 
   async function requestFeedback() {
-    if (!hasVisual || !text.trim()) return;
+    if (!hasPracticeItem || !text.trim()) return;
 
     const usage = getSessionUsage();
     setSessionUsage(usage);
@@ -244,7 +268,11 @@ export function SpeakingPractice() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...(isMultiVisual ? { images: currentImages } : { image: currentImages[0] }),
+          ...(isInterview
+            ? {}
+            : isMultiVisual
+              ? { images: currentImages }
+              : { image: currentImages[0] }),
           text: text.trim(),
           language: learningLanguage,
           nativeLanguage,
@@ -261,7 +289,12 @@ export function SpeakingPractice() {
                   scenarioPromptJa: currentScenario.promptJa,
                   scenarioPromptEn: currentScenario.promptEn,
                 }
-              : {}),
+              : currentInterview
+                ? {
+                    scenarioPromptJa: currentInterview.promptJa,
+                    scenarioPromptEn: currentInterview.promptEn,
+                  }
+                : {}),
         }),
       });
       const data = await res.json();
@@ -337,8 +370,25 @@ export function SpeakingPractice() {
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
         <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-stone-200">
-          <div className={`relative bg-stone-100 ${isMultiVisual ? "p-3" : "aspect-[4/3]"}`}>
-            {hasVisual ? (
+          <div className={`relative bg-stone-100 ${isMultiVisual || isInterview ? "p-3" : "aspect-[4/3]"}`}>
+            {isInterview ? (
+              currentInterview ? (
+                <div className="flex min-h-[280px] flex-col justify-center rounded-2xl bg-white px-6 py-8 shadow-sm ring-1 ring-stone-200">
+                  <p className="inline-flex w-fit rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
+                    {currentInterview.categoryJa}
+                  </p>
+                  <h2 className="mt-4 text-xl font-semibold text-stone-900">{currentInterview.titleJa}</h2>
+                  <p className="mt-4 text-base leading-7 text-stone-800">{currentInterview.promptJa}</p>
+                  <p className="mt-4 border-t border-stone-100 pt-4 text-sm leading-6 text-stone-500">
+                    {currentInterview.promptEn}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
+                  {pattern.emptyImageHint}
+                </div>
+              )
+            ) : hasVisual ? (
               isMultiVisual ? (
                 isCompare ? (
                   <div className="flex flex-col gap-2">
@@ -401,7 +451,9 @@ export function SpeakingPractice() {
                   ? ` · ${currentCompare.titleJa}`
                   : isRoleplay && currentScenario
                     ? ` · ${currentScenario.categoryJa}`
-                    : ""}
+                    : isInterview && currentInterview
+                      ? ` · ${currentInterview.titleJa}`
+                      : ""}
             </p>
             <button type="button" className="btn-ghost" onClick={() => void nextItem(1)} disabled={busy}>
               {isCompare
@@ -410,7 +462,9 @@ export function SpeakingPractice() {
                   ? "次のストーリー"
                   : isRoleplay
                     ? "次のシーン"
-                    : "次の画像"}
+                    : isInterview
+                      ? "次の質問"
+                      : "次の画像"}
             </button>
           </div>
         </section>
@@ -426,6 +480,11 @@ export function SpeakingPractice() {
             {isRoleplay && currentScenario && (
               <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
                 {currentScenario.categoryJa}
+              </p>
+            )}
+            {isInterview && currentInterview && (
+              <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
+                {currentInterview.titleJa}
               </p>
             )}
             <p className="mt-1">{taskJa}</p>

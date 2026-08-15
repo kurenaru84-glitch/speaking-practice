@@ -1,6 +1,6 @@
 import { codeSwitchFeedbackRules, containsNativeLanguage } from "@/lib/code-switch";
 
-export type PatternId = "describe" | "story" | "speculate" | "roleplay" | "compare";
+export type PatternId = "describe" | "story" | "speculate" | "roleplay" | "compare" | "interview";
 
 export type Pattern = {
   id: PatternId;
@@ -11,7 +11,7 @@ export type Pattern = {
   taskEn: string;
   imageFolder: string;
   multiImage: boolean;
-  imageLayout: "single" | "sequence" | "compare" | "roleplay";
+  imageLayout: "single" | "sequence" | "compare" | "roleplay" | "interview";
   feedbackButton: string;
   naturalTitle: string;
   emptyImageHint: string;
@@ -101,6 +101,21 @@ export const PATTERNS: Pattern[] = [
     naturalTitle: "こう述べるともっと自然",
     emptyImageHint: "public/images/compare/セット名/ に a.jpg と b.jpg を入れてください",
     navLabel: "前の比較",
+  },
+  {
+    id: "interview",
+    label: "インタビュー",
+    title: "インタビュー練習",
+    description: "面接官の質問に1分ほど答える練習です。具体例や理由を入れて話してください。",
+    taskJa: "質問に対して、具体例と理由を交えて1分ほど答えてください。",
+    taskEn: "Answer the interview question for about one minute. Include specific examples and reasons.",
+    imageFolder: "interview",
+    multiImage: false,
+    imageLayout: "interview",
+    feedbackButton: "答え方と構成をチェック",
+    naturalTitle: "こう答えるともっと自然",
+    emptyImageHint: "public/images/interview/カテゴリ名/meta.json に質問を追加してください",
+    navLabel: "前の質問",
   },
 ];
 
@@ -252,6 +267,34 @@ ${buildJsonShape(
 )}
 
 Focus sentence comments on: subjunctive, direct address, register, realism.
+${sharedRules(languageName, nativeLanguageName)}`;
+  }
+
+  if (patternId === "interview") {
+    const questionBlock = scenario
+      ? `
+Interview question shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}
+
+Evaluate whether the learner answered THIS question with enough detail, structure, and natural spoken ${languageName}.`
+      : "";
+
+    return `${intro}
+${questionBlock}
+
+The learner answered an interview question in ${languageName} for about one minute.
+
+Return JSON only:
+${buildJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A natural 60-second interview answer in ${languageName}. Open with a clear point, add 1-2 specific examples, explain why, and end with a brief wrap-up. Use First / For example / Because / So. 80-140 words.`,
+  `2-4 sentences in ${nativeLanguageName} on answer structure, specificity, and interview tone`
+)}
+
+Focus sentence comments on: vague answers, missing examples, weak connectors, off-topic content.
+Vocabulary: interview phrases, opinion words, and topic-specific terms the learner could use.
 ${sharedRules(languageName, nativeLanguageName)}`;
   }
 

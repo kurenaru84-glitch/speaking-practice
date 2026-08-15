@@ -28,10 +28,12 @@ export async function POST(request: Request) {
   const learning = getLearningLanguage(body.language ?? "en-US");
   const native = getNativeLanguage(body.nativeLanguage ?? "ja-JP");
 
-  let imageInputs: Array<{ base64: string; mimeType: string }>;
+  let imageInputs: Array<{ base64: string; mimeType: string }> = [];
 
   try {
-    if (pattern.multiImage) {
+    if (pattern.imageLayout === "interview") {
+      imageInputs = [];
+    } else if (pattern.multiImage) {
       const urls = body.images ?? [];
       if (urls.length === 0) {
         return NextResponse.json({ error: "画像セットがありません。" }, { status: 400 });

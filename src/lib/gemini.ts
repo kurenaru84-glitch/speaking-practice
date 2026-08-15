@@ -177,7 +177,7 @@ Return JSON only:
 }
 
 export async function getSpeakingFeedback(params: {
-  images: Array<{ base64: string; mimeType: string }>;
+  images?: Array<{ base64: string; mimeType: string }>;
   userText: string;
   languageName: string;
   nativeLanguageName: string;
@@ -194,7 +194,7 @@ export async function getSpeakingFeedback(params: {
     params.scenario
   );
 
-  const imageParts = params.images.map((img) => ({
+  const imageParts = (params.images ?? []).map((img) => ({
     inline_data: {
       mime_type: img.mimeType,
       data: img.base64,
@@ -204,7 +204,7 @@ export async function getSpeakingFeedback(params: {
   const text = await callGemini({
     contents: [
       {
-        parts: [...imageParts, { text: prompt }],
+        parts: imageParts.length > 0 ? [...imageParts, { text: prompt }] : [{ text: prompt }],
       },
     ],
     generationConfig: {

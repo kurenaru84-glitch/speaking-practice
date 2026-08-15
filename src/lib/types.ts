@@ -9,9 +9,23 @@ export type VocabularyItem = {
   note: string;
 };
 
+export type NaturalSection = {
+  key: string;
+  labelJa: string;
+  text: string;
+};
+
 export type NaturalExample = {
   text: string;
   translationJa: string;
+  sections?: NaturalSection[];
+};
+
+export type ChecklistItem = {
+  id: string;
+  labelJa: string;
+  passed: boolean;
+  note?: string;
 };
 
 export type FeedbackResult = {
@@ -19,6 +33,8 @@ export type FeedbackResult = {
   natural: NaturalExample[];
   vocabulary: VocabularyItem[];
   summary: string;
+  checklist?: ChecklistItem[];
+  growthNote?: string;
 };
 
 export type StorySet = {

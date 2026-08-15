@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     emailType?: "compose" | "reply";
     incomingEmailJa?: string;
     incomingEmailEn?: string;
+    previousUserText?: string;
+    previousChecklistSummary?: string;
   };
 
   const text = body.text?.trim() ?? "";
@@ -75,6 +77,13 @@ export async function POST(request: Request) {
               emailType: body.emailType,
               incomingEmailJa: body.incomingEmailJa?.trim(),
               incomingEmailEn: body.incomingEmailEn?.trim(),
+            }
+          : undefined,
+      previousAttempt:
+        body.previousUserText?.trim()
+          ? {
+              userText: body.previousUserText.trim(),
+              checklistSummary: body.previousChecklistSummary?.trim(),
             }
           : undefined,
     });

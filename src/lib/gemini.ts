@@ -3,8 +3,8 @@ import {
   buildTranscribePrompt,
   looksLikeRunOnTranscript,
 } from "@/lib/code-switch";
-import type { FeedbackResult, NaturalExample } from "@/lib/types";
-import { buildFeedbackPrompt, type PatternId } from "@/lib/patterns";
+import type { ChecklistItem, FeedbackResult, NaturalExample, NaturalSection } from "@/lib/types";
+import { buildFeedbackPrompt, type PatternId, type PreviousAttemptContext } from "@/lib/patterns";
 
 const MODEL = "gemini-3.6-flash";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -192,6 +192,7 @@ export async function getSpeakingFeedback(params: {
     incomingEmailJa?: string;
     incomingEmailEn?: string;
   };
+  previousAttempt?: PreviousAttemptContext;
 }): Promise<FeedbackResult> {
   const prompt = buildFeedbackPrompt(
     params.patternId,
@@ -199,7 +200,8 @@ export async function getSpeakingFeedback(params: {
     params.nativeLanguageName,
     params.nativeLanguageId,
     params.userText,
-    params.scenario
+    params.scenario,
+    params.previousAttempt
   );
 
   const imageParts = (params.images ?? []).map((img) => ({
@@ -228,6 +230,22 @@ export async function getSpeakingFeedback(params: {
   }
 }
 
+function normalizeSections(value: unknown): NaturalSection[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const sections = value
+    .map((item): NaturalSection | null => {
+      if (!item || typeof item !== "object") return null;
+      const obj = item as Record<string, unknown>;
+      const text = String(obj.text ?? "").trim();
+      const key = String(obj.key ?? "").trim();
+      const labelJa = String(obj.labelJa ?? obj.label ?? "").trim();
+      if (!text || !labelJa) return null;
+      return { key: key || labelJa, labelJa, text };
+    })
+    .filter((item): item is NaturalSection => item !== null);
+  return sections.length > 0 ? sections : undefined;
+}
+
 function normalizeNatural(value: unknown): NaturalExample[] {
   if (Array.isArray(value)) {
     const items = value
@@ -242,8 +260,9 @@ function normalizeNatural(value: unknown): NaturalExample[] {
           const translationJa = String(
             obj.translationJa ?? obj.translation_ja ?? obj.translation ?? ""
           ).trim();
+          const sections = normalizeSections(obj.sections);
           if (!text) return null;
-          return { text, translationJa };
+          return { text, translationJa, sections };
         }
         return null;
       })
@@ -256,36 +275,64 @@ function normalizeNatural(value: unknown): NaturalExample[] {
   return [];
 }
 
+function normalizeChecklist(value: unknown): ChecklistItem[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items = value
+    .map((item): ChecklistItem | null => {
+      if (!item || typeof item !== "object") return null;
+      const obj = item as Record<string, unknown>;
+      const id = String(obj.id ?? "").trim();
+      const labelJa = String(obj.labelJa ?? obj.label ?? "").trim();
+      if (!id || !labelJa) return null;
+      const note = String(obj.note ?? "").trim();
+      return {
+        id,
+        labelJa,
+        passed: Boolean(obj.passed),
+        note: note || undefined,
+      };
+    })
+    .filter((item): item is ChecklistItem => item !== null);
+  return items.length > 0 ? items : undefined;
+}
+
 function normalizeFeedback(raw: unknown): FeedbackResult {
   const data = raw as Partial<FeedbackResult> & {
     corrections?: Array<{ original: string; fixed: string; note: string }>;
     natural?: string | string[];
+    growthNote?: string;
   };
 
+  const growthNote = String(data.growthNote ?? "").trim() || undefined;
+  const checklist = normalizeChecklist(data.checklist);
+
+  const base = (sentences: FeedbackResult["sentences"]) => ({
+    sentences,
+    natural: normalizeNatural(data.natural),
+    vocabulary: (data.vocabulary ?? []).slice(0, 10),
+    summary: data.summary ?? "",
+    checklist,
+    growthNote,
+  });
+
   if (Array.isArray(data.sentences) && data.sentences.length > 0) {
-    return {
-      sentences: data.sentences.map((s) => ({
+    return base(
+      data.sentences.map((s) => ({
         original: s.original ?? "",
         fixed: s.fixed ?? s.original ?? "",
         comment: s.comment ?? "",
-      })),
-      natural: normalizeNatural(data.natural),
-      vocabulary: (data.vocabulary ?? []).slice(0, 10),
-      summary: data.summary ?? "",
-    };
+      }))
+    );
   }
 
   if (Array.isArray(data.corrections)) {
-    return {
-      sentences: data.corrections.map((c) => ({
+    return base(
+      data.corrections.map((c) => ({
         original: c.original,
         fixed: c.fixed,
         comment: c.note,
-      })),
-      natural: normalizeNatural(data.natural),
-      vocabulary: (data.vocabulary ?? []).slice(0, 10),
-      summary: data.summary ?? "",
-    };
+      }))
+    );
   }
 
   throw new Error("AIの応答形式が不正です。");

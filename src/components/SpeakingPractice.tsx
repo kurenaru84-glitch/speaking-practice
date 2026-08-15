@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { containsNativeLanguage } from "@/lib/code-switch";
 import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
 import { useSettings } from "@/lib/use-settings";
@@ -29,6 +29,29 @@ import type {
   RoleplayScenario,
   StorySet,
 } from "@/lib/types";
+import {
+  countChecklistPassed,
+  getLatestPracticeHistory,
+  savePracticeHistory,
+  type PracticeHistoryEntry,
+} from "@/lib/practice-history";
+import {
+  buildPracticeItemKey,
+  findIndexByItemKey,
+  getPracticeItemTitle,
+} from "@/lib/practice-item-key";
+import {
+  addRetryQueueEntry,
+  isInRetryQueue,
+  loadRetryQueue,
+  removeRetryQueueEntry,
+  type RetryQueueEntry,
+} from "@/lib/retry-queue";
+import { FeedbackActions } from "@/components/FeedbackActions";
+import { FeedbackChecklist } from "@/components/FeedbackChecklist";
+import { PracticeGrowthPanel } from "@/components/PracticeGrowthPanel";
+import { RetryQueuePanel } from "@/components/RetryQueuePanel";
+import { StructuredNaturalExample } from "@/components/StructuredNaturalExample";
 import { SelectableText } from "@/components/SelectableText";
 
 const RECORD_SECONDS = 60;
@@ -60,6 +83,14 @@ export function SpeakingPractice() {
   const [toast, setToast] = useState("");
   const [sessionUsage, setSessionUsage] = useState<SessionUsage>(() => getSessionUsage());
   const [wordListEnabled] = useState(() => canUseWordList(getPlan()));
+  const [previousHistory, setPreviousHistory] = useState<PracticeHistoryEntry | null>(null);
+  const [comparisonHistory, setComparisonHistory] = useState<PracticeHistoryEntry | null>(null);
+  const [retryQueue, setRetryQueue] = useState<RetryQueueEntry[]>([]);
+  const pendingRetryRef = useRef<{ patternId: PatternId; itemKey: string } | null>(null);
+
+  const refreshRetryQueue = useCallback(() => {
+    setRetryQueue(loadRetryQueue());
+  }, []);
 
   const { addEntry } = useWordList();
 
@@ -124,6 +155,64 @@ export function SpeakingPractice() {
     pattern.taskEn;
   const outputLabel = isEmail ? "あなたのメール" : "あなたの説明";
 
+  const currentItemKey = useMemo(
+    () =>
+      buildPracticeItemKey({
+        patternId,
+        index,
+        interview: currentInterview,
+        email: currentEmail,
+        compare: currentCompare,
+        roleplay: currentScenario,
+        story: currentSet,
+        image: currentImages[0] ?? null,
+      }),
+    [
+      patternId,
+      index,
+      currentInterview,
+      currentEmail,
+      currentCompare,
+      currentScenario,
+      currentSet,
+      currentImages,
+    ]
+  );
+
+  const currentItemTitleJa = useMemo(
+    () =>
+      getPracticeItemTitle({
+        patternLabel: pattern.label,
+        interview: currentInterview,
+        email: currentEmail,
+        compare: currentCompare,
+        roleplay: currentScenario,
+        story: currentSet,
+        index,
+      }),
+    [
+      pattern.label,
+      currentInterview,
+      currentEmail,
+      currentCompare,
+      currentScenario,
+      currentSet,
+      index,
+    ]
+  );
+
+  const inRetryQueue = isInRetryQueue(patternId, currentItemKey);
+  const supportsChecklist = isInterview || isEmail;
+
+  useEffect(() => {
+    refreshRetryQueue();
+  }, [refreshRetryQueue]);
+
+  useEffect(() => {
+    setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
+    setComparisonHistory(null);
+  }, [currentItemKey, learningLanguage, patternId]);
+
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
     fetch(`/api/images?pattern=${patternId}`)
@@ -179,6 +268,34 @@ export function SpeakingPractice() {
       })
       .catch(() => setError("画像一覧の取得に失敗しました。"));
   }, [patternId]);
+
+  useEffect(() => {
+    const pending = pendingRetryRef.current;
+    if (!pending || pending.patternId !== patternId || itemCount === 0) return;
+
+    const nextIndex = findIndexByItemKey(patternId, pending.itemKey, {
+      images,
+      stories,
+      compareSets,
+      roleplayScenarios,
+      interviewQuestions,
+      emailScenarios,
+    });
+    setIndex(nextIndex);
+    setText("");
+    setFeedback(null);
+    setComparisonHistory(null);
+    pendingRetryRef.current = null;
+  }, [
+    patternId,
+    itemCount,
+    images,
+    stories,
+    compareSets,
+    roleplayScenarios,
+    interviewQuestions,
+    emailScenarios,
+  ]);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -295,6 +412,15 @@ export function SpeakingPractice() {
     setLoading(true);
     setError("");
     setFeedback(null);
+    setComparisonHistory(previousHistory);
+
+    const previousChecklist = previousHistory
+      ? countChecklistPassed(previousHistory.feedback)
+      : { passed: 0, total: 0 };
+    const previousChecklistSummary =
+      previousChecklist.total > 0
+        ? `${previousChecklist.passed}/${previousChecklist.total} passed`
+        : undefined;
 
     try {
       const res = await fetch("/api/feedback", {
@@ -310,6 +436,12 @@ export function SpeakingPractice() {
           language: learningLanguage,
           nativeLanguage,
           pattern: patternId,
+          ...(previousHistory
+            ? {
+                previousUserText: previousHistory.userText,
+                previousChecklistSummary,
+              }
+            : {}),
           ...(currentCompare
             ? {
                 scenarioPromptJa: currentCompare.promptJa,
@@ -342,7 +474,17 @@ export function SpeakingPractice() {
       if (!res.ok) throw new Error(data.error ?? "フィードバックに失敗しました。");
       recordSession();
       refreshSessionUsage();
-      setFeedback(data as FeedbackResult);
+      const result = data as FeedbackResult;
+      setFeedback(result);
+      savePracticeHistory({
+        patternId,
+        itemKey: currentItemKey,
+        itemTitleJa: currentItemTitleJa,
+        userText: text.trim(),
+        feedback: result,
+        learningLanguage,
+      });
+      setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
     } catch (err) {
       setError(err instanceof Error ? err.message : "フィードバックに失敗しました。");
     } finally {
@@ -362,6 +504,65 @@ export function SpeakingPractice() {
     setSecondsLeft(RECORD_SECONDS);
     setError("");
   }
+
+  function handleRetrySameItem() {
+    setFeedback(null);
+    setComparisonHistory(null);
+    setText("");
+    setError("");
+  }
+
+  function handleRewriteWithModel() {
+    const modelText = feedback?.natural[0]?.text?.trim();
+    if (!modelText) return;
+    setText(modelText);
+    setFeedback(null);
+    setComparisonHistory(null);
+    setError("");
+    showToast("模範例を入力欄にコピーしました。編集して再提出してください。");
+  }
+
+  function handleAddToRetryQueue() {
+    const modelHint = feedback?.natural[0]?.text?.trim() ?? "";
+    const result = addRetryQueueEntry({
+      patternId,
+      itemKey: currentItemKey,
+      itemTitleJa: currentItemTitleJa,
+      modelHint,
+    });
+    refreshRetryQueue();
+    showToast(result.ok ? "再挑戦キューに追加しました" : "すでにキューにあります");
+  }
+
+  function handleRetryQueueSelect(entry: RetryQueueEntry) {
+    pendingRetryRef.current = { patternId: entry.patternId, itemKey: entry.itemKey };
+    if (entry.patternId !== patternId) {
+      setPatternId(entry.patternId);
+    } else {
+      const nextIndex = findIndexByItemKey(entry.patternId, entry.itemKey, {
+        images,
+        stories,
+        compareSets,
+        roleplayScenarios,
+        interviewQuestions,
+        emailScenarios,
+      });
+      setIndex(nextIndex);
+      setText("");
+      setFeedback(null);
+      setComparisonHistory(null);
+      pendingRetryRef.current = null;
+    }
+  }
+
+  function handleRemoveFromRetryQueue(id: string) {
+    removeRetryQueueEntry(id);
+    refreshRetryQueue();
+  }
+
+  const previousChecklistScore = previousHistory
+    ? countChecklistPassed(previousHistory.feedback)
+    : null;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 md:px-8">
@@ -408,6 +609,12 @@ export function SpeakingPractice() {
           ))}
         </div>
       </header>
+
+      <RetryQueuePanel
+        entries={retryQueue}
+        onSelect={handleRetryQueueSelect}
+        onRemove={handleRemoveFromRetryQueue}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
         <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-stone-200">
@@ -683,6 +890,16 @@ export function SpeakingPractice() {
             </p>
           )}
 
+          {previousHistory && !feedback && (
+            <p className="rounded-xl bg-violet-50 px-3 py-2 text-sm leading-6 text-violet-950">
+              前回の挑戦あり
+              {previousChecklistScore && previousChecklistScore.total > 0
+                ? ` · チェック ${previousChecklistScore.passed}/${previousChecklistScore.total}`
+                : ""}
+              。もう一度添削すると、前回との比較が表示されます。
+            </p>
+          )}
+
           <button
             type="button"
             className="btn-primary"
@@ -711,7 +928,27 @@ export function SpeakingPractice() {
       </div>
 
       {feedback && (
-        <section className="grid gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200 lg:grid-cols-2">
+        <section className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
+          <FeedbackActions
+            onRetry={handleRetrySameItem}
+            onRewriteWithModel={handleRewriteWithModel}
+            onAddToQueue={handleAddToRetryQueue}
+            inQueue={inRetryQueue}
+          />
+
+          {comparisonHistory && (
+            <PracticeGrowthPanel
+              previous={comparisonHistory}
+              currentText={text.trim()}
+              feedback={feedback}
+            />
+          )}
+
+          {supportsChecklist && feedback.checklist && feedback.checklist.length > 0 && (
+            <FeedbackChecklist items={feedback.checklist} />
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-2">
           <div>
             <h2 className="mb-1 text-lg font-semibold text-stone-900">一文ずとのフィードバック</h2>
             {wordListEnabled && (
@@ -776,25 +1013,37 @@ export function SpeakingPractice() {
               <div className="flex flex-col gap-3">
                 {feedback.natural
                   .filter((example) => example.text.trim())
-                  .map((example, i) => (
-                  <div key={`natural-${i}`} className="rounded-2xl bg-amber-50 p-4">
-                    <p className="mb-2 text-xs font-medium text-amber-900">例 {i + 1}</p>
-                    <SelectableText
-                      text={example.text}
-                      language={learningLanguage}
-                      source={`${pattern.naturalTitle} 例${i + 1}`}
-                      className="whitespace-pre-wrap text-sm leading-7 text-stone-800"
-                      allowAdd={wordListEnabled}
-                      onToast={showToast}
-                    />
-                    {example.translationJa && (
-                      <div className="mt-3 border-t border-amber-200/80 pt-3">
-                        <p className="mb-1 text-xs font-medium text-stone-500">訳</p>
-                        <p className="text-sm leading-7 text-stone-600">{example.translationJa}</p>
+                  .map((example, i) =>
+                    supportsChecklist && example.sections?.length ? (
+                      <StructuredNaturalExample
+                        key={`natural-${i}`}
+                        example={example}
+                        index={i}
+                        language={learningLanguage}
+                        sourceLabel={pattern.naturalTitle}
+                        allowAdd={wordListEnabled}
+                        onToast={showToast}
+                      />
+                    ) : (
+                      <div key={`natural-${i}`} className="rounded-2xl bg-amber-50 p-4">
+                        <p className="mb-2 text-xs font-medium text-amber-900">例 {i + 1}</p>
+                        <SelectableText
+                          text={example.text}
+                          language={learningLanguage}
+                          source={`${pattern.naturalTitle} 例${i + 1}`}
+                          className="whitespace-pre-wrap text-sm leading-7 text-stone-800"
+                          allowAdd={wordListEnabled}
+                          onToast={showToast}
+                        />
+                        {example.translationJa && (
+                          <div className="mt-3 border-t border-amber-200/80 pt-3">
+                            <p className="mb-1 text-xs font-medium text-stone-500">訳</p>
+                            <p className="text-sm leading-7 text-stone-600">{example.translationJa}</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    )
+                  )}
               </div>
             </div>
             {feedback.vocabulary.length > 0 && (
@@ -828,6 +1077,7 @@ export function SpeakingPractice() {
                 </ul>
               </div>
             )}
+          </div>
           </div>
         </section>
       )}

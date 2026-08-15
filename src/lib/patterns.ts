@@ -193,6 +193,110 @@ function buildJsonShape(
 }`;
 }
 
+const INTERVIEW_CHECKLIST = [
+  { id: "has_specific_example", labelJa: "具体例がある" },
+  { id: "explains_reason", labelJa: "理由・背景を説明している" },
+  { id: "has_conclusion", labelJa: "結論・まとめがある" },
+  { id: "good_length", labelJa: "1分程度の長さ（十分な情報量）" },
+] as const;
+
+const EMAIL_COMPOSE_CHECKLIST = [
+  { id: "has_subject", labelJa: "件名がある" },
+  { id: "has_greeting", labelJa: "適切な挨拶がある" },
+  { id: "purpose_clear", labelJa: "用件・目的が明確" },
+  { id: "has_closing", labelJa: "結びの挨拶がある" },
+] as const;
+
+const EMAIL_REPLY_CHECKLIST = [
+  { id: "has_subject", labelJa: "件名がある" },
+  { id: "has_greeting", labelJa: "適切な挨拶がある" },
+  { id: "answers_all_points", labelJa: "相手の質問・依頼すべてに回答" },
+  { id: "has_closing", labelJa: "結びの挨拶がある" },
+] as const;
+
+const INTERVIEW_SECTIONS = [
+  { key: "opening", labelJa: "導入" },
+  { key: "example", labelJa: "具体例" },
+  { key: "reason", labelJa: "理由" },
+  { key: "closing", labelJa: "結び" },
+] as const;
+
+const EMAIL_SECTIONS = [
+  { key: "subject", labelJa: "件名" },
+  { key: "greeting", labelJa: "挨拶" },
+  { key: "body", labelJa: "本文" },
+  { key: "closing", labelJa: "結び" },
+] as const;
+
+function buildStructuredJsonShape(
+  languageName: string,
+  nativeLanguageName: string,
+  naturalHint: string,
+  summaryHint: string,
+  checklist: ReadonlyArray<{ id: string; labelJa: string }>,
+  sections: ReadonlyArray<{ key: string; labelJa: string }>,
+  includeGrowthNote: boolean
+) {
+  const checklistLines = checklist
+    .map(
+      (item) =>
+        `    { "id": "${item.id}", "labelJa": "${item.labelJa}", "passed": true or false, "note": "optional brief note in ${nativeLanguageName}" }`
+    )
+    .join(",\n");
+
+  const sectionLines = sections
+    .map(
+      (section) =>
+        `        { "key": "${section.key}", "labelJa": "${section.labelJa}", "text": "this part in ${languageName}" }`
+    )
+    .join(",\n");
+
+  const naturalEntry = `{
+      "text": "${naturalHint}",
+      "translationJa": "natural ${nativeLanguageName} translation of the full example",
+      "sections": [
+${sectionLines}
+      ]
+    }`;
+
+  return `{
+  "sentences": [
+    {
+      "original": "one learner sentence exactly as spoken/written",
+      "fixed": "corrected sentence in ${languageName}, or same as original if already good",
+      "comment": "reaction in ${nativeLanguageName}: correction, advice, or praise"
+    }
+  ],
+  "natural": [
+    ${naturalEntry},
+    {
+      "text": "A second alternative example in ${languageName}. Same structure quality, different wording.",
+      "translationJa": "natural ${nativeLanguageName} translation of example 2",
+      "sections": [
+${sectionLines}
+      ]
+    }
+  ],
+  "checklist": [
+${checklistLines}
+  ],${
+    includeGrowthNote
+      ? `
+  "growthNote": "1-2 sentences in ${nativeLanguageName} comparing THIS attempt to the learner's PREVIOUS attempt on the same question. Mention concrete improvements (e.g. more examples, better connectors) or what still needs work.",`
+      : ""
+  }
+  "vocabulary": [
+    { "term": "useful word or phrase in ${languageName}", "note": "short ${nativeLanguageName} explanation" }
+  ],
+  "summary": "${summaryHint}"
+}`;
+}
+
+export type PreviousAttemptContext = {
+  userText: string;
+  checklistSummary?: string;
+};
+
 export function buildFeedbackPrompt(
   patternId: PatternId,
   languageName: string,
@@ -207,15 +311,25 @@ export function buildFeedbackPrompt(
     emailType?: "compose" | "reply";
     incomingEmailJa?: string;
     incomingEmailEn?: string;
-  }
+  },
+  previousAttempt?: PreviousAttemptContext
 ): string {
+  const previousBlock = previousAttempt
+    ? `
+The learner's PREVIOUS attempt on this same question (for comparison):
+"""
+${previousAttempt.userText}
+"""${previousAttempt.checklistSummary ? `\nPrevious checklist score: ${previousAttempt.checklistSummary}` : ""}
+`
+    : "";
+
   const codeSwitchNote = containsNativeLanguage(userText, nativeLanguageId)
     ? `\nThis transcript contains ${nativeLanguageName} mixed in — the learner likely forgot vocabulary. Help them express it in the target language.\n`
     : "";
 
   const intro = `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
 The learner's native language is ${nativeLanguageName}. All comments, notes, summaries, and translationJa fields must be in ${nativeLanguageName}.
-${codeSwitchNote}
+${codeSwitchNote}${previousBlock}
 Learner text:
 """
 ${userText}
@@ -308,16 +422,24 @@ ${questionBlock}
 
 The learner answered an interview question in ${languageName} for about one minute.
 
+Checklist rules:
+- Evaluate each checklist item honestly against the learner's answer.
+- "good_length" passes if the answer has enough substance for ~60 seconds (roughly 70+ words or 4+ substantive sentences).
+
 Return JSON only:
-${buildJsonShape(
+${buildStructuredJsonShape(
   languageName,
   nativeLanguageName,
-  `A natural 60-second interview answer in ${languageName}. Open with a clear point, add 1-2 specific examples, explain why, and end with a brief wrap-up. Use First / For example / Because / So. 80-140 words.`,
-  `2-4 sentences in ${nativeLanguageName} on answer structure, specificity, and interview tone`
+  `A natural 60-second interview answer in ${languageName}. 80-140 words.`,
+  `2-4 sentences in ${nativeLanguageName} on answer structure, specificity, and interview tone`,
+  INTERVIEW_CHECKLIST,
+  INTERVIEW_SECTIONS,
+  Boolean(previousAttempt)
 )}
 
 Focus sentence comments on: vague answers, missing examples, weak connectors, off-topic content.
 Vocabulary: interview phrases, opinion words, and topic-specific terms the learner could use.
+For each "natural" example, split the text into sections (opening, example, reason, closing) with accurate text fragments.
 ${sharedRules(languageName, nativeLanguageName)}`;
   }
 
@@ -349,16 +471,24 @@ ${emailBlock}
 
 The learner wrote an email in ${languageName}.
 
+Checklist rules:
+- Evaluate each checklist item against the learner's email.
+- For replies, "answers_all_points" passes only if every request/question in the incoming email is addressed.
+
 Return JSON only:
-${buildJsonShape(
+${buildStructuredJsonShape(
   languageName,
   nativeLanguageName,
-  `A complete model email in ${languageName} with Subject line, greeting, clear body paragraphs, and professional closing. Appropriate register for the situation. 80-200 words.`,
-  `2-4 sentences in ${nativeLanguageName} on email structure, tone, completeness, and business/formal expressions`
+  `A complete model email in ${languageName}. 80-200 words.`,
+  `2-4 sentences in ${nativeLanguageName} on email structure, tone, completeness, and expressions`,
+  isReply ? EMAIL_REPLY_CHECKLIST : EMAIL_COMPOSE_CHECKLIST,
+  EMAIL_SECTIONS,
+  Boolean(previousAttempt)
 )}
 
 Focus sentence comments on: missing subject, weak greeting/closing, unclear purpose, unanswered points (for replies), register mistakes.
 Vocabulary: useful email phrases and situation-specific expressions (not generic words).
+For each "natural" example, split into sections (subject, greeting, body, closing) with accurate text fragments.
 ${sharedRules(languageName, nativeLanguageName)}`;
   }
 

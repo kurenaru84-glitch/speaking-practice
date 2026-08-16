@@ -1,5 +1,6 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
+import { getEmailContext } from "@/lib/email-context";
 import { getPatternImageDir } from "@/lib/images";
 import type { EmailCategoryMeta, EmailScenario } from "@/lib/email-meta";
 
@@ -42,12 +43,14 @@ export async function listEmailScenarios(): Promise<EmailScenario[]> {
     if (!meta) continue;
 
     for (const s of meta.scenarios) {
+      const id = `${entry}/${s.id}`;
       scenarios.push({
-        id: `${entry}/${s.id}`,
+        id,
         categoryId: entry,
         categoryJa: meta.categoryJa,
         categoryEn: meta.categoryEn,
         type: s.type,
+        context: getEmailContext(id),
         titleJa: s.titleJa ?? s.id,
         promptJa: s.promptJa,
         promptEn: s.promptEn,

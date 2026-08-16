@@ -55,8 +55,9 @@ import {
   type RetryQueueEntry,
 } from "@/lib/retry-queue";
 import { ProcessingStatusBar } from "@/components/ProcessingStatusBar";
-import { BookmarkPanel } from "@/components/BookmarkPanel";
+import { BookmarkMenu } from "@/components/BookmarkMenu";
 import { PatternNavigator } from "@/components/PatternNavigator";
+import { SessionThumbnailGrid } from "@/components/SessionThumbnailGrid";
 import {
   PracticeStepIndicator,
   resolvePracticeStep,
@@ -70,6 +71,18 @@ import { RetryQueuePanel } from "@/components/RetryQueuePanel";
 import { StructuredNaturalExample } from "@/components/StructuredNaturalExample";
 import { SentenceCorrection } from "@/components/SentenceCorrection";
 import { SelectableText } from "@/components/SelectableText";
+import {
+  getCategoryForPattern,
+  getDefaultSubcategory,
+  type ContentSubcategoryId,
+} from "@/lib/pattern-categories";
+import { buildSessionThumbs, isSpeakingPattern } from "@/lib/session-thumbs";
+
+type PendingNavigate = {
+  patternId: PatternId;
+  itemKey: string;
+  subcategory?: ContentSubcategoryId;
+};
 
 const RECORD_SECONDS = 60;
 
@@ -105,7 +118,8 @@ export function SpeakingPractice() {
   const [retryQueue, setRetryQueue] = useState<RetryQueueEntry[]>([]);
   const [bookmarks, setBookmarks] = useState<BookmarkEntry[]>([]);
   const [bookmarked, setBookmarked] = useState(false);
-  const pendingNavigateRef = useRef<{ patternId: PatternId; itemKey: string } | null>(null);
+  const [contentSubcategory, setContentSubcategory] = useState<ContentSubcategoryId>("business");
+  const pendingNavigateRef = useRef<PendingNavigate | null>(null);
 
   const refreshRetryQueue = useCallback(() => {
     setRetryQueue(loadRetryQueue());
@@ -130,11 +144,27 @@ export function SpeakingPractice() {
   const isTextPractice = isInterview || isEmail;
   const isStory = pattern.imageLayout === "sequence";
   const isMultiVisual = isStory || isCompare;
+  const activeCategory = getCategoryForPattern(patternId);
+
+  const visibleInterviewQuestions = useMemo(
+    () =>
+      isInterview
+        ? interviewQuestions.filter((q) => q.context === contentSubcategory)
+        : interviewQuestions,
+    [interviewQuestions, isInterview, contentSubcategory]
+  );
+
+  const visibleEmailScenarios = useMemo(
+    () =>
+      isEmail ? emailScenarios.filter((s) => s.context === contentSubcategory) : emailScenarios,
+    [emailScenarios, isEmail, contentSubcategory]
+  );
+
   const currentSet = isStory ? stories[index] : null;
   const currentCompare = isCompare ? compareSets[index] : null;
   const currentScenario = isRoleplay ? roleplayScenarios[index] : null;
-  const currentInterview = isInterview ? interviewQuestions[index] : null;
-  const currentEmail = isEmail ? emailScenarios[index] : null;
+  const currentInterview = isInterview ? visibleInterviewQuestions[index] : null;
+  const currentEmail = isEmail ? visibleEmailScenarios[index] : null;
   const currentImages = isCompare
     ? (currentCompare?.images ?? [])
     : isStory
@@ -166,12 +196,26 @@ export function SpeakingPractice() {
     : isRoleplay
       ? roleplayScenarios.length
       : isInterview
-        ? interviewQuestions.length
+        ? visibleInterviewQuestions.length
         : isEmail
-          ? emailScenarios.length
+          ? visibleEmailScenarios.length
           : isStory
-          ? stories.length
-          : images.length;
+            ? stories.length
+            : images.length;
+
+  const sessionThumbs = useMemo(
+    () =>
+      buildSessionThumbs({
+        patternId,
+        images,
+        stories,
+        compareSets,
+        roleplayScenarios,
+      }),
+    [patternId, images, stories, compareSets, roleplayScenarios]
+  );
+
+  const showSessionPicker = isSpeakingPattern(patternId) && sessionThumbs.length > 1;
   const taskJa =
     currentCompare?.promptJa ??
     currentScenario?.promptJa ??
@@ -252,6 +296,26 @@ export function SpeakingPractice() {
   }, [patternId, currentItemKey]);
 
   useEffect(() => {
+    const defaultSubcategory = getDefaultSubcategory(activeCategory);
+    if (defaultSubcategory) {
+      setContentSubcategory(defaultSubcategory);
+    }
+  }, [activeCategory]);
+
+  const skipSubcategoryResetRef = useRef(false);
+
+  useEffect(() => {
+    if (skipSubcategoryResetRef.current) {
+      skipSubcategoryResetRef.current = false;
+      return;
+    }
+    setIndex(0);
+    setText("");
+    setFeedback(null);
+    setError("");
+  }, [contentSubcategory]);
+
+  useEffect(() => {
     setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
     setComparisonHistory(null);
   }, [currentItemKey, learningLanguage, patternId]);
@@ -316,7 +380,7 @@ export function SpeakingPractice() {
     const pending = pendingNavigateRef.current;
     if (!pending || pending.patternId !== patternId || itemCount === 0) return;
 
-    const nextIndex = findIndexByItemKey(patternId, pending.itemKey, {
+    const target = resolveNavigateTarget(pending.patternId, pending.itemKey, {
       images,
       stories,
       compareSets,
@@ -324,7 +388,11 @@ export function SpeakingPractice() {
       interviewQuestions,
       emailScenarios,
     });
-    setIndex(nextIndex);
+    skipSubcategoryResetRef.current = true;
+    if (target.subcategory) {
+      setContentSubcategory(target.subcategory);
+    }
+    setIndex(target.index);
     setText("");
     setFeedback(null);
     setComparisonHistory(null);
@@ -352,29 +420,46 @@ export function SpeakingPractice() {
     [images, stories, compareSets, roleplayScenarios, interviewQuestions, emailScenarios]
   );
 
-  const navigateToItem = useCallback(
-    (targetPatternId: PatternId, itemKey: string) => {
-      pendingNavigateRef.current = { patternId: targetPatternId, itemKey };
-      if (targetPatternId !== patternId) {
-        setPatternId(targetPatternId);
-        return;
-      }
-      const nextIndex = findIndexByItemKey(targetPatternId, itemKey, practiceData);
-      setIndex(nextIndex);
-      setText("");
-      setFeedback(null);
-      setComparisonHistory(null);
-      pendingNavigateRef.current = null;
-    },
-    [patternId, practiceData]
-  );
-
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
       window.clearInterval(timerRef.current);
       timerRef.current = null;
     }
   }, []);
+
+  const applySessionIndex = useCallback(
+    (nextIndex: number) => {
+      if (busy) return;
+      clearTimer();
+      stopPreview();
+      setLivePreview(false);
+      void stop();
+      setIndex(nextIndex);
+      setText("");
+      setFeedback(null);
+      setSecondsLeft(RECORD_SECONDS);
+      setError("");
+    },
+    [busy, clearTimer, stop, stopPreview]
+  );
+
+  const navigateToItem = useCallback(
+    (targetPatternId: PatternId, itemKey: string) => {
+      if (targetPatternId !== patternId) {
+        pendingNavigateRef.current = { patternId: targetPatternId, itemKey };
+        setPatternId(targetPatternId);
+        return;
+      }
+
+      const target = resolveNavigateTarget(targetPatternId, itemKey, practiceData);
+      skipSubcategoryResetRef.current = true;
+      if (target.subcategory) {
+        setContentSubcategory(target.subcategory);
+      }
+      applySessionIndex(target.index);
+    },
+    [patternId, practiceData, applySessionIndex]
+  );
 
   const transcribeBlob = useCallback(async (blob: Blob) => {
     setTranscribing(true);
@@ -662,6 +747,12 @@ export function SpeakingPractice() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <BookmarkMenu
+              entries={bookmarks}
+              onSelect={handleBookmarkSelect}
+              onRemove={handleRemoveBookmark}
+              disabled={busy}
+            />
             <Link href="/settings" className="btn-secondary">
               設定
             </Link>
@@ -681,17 +772,17 @@ export function SpeakingPractice() {
         <PatternNavigator
           patternId={patternId}
           onPatternChange={setPatternId}
+          subcategoryId={
+            activeCategory === "speaking" ? null : contentSubcategory
+          }
+          onSubcategoryChange={
+            activeCategory === "speaking" ? undefined : setContentSubcategory
+          }
           disabled={busy}
         />
       </header>
 
       <PracticeStepIndicator step={practiceStep} loading={loading || transcribing} />
-
-      <BookmarkPanel
-        entries={bookmarks}
-        onSelect={handleBookmarkSelect}
-        onRemove={handleRemoveBookmark}
-      />
 
       <RetryQueuePanel
         entries={retryQueue}
@@ -845,6 +936,14 @@ export function SpeakingPractice() {
                         : "次の画像"}
             </button>
           </div>
+          {showSessionPicker && (
+            <SessionThumbnailGrid
+              items={sessionThumbs}
+              selectedIndex={index}
+              onSelect={applySessionIndex}
+              disabled={busy}
+            />
+          )}
         </section>
 
         <section className="card flex flex-col gap-4 p-5">
@@ -1156,4 +1255,35 @@ export function SpeakingPractice() {
       )}
     </main>
   );
+}
+
+function resolveNavigateTarget(
+  targetPatternId: PatternId,
+  itemKey: string,
+  data: {
+    images: string[];
+    stories: StorySet[];
+    compareSets: CompareSet[];
+    roleplayScenarios: RoleplayScenario[];
+    interviewQuestions: InterviewQuestion[];
+    emailScenarios: EmailScenario[];
+  }
+): { subcategory?: ContentSubcategoryId; index: number } {
+  if (targetPatternId === "interview") {
+    const question = data.interviewQuestions.find((q) => `interview:${q.id}` === itemKey);
+    if (!question) return { index: 0 };
+    const filtered = data.interviewQuestions.filter((q) => q.context === question.context);
+    const resolvedIndex = filtered.findIndex((q) => q.id === question.id);
+    return { subcategory: question.context, index: resolvedIndex >= 0 ? resolvedIndex : 0 };
+  }
+
+  if (targetPatternId === "email") {
+    const scenario = data.emailScenarios.find((s) => `email:${s.id}` === itemKey);
+    if (!scenario) return { index: 0 };
+    const filtered = data.emailScenarios.filter((s) => s.context === scenario.context);
+    const resolvedIndex = filtered.findIndex((s) => s.id === scenario.id);
+    return { subcategory: scenario.context, index: resolvedIndex >= 0 ? resolvedIndex : 0 };
+  }
+
+  return { index: findIndexByItemKey(targetPatternId, itemKey, data) };
 }

@@ -16,6 +16,7 @@ export type InterviewQuestion = {
   categoryId: string;
   categoryJa: string;
   categoryEn: string;
+  context: "personal" | "behavioral";
   titleJa: string;
   promptJa: string;
   promptEn: string;

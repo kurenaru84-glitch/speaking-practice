@@ -22,6 +22,7 @@ export type EmailScenario = {
   categoryJa: string;
   categoryEn: string;
   type: EmailScenarioType;
+  context: "business" | "personal";
   titleJa: string;
   promptJa: string;
   promptEn: string;

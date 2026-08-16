@@ -70,6 +70,7 @@ export type InterviewQuestion = {
   categoryId: string;
   categoryJa: string;
   categoryEn: string;
+  context: "personal" | "behavioral";
   titleJa: string;
   promptJa: string;
   promptEn: string;
@@ -81,6 +82,7 @@ export type EmailScenario = {
   categoryJa: string;
   categoryEn: string;
   type: "compose" | "reply";
+  context: "business" | "personal";
   titleJa: string;
   promptJa: string;
   promptEn: string;

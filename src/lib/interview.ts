@@ -1,5 +1,6 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
+import { getInterviewContext } from "@/lib/interview-context";
 import { getPatternImageDir } from "@/lib/images";
 import type { InterviewCategoryMeta, InterviewQuestion } from "@/lib/interview-meta";
 
@@ -42,11 +43,13 @@ export async function listInterviewQuestions(): Promise<InterviewQuestion[]> {
     if (!meta) continue;
 
     for (const q of meta.questions) {
+      const id = `${entry}/${q.id}`;
       questions.push({
-        id: `${entry}/${q.id}`,
+        id,
         categoryId: entry,
         categoryJa: meta.categoryJa,
         categoryEn: meta.categoryEn,
+        context: getInterviewContext(id),
         titleJa: q.titleJa ?? q.id,
         promptJa: q.promptJa,
         promptEn: q.promptEn,

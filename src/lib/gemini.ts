@@ -4,6 +4,7 @@ import {
   looksLikeRunOnTranscript,
 } from "@/lib/code-switch";
 import type { ChecklistItem, FeedbackResult, NaturalExample, NaturalSection } from "@/lib/types";
+import { filterFeedbackSentences } from "@/lib/skip-feedback-sentences";
 import { buildFeedbackPrompt, type PatternId, type PreviousAttemptContext } from "@/lib/patterns";
 
 const MODEL = "gemini-3.6-flash";
@@ -307,7 +308,7 @@ function normalizeFeedback(raw: unknown): FeedbackResult {
   const checklist = normalizeChecklist(data.checklist);
 
   const base = (sentences: FeedbackResult["sentences"]) => ({
-    sentences,
+    sentences: filterFeedbackSentences(sentences),
     natural: normalizeNatural(data.natural),
     vocabulary: (data.vocabulary ?? []).slice(0, 10),
     summary: data.summary ?? "",

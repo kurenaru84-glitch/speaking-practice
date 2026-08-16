@@ -140,7 +140,8 @@ export function getPattern(id: string): Pattern {
 
 const SHARED_RULES = (nativeLanguageName: string) => `
 Sentence feedback rules:
-- Split the learner text into sentences. Create one "sentences" entry per sentence. Never skip a sentence.
+- Split the learner text into sentences. Create one "sentences" entry per substantive sentence.
+- SKIP fillers, discourse markers, and standalone short responses (e.g. "Yes", "Um", "Well", "Yeah", "OK", "えー", "うん", "はい"). Do NOT create entries for them.
 - "comment" is always in ${nativeLanguageName} (1-2 short sentences).
 - If the sentence is good, set "fixed" equal to "original" and praise in comment.
 - If correction is needed, put the corrected sentence in "fixed" and explain why in "comment".

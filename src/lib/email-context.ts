@@ -1,0 +1,48 @@
+export type EmailContext = "business" | "personal";
+
+const EMAIL_CONTEXT_BY_ID: Record<string, EmailContext> = {
+  "compose/school-absence": "business",
+  "compose/meeting-reschedule": "business",
+  "compose/thank-you-interview": "business",
+  "compose/deadline-extension": "business",
+  "compose/lunch-invitation": "business",
+  "compose/wrong-order-complaint": "business",
+  "compose/reference-request": "business",
+  "compose/client-follow-up": "business",
+  "compose/training-leave": "business",
+  "compose/project-intro": "business",
+  "compose/supplier-sample": "business",
+  "compose/schedule-change-notice": "business",
+  "compose/repair-request": "personal",
+  "compose/rsvp-decline": "personal",
+  "compose/hotel-booking": "personal",
+  "compose/thank-friend-gift": "personal",
+  "compose/housewarming-invite": "personal",
+  "compose/sports-club-join": "personal",
+  "compose/apologize-missed-dinner": "personal",
+  "compose/pet-sitting-request": "personal",
+  "reply/stock-inquiry": "business",
+  "reply/meeting-confirm": "business",
+  "reply/refund-request": "business",
+  "reply/report-status": "business",
+  "reply/delivery-address-change": "business",
+  "reply/document-submission": "business",
+  "reply/price-negotiation": "business",
+  "reply/homework-clarification": "business",
+  "reply/conference-registration": "business",
+  "reply/leave-approval": "business",
+  "reply/demo-recording-request": "business",
+  "reply/concert-invite": "personal",
+  "reply/landlord-rent": "personal",
+  "reply/neighbor-tool-borrow": "personal",
+  "reply/wedding-save-the-date": "personal",
+  "reply/marketplace-buyer": "personal",
+  "reply/friend-visiting-town": "personal",
+  "reply/parent-visit": "personal",
+  "reply/language-exchange": "personal",
+  "reply/lost-item-hotel": "personal",
+};
+
+export function getEmailContext(scenarioId: string): EmailContext {
+  return EMAIL_CONTEXT_BY_ID[scenarioId] ?? "business";
+}

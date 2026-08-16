@@ -115,6 +115,14 @@ body {
   }
 }
 
-.mic-pulse {
-  animation: mic-pulse 1.4s ease-in-out infinite;
+.protected-media {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
 }

@@ -3,7 +3,7 @@
 import {
   getCategoryForPattern,
   getPatternsInCategory,
-  getSubcategoriesForCategory,
+  getSubcategoriesForPattern,
   PATTERN_CATEGORIES,
   type ContentSubcategoryId,
   type PatternCategoryId,
@@ -27,7 +27,7 @@ export function PatternNavigator({
 }: Props) {
   const activeCategory = getCategoryForPattern(patternId);
   const patternsInCategory = getPatternsInCategory(activeCategory);
-  const subcategories = getSubcategoriesForCategory(activeCategory);
+  const subcategories = getSubcategoriesForPattern(patternId);
 
   function handleCategoryChange(categoryId: PatternCategoryId) {
     const patterns = getPatternsInCategory(categoryId);
@@ -60,6 +60,27 @@ export function PatternNavigator({
         })}
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {patternsInCategory.map((pattern) => {
+          const selected = patternId === pattern.id;
+          return (
+            <button
+              key={pattern.id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onPatternChange(pattern.id)}
+              className={`rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
+                selected
+                  ? "bg-amber-700 text-white"
+                  : "border border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
+              }`}
+            >
+              {pattern.label}
+            </button>
+          );
+        })}
+      </div>
+
       {subcategories && onSubcategoryChange && (
         <div className="flex flex-wrap gap-2">
           {subcategories.map((sub) => {
@@ -82,27 +103,6 @@ export function PatternNavigator({
           })}
         </div>
       )}
-
-      <div className="flex flex-wrap gap-2">
-        {patternsInCategory.map((pattern) => {
-          const selected = patternId === pattern.id;
-          return (
-            <button
-              key={pattern.id}
-              type="button"
-              disabled={disabled}
-              onClick={() => onPatternChange(pattern.id)}
-              className={`rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
-                selected
-                  ? "bg-amber-700 text-white"
-                  : "border border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
-              }`}
-            >
-              {pattern.label}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { ProtectedImage } from "@/components/ProtectedImage";
 import type { SessionThumb } from "@/lib/session-thumbs";
 
 export type { SessionThumb };
@@ -22,7 +23,7 @@ export function SessionThumbnailGrid({ items, selectedIndex, onSelect, disabled 
           const selected = item.index === selectedIndex;
           return (
             <button
-              key={`${item.index}-${item.thumbnail}`}
+              key={`${item.index}-${item.label}`}
               type="button"
               disabled={disabled}
               onClick={() => onSelect(item.index)}
@@ -32,21 +33,44 @@ export function SessionThumbnailGrid({ items, selectedIndex, onSelect, disabled 
                   : "border-stone-200 hover:border-stone-300"
               }`}
             >
-              <div className="relative aspect-[4/3] bg-stone-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.thumbnail}
-                  alt={item.label}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-                {selected && (
-                  <span className="absolute right-1.5 top-1.5 badge bg-amber-700 text-white">
-                    選択中
+              {item.kind === "text" ? (
+                <div className="relative flex aspect-[4/3] flex-col justify-between bg-gradient-to-br from-stone-50 to-white p-3">
+                  <div>
+                    {item.badge && (
+                      <span className="badge-neutral mb-2 inline-flex">{item.badge}</span>
+                    )}
+                    <p className="line-clamp-2 text-sm font-semibold leading-5 text-stone-900">
+                      {item.label}
+                    </p>
+                  </div>
+                  {item.subtitle && (
+                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-stone-500">{item.subtitle}</p>
+                  )}
+                  {selected && (
+                    <span className="absolute right-1.5 top-1.5 badge bg-amber-700 text-white">
+                      選択中
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="relative aspect-[4/3] bg-stone-100">
+                  <ProtectedImage
+                    src={item.thumbnail ?? ""}
+                    alt={item.label}
+                    className="pointer-events-none h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span className="absolute left-1.5 top-1.5 badge bg-black/60 text-white">
+                    {item.label}
                   </span>
-                )}
-              </div>
-              <p className="truncate px-2 py-1.5 text-xs font-medium text-stone-700">{item.label}</p>
+                  {selected && (
+                    <span className="absolute right-1.5 top-1.5 badge bg-amber-700 text-white">
+                      選択中
+                    </span>
+                  )}
+                </div>
+              )}
             </button>
           );
         })}

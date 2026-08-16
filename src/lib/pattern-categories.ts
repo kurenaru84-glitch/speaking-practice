@@ -2,7 +2,7 @@ import { PATTERNS, type PatternId } from "@/lib/patterns";
 import type { EmailContext } from "@/lib/email-context";
 import type { InterviewContext } from "@/lib/interview-context";
 
-export type PatternCategoryId = "speaking" | "writing" | "interview";
+export type PatternCategoryId = "speaking" | "writing";
 
 export type PatternCategory = {
   id: PatternCategoryId;
@@ -21,35 +21,28 @@ export const PATTERN_CATEGORIES: PatternCategory[] = [
   {
     id: "speaking",
     label: "スピーキング",
-    description: "画像を見て話す練習",
+    description: "画像や質問に答える練習",
   },
   {
     id: "writing",
     label: "ライティング",
     description: "メールの作成・返信",
   },
-  {
-    id: "interview",
-    label: "面接・会話",
-    description: "質問に答える練習",
-  },
 ];
 
 export const PATTERNS_BY_CATEGORY: Record<PatternCategoryId, PatternId[]> = {
-  speaking: ["describe", "story", "speculate", "roleplay", "compare"],
+  speaking: ["describe", "story", "speculate", "roleplay", "compare", "interview"],
   writing: ["email"],
-  interview: ["interview"],
 };
 
-export const SUBCATEGORIES_BY_CATEGORY: Record<PatternCategoryId, ContentSubcategory[] | null> = {
-  speaking: null,
-  writing: [
-    { id: "business", label: "ビジネス" },
-    { id: "personal", label: "プライベート" },
-  ],
+const SUBCATEGORIES_BY_PATTERN: Partial<Record<PatternId, ContentSubcategory[]>> = {
   interview: [
     { id: "personal", label: "自分について" },
     { id: "behavioral", label: "面接" },
+  ],
+  email: [
+    { id: "business", label: "ビジネス" },
+    { id: "personal", label: "プライベート" },
   ],
 };
 
@@ -66,11 +59,23 @@ export function getPatternsInCategory(categoryId: PatternCategoryId) {
   return PATTERNS_BY_CATEGORY[categoryId].map((id) => PATTERNS.find((p) => p.id === id)!);
 }
 
-export function getDefaultSubcategory(categoryId: PatternCategoryId): ContentSubcategoryId | null {
-  const subs = SUBCATEGORIES_BY_CATEGORY[categoryId];
+export function getSubcategoriesForPattern(patternId: PatternId) {
+  return SUBCATEGORIES_BY_PATTERN[patternId] ?? null;
+}
+
+export function getDefaultSubcategoryForPattern(patternId: PatternId): ContentSubcategoryId | null {
+  const subs = getSubcategoriesForPattern(patternId);
   return subs?.[0]?.id ?? null;
 }
 
+/** @deprecated use getDefaultSubcategoryForPattern */
+export function getDefaultSubcategory(categoryId: PatternCategoryId): ContentSubcategoryId | null {
+  if (categoryId === "writing") return "business";
+  return "personal";
+}
+
+/** @deprecated use getSubcategoriesForPattern */
 export function getSubcategoriesForCategory(categoryId: PatternCategoryId) {
-  return SUBCATEGORIES_BY_CATEGORY[categoryId];
+  if (categoryId === "writing") return SUBCATEGORIES_BY_PATTERN.email ?? null;
+  return null;
 }

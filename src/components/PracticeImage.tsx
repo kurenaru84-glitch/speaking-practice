@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ProtectedImage } from "@/components/ProtectedImage";
 
 type Props = {
   src: string;
@@ -35,8 +36,7 @@ export function PracticeImage({ src, alt, className }: Props) {
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <ProtectedImage
       src={readySrc}
       alt={alt}
       className={className}

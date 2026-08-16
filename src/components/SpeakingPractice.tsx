@@ -59,6 +59,7 @@ import { BookmarkMenu } from "@/components/BookmarkMenu";
 import { PatternNavigator } from "@/components/PatternNavigator";
 import { SessionThumbnailGrid } from "@/components/SessionThumbnailGrid";
 import { PracticeImage, preloadImages } from "@/components/PracticeImage";
+import { ProtectedImage } from "@/components/ProtectedImage";
 import { ContentLoadingSkeleton } from "@/components/ContentLoadingSkeleton";
 import {
   PracticeStepIndicator,
@@ -74,11 +75,10 @@ import { StructuredNaturalExample } from "@/components/StructuredNaturalExample"
 import { SentenceCorrection } from "@/components/SentenceCorrection";
 import { SelectableText } from "@/components/SelectableText";
 import {
-  getCategoryForPattern,
-  getDefaultSubcategory,
+  getDefaultSubcategoryForPattern,
   type ContentSubcategoryId,
 } from "@/lib/pattern-categories";
-import { buildSessionThumbs, isSpeakingPattern } from "@/lib/session-thumbs";
+import { buildSessionThumbs } from "@/lib/session-thumbs";
 
 type PendingNavigate = {
   patternId: PatternId;
@@ -121,7 +121,7 @@ export function SpeakingPractice() {
   const [bookmarks, setBookmarks] = useState<BookmarkEntry[]>([]);
   const [contentLoading, setContentLoading] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
-  const [contentSubcategory, setContentSubcategory] = useState<ContentSubcategoryId>("business");
+  const [contentSubcategory, setContentSubcategory] = useState<ContentSubcategoryId>("personal");
   const pendingNavigateRef = useRef<PendingNavigate | null>(null);
 
   const refreshRetryQueue = useCallback(() => {
@@ -147,7 +147,6 @@ export function SpeakingPractice() {
   const isTextPractice = isInterview || isEmail;
   const isStory = pattern.imageLayout === "sequence";
   const isMultiVisual = isStory || isCompare;
-  const activeCategory = getCategoryForPattern(patternId);
 
   const visibleInterviewQuestions = useMemo(
     () =>
@@ -214,11 +213,21 @@ export function SpeakingPractice() {
         stories,
         compareSets,
         roleplayScenarios,
+        interviewQuestions: visibleInterviewQuestions,
+        emailScenarios: visibleEmailScenarios,
       }),
-    [patternId, images, stories, compareSets, roleplayScenarios]
+    [
+      patternId,
+      images,
+      stories,
+      compareSets,
+      roleplayScenarios,
+      visibleInterviewQuestions,
+      visibleEmailScenarios,
+    ]
   );
 
-  const showSessionPicker = isSpeakingPattern(patternId) && sessionThumbs.length > 1;
+  const showSessionPicker = sessionThumbs.length > 1;
   const taskJa =
     currentCompare?.promptJa ??
     currentScenario?.promptJa ??
@@ -299,11 +308,11 @@ export function SpeakingPractice() {
   }, [patternId, currentItemKey]);
 
   useEffect(() => {
-    const defaultSubcategory = getDefaultSubcategory(activeCategory);
+    const defaultSubcategory = getDefaultSubcategoryForPattern(patternId);
     if (defaultSubcategory) {
       setContentSubcategory(defaultSubcategory);
     }
-  }, [activeCategory]);
+  }, [patternId]);
 
   const skipSubcategoryResetRef = useRef(false);
 
@@ -383,8 +392,8 @@ export function SpeakingPractice() {
 
   useEffect(() => {
     const thumbSources = sessionThumbs
-      .filter((item) => Math.abs(item.index - index) <= 2)
-      .map((item) => item.thumbnail);
+      .filter((item) => item.thumbnail && Math.abs(item.index - index) <= 2)
+      .map((item) => item.thumbnail as string);
     preloadImages(thumbSources);
   }, [sessionThumbs, index]);
 
@@ -784,12 +793,8 @@ export function SpeakingPractice() {
         <PatternNavigator
           patternId={patternId}
           onPatternChange={setPatternId}
-          subcategoryId={
-            activeCategory === "speaking" ? null : contentSubcategory
-          }
-          onSubcategoryChange={
-            activeCategory === "speaking" ? undefined : setContentSubcategory
-          }
+          subcategoryId={contentSubcategory}
+          onSubcategoryChange={setContentSubcategory}
           disabled={busy}
         />
       </header>
@@ -803,8 +808,11 @@ export function SpeakingPractice() {
       />
 
       <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr]">
-        <section className="card overflow-hidden">
-          <div className={`relative bg-stone-100 ${isMultiVisual || isTextPractice ? "p-3" : "aspect-[4/3]"}`}>
+        <section className="card no-select overflow-hidden">
+          <div
+            className={`relative bg-stone-100 ${isMultiVisual || isTextPractice ? "p-3" : "aspect-[4/3]"}`}
+            onContextMenu={(event) => event.preventDefault()}
+          >
             {contentLoading ? (
               <ContentLoadingSkeleton
                 className={isMultiVisual || isTextPractice ? "min-h-[280px] rounded-xl" : "aspect-[4/3]"}
@@ -859,8 +867,13 @@ export function SpeakingPractice() {
                   <div className="flex flex-col gap-2">
                     {currentImages.slice(0, 2).map((src, i) => (
                       <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt={`Option ${String.fromCharCode(65 + i)}`} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                        <ProtectedImage
+                          src={src}
+                          alt={`Option ${String.fromCharCode(65 + i)}`}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
                         <span className="absolute left-2 top-2 rounded-full bg-amber-700 px-2.5 py-0.5 text-xs font-bold text-white">
                           {i === 0 ? currentCompare?.labelA ?? "A" : currentCompare?.labelB ?? "B"}
                         </span>
@@ -871,8 +884,13 @@ export function SpeakingPractice() {
                   <div className="grid grid-cols-2 gap-2">
                     {currentImages.map((src, i) => (
                       <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt={`Panel ${i + 1}`} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                        <ProtectedImage
+                          src={src}
+                          alt={`Panel ${i + 1}`}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
                         <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
                           {i + 1}
                         </span>
@@ -962,7 +980,7 @@ export function SpeakingPractice() {
         </section>
 
         <section className="card flex flex-col gap-4 p-5">
-          <div className="notice-accent">
+          <div className="notice-accent no-select">
             <p className="label-caps">課題</p>
             {isCompare && currentCompare && <p className="badge-accent mt-2">{currentCompare.titleJa}</p>}
             {isRoleplay && currentScenario && (

@@ -1,11 +1,20 @@
 import type { PatternId } from "@/lib/patterns";
-import type { CompareSet, RoleplayScenario, StorySet } from "@/lib/types";
+import type { CompareSet, EmailScenario, InterviewQuestion, RoleplayScenario, StorySet } from "@/lib/types";
 
 export type SessionThumb = {
   index: number;
   label: string;
-  thumbnail: string;
+  subtitle?: string;
+  thumbnail?: string;
+  kind: "image" | "text";
+  badge?: string;
 };
+
+function truncate(text: string, max: number) {
+  const trimmed = text.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max)}…`;
+}
 
 export function buildSessionThumbs(params: {
   patternId: PatternId;
@@ -13,47 +22,80 @@ export function buildSessionThumbs(params: {
   stories: StorySet[];
   compareSets: CompareSet[];
   roleplayScenarios: RoleplayScenario[];
+  interviewQuestions?: InterviewQuestion[];
+  emailScenarios?: EmailScenario[];
 }): SessionThumb[] {
-  const { patternId, images, stories, compareSets, roleplayScenarios } = params;
+  const {
+    patternId,
+    images,
+    stories,
+    compareSets,
+    roleplayScenarios,
+    interviewQuestions = [],
+    emailScenarios = [],
+  } = params;
+
+  if (patternId === "interview") {
+    return interviewQuestions.map((question, index) => ({
+      index,
+      kind: "text" as const,
+      label: question.titleJa,
+      subtitle: truncate(question.promptJa, 72),
+      badge: question.context === "behavioral" ? "面接" : "自分について",
+    }));
+  }
+
+  if (patternId === "email") {
+    return emailScenarios.map((scenario, index) => ({
+      index,
+      kind: "text" as const,
+      label: scenario.titleJa,
+      subtitle: truncate(scenario.promptJa, 72),
+      badge: scenario.type === "reply" ? "返信" : "新規",
+    }));
+  }
 
   if (patternId === "story") {
-    return stories.map((story, index) => ({
-      index,
-      label: story.title,
-      thumbnail: story.images[0] ?? "",
-    })).filter((item) => item.thumbnail);
+    return stories
+      .map((story, index) => ({
+        index,
+        kind: "image" as const,
+        label: `ストーリー ${index + 1}`,
+        thumbnail: story.images[0] ?? "",
+      }))
+      .filter((item) => item.thumbnail);
   }
 
   if (patternId === "compare") {
-    return compareSets.map((set, index) => ({
-      index,
-      label: set.titleJa,
-      thumbnail: set.images[0] ?? "",
-    })).filter((item) => item.thumbnail);
+    return compareSets
+      .map((set, index) => ({
+        index,
+        kind: "image" as const,
+        label: set.titleJa,
+        thumbnail: set.images[0] ?? "",
+      }))
+      .filter((item) => item.thumbnail);
   }
 
   if (patternId === "roleplay") {
-    return roleplayScenarios.map((scenario, index) => ({
-      index,
-      label: scenario.categoryJa,
-      thumbnail: scenario.image,
-    })).filter((item) => item.thumbnail);
+    return roleplayScenarios
+      .map((scenario, index) => ({
+        index,
+        kind: "image" as const,
+        label: scenario.categoryJa,
+        thumbnail: scenario.image,
+      }))
+      .filter((item) => item.thumbnail);
   }
 
   if (patternId === "describe" || patternId === "speculate") {
-    return images.map((src, index) => {
-      const filename = src.split("/").pop() ?? `Photo ${index + 1}`;
-      return {
-        index,
-        label: filename.replace(/\.[^.]+$/, ""),
-        thumbnail: src,
-      };
-    });
+    return images.map((src, index) => ({
+      index,
+      kind: "image" as const,
+      label: `写真 ${index + 1}`,
+      thumbnail: src,
+    }));
   }
 
   return [];
-}
-
-export function isSpeakingPattern(patternId: PatternId): boolean {
-  return patternId === "describe" || patternId === "story" || patternId === "speculate" || patternId === "roleplay" || patternId === "compare";
 }

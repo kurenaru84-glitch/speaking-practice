@@ -3,17 +3,17 @@
   "categoryEn": "Directions & helping others",
   "images": [
     {
-      "file": "lost-tourist.jpg",
+      "file": "lost-tourist.webp",
       "promptJa": "道に迷って、どこに行けばいいか分からなそうな人がいます。声をかけて助けてあげてください。",
       "promptEn": "Someone looks lost and doesn't know where to go. Offer to help them."
     },
     {
-      "file": "train-confusion.jpg",
+      "file": "train-confusion.webp",
       "promptJa": "駅でどの路線に乗ればいいか迷っている人がいます。案内してあげてください。",
       "promptEn": "Someone at the station looks confused about which train line to take. Help them find the right way."
     },
     {
-      "file": "pexels-mart-production-7641242.jpg",
+      "file": "pexels-mart-production-7641242.webp",
       "promptJa": "子どもが熱を出してベッドで休んでいます。心配そうな親として、やさしく声をかけてください。",
       "promptEn": "A child has a fever and is resting in bed. As a concerned parent, say something caring and reassuring."
     }

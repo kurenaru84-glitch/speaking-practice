@@ -58,6 +58,8 @@ import { ProcessingStatusBar } from "@/components/ProcessingStatusBar";
 import { BookmarkMenu } from "@/components/BookmarkMenu";
 import { PatternNavigator } from "@/components/PatternNavigator";
 import { SessionThumbnailGrid } from "@/components/SessionThumbnailGrid";
+import { PracticeImage, preloadImages } from "@/components/PracticeImage";
+import { ContentLoadingSkeleton } from "@/components/ContentLoadingSkeleton";
 import {
   PracticeStepIndicator,
   resolvePracticeStep,
@@ -117,6 +119,7 @@ export function SpeakingPractice() {
   const [comparisonHistory, setComparisonHistory] = useState<PracticeHistoryEntry | null>(null);
   const [retryQueue, setRetryQueue] = useState<RetryQueueEntry[]>([]);
   const [bookmarks, setBookmarks] = useState<BookmarkEntry[]>([]);
+  const [contentLoading, setContentLoading] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
   const [contentSubcategory, setContentSubcategory] = useState<ContentSubcategoryId>("business");
   const pendingNavigateRef = useRef<PendingNavigate | null>(null);
@@ -322,6 +325,7 @@ export function SpeakingPractice() {
 
   useEffect(() => {
     setRecordingOk(isRecordingSupported());
+    setContentLoading(true);
     fetch(`/api/images?pattern=${patternId}`)
       .then((res) => res.json())
       .then((data: ImagesResponse) => {
@@ -373,8 +377,16 @@ export function SpeakingPractice() {
         setFeedback(null);
         setError("");
       })
-      .catch(() => setError("画像一覧の取得に失敗しました。"));
+      .catch(() => setError("お題の読み込みに失敗しました。"))
+      .finally(() => setContentLoading(false));
   }, [patternId]);
+
+  useEffect(() => {
+    const thumbSources = sessionThumbs
+      .filter((item) => Math.abs(item.index - index) <= 2)
+      .map((item) => item.thumbnail);
+    preloadImages(thumbSources);
+  }, [sessionThumbs, index]);
 
   useEffect(() => {
     const pending = pendingNavigateRef.current;
@@ -793,7 +805,11 @@ export function SpeakingPractice() {
       <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr]">
         <section className="card overflow-hidden">
           <div className={`relative bg-stone-100 ${isMultiVisual || isTextPractice ? "p-3" : "aspect-[4/3]"}`}>
-            {isInterview ? (
+            {contentLoading ? (
+              <ContentLoadingSkeleton
+                className={isMultiVisual || isTextPractice ? "min-h-[280px] rounded-xl" : "aspect-[4/3]"}
+              />
+            ) : isInterview ? (
               currentInterview ? (
                 <div className="flex min-h-[280px] flex-col justify-center rounded-xl border border-stone-200 bg-white px-6 py-8">
                   <p className="badge-accent w-fit">{currentInterview.categoryJa}</p>
@@ -805,7 +821,7 @@ export function SpeakingPractice() {
                 </div>
               ) : (
                 <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
-                  {pattern.emptyImageHint}
+                  お題がありません
                 </div>
               )
             ) : isEmail ? (
@@ -834,7 +850,7 @@ export function SpeakingPractice() {
                 </div>
               ) : (
                 <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
-                  {pattern.emptyImageHint}
+                  お題がありません
                 </div>
               )
             ) : hasVisual ? (
@@ -844,7 +860,7 @@ export function SpeakingPractice() {
                     {currentImages.slice(0, 2).map((src, i) => (
                       <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt={`Option ${String.fromCharCode(65 + i)}`} className="h-full w-full object-cover" />
+                        <img src={src} alt={`Option ${String.fromCharCode(65 + i)}`} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                         <span className="absolute left-2 top-2 rounded-full bg-amber-700 px-2.5 py-0.5 text-xs font-bold text-white">
                           {i === 0 ? currentCompare?.labelA ?? "A" : currentCompare?.labelB ?? "B"}
                         </span>
@@ -856,7 +872,7 @@ export function SpeakingPractice() {
                     {currentImages.map((src, i) => (
                       <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt={`Panel ${i + 1}`} className="h-full w-full object-cover" />
+                        <img src={src} alt={`Panel ${i + 1}`} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                         <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
                           {i + 1}
                         </span>
@@ -865,8 +881,7 @@ export function SpeakingPractice() {
                   </div>
                 )
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <PracticeImage
                   src={currentImages[0]}
                   alt="練習用の写真"
                   className="h-full w-full object-cover"
@@ -874,7 +889,7 @@ export function SpeakingPractice() {
               )
             ) : (
               <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
-                {pattern.emptyImageHint}
+                お題がありません
               </div>
             )}
             {recording && (
@@ -1014,8 +1029,8 @@ export function SpeakingPractice() {
               <p className="font-medium text-red-700">録音中 · 残り {secondsLeft} 秒</p>
               <p className="mt-2 leading-6">
                 {mobile
-                  ? "iPhone / Android ではリアルタイム文字表示に対応していません。話し終わったら「録音を止める」を押してください。Gemini が文字起こしします。"
-                  : "リアルタイム表示非対応のブラウザです。録音後に Gemini が文字起こしします。"}
+                  ? "iPhone / Android ではリアルタイム文字表示に対応していません。話し終わったら「録音を止める」を押してください。録音後に文字起こしします。"
+                  : "リアルタイム表示非対応のブラウザです。録音後に文字起こしします。"}
               </p>
             </div>
           )}
@@ -1053,8 +1068,8 @@ export function SpeakingPractice() {
                   isEmail
                     ? "件名・挨拶・本文・結びを意識してメールを書いてください。録音も使えます。"
                     : mobile
-                      ? "録音を止めると Gemini がここへ文字起こしします。忘れた語は母国語で話してもOKです。"
-                      : "話している間ここに文字が出ます。忘れた語は母国語で話してもOK — 録音後に Gemini が確定版に更新します。"
+                      ? "録音を止めるとここへ文字起こしされます。忘れた語は母国語で話してもOKです。"
+                      : "話している間ここに文字が出ます。忘れた語は母国語で話してもOK — 録音後に確定版に更新します。"
                 }
                 value={text}
                 readOnly={livePreview || transcribing}

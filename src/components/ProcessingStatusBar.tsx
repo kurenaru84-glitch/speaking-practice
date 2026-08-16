@@ -18,8 +18,8 @@ const STEPS: Record<ProcessingPhase, string[]> = {
 };
 
 const SUBTEXT: Record<ProcessingPhase, string> = {
-  transcribe: "Gemini が録音内容をテキストに変換しています",
-  feedback: "Gemini がフィードバックを作成しています",
+  transcribe: "録音内容をテキストに変換しています",
+  feedback: "フィードバックを作成しています",
 };
 
 function useSimulatedProgress(active: boolean) {

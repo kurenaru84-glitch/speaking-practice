@@ -31,7 +31,7 @@ function extractText(data: GeminiResponse) {
       ?.filter((part) => !part.thought)
       .map((part) => part.text ?? "")
       .join("") ?? "";
-  if (!text) throw new Error("Gemini から応答がありませんでした。");
+  if (!text) throw new Error("AI から応答がありませんでした。");
   return text.trim();
 }
 
@@ -46,7 +46,7 @@ async function callGemini(body: Record<string, unknown>) {
 
   const data = (await res.json()) as GeminiResponse;
   if (!res.ok) {
-    throw new Error(data.error?.message ?? `Gemini API error (${res.status})`);
+    throw new Error(data.error?.message ?? `AI API error (${res.status})`);
   }
   return extractText(data);
 }

@@ -38,3 +38,16 @@ body {
   color: inherit;
   overflow: hidden;
 }
+
+@keyframes processing-bar-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
+.processing-bar-shimmer {
+  animation: processing-bar-shimmer 1.6s ease-in-out infinite;
+}

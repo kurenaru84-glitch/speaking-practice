@@ -1,22 +1,12 @@
 "use client";
 
-import type { PatternId } from "@/lib/patterns";
+import { PATTERN_LABELS } from "@/lib/pattern-labels";
 import type { RetryQueueEntry } from "@/lib/retry-queue";
 
 type Props = {
   entries: RetryQueueEntry[];
   onSelect: (entry: RetryQueueEntry) => void;
   onRemove: (id: string) => void;
-};
-
-const PATTERN_LABELS: Record<PatternId, string> = {
-  describe: "状況説明",
-  story: "ストーリー",
-  speculate: "推測",
-  roleplay: "ロールプレイ",
-  compare: "比較",
-  interview: "インタビュー",
-  email: "メール",
 };
 
 export function RetryQueuePanel({ entries, onSelect, onRemove }: Props) {

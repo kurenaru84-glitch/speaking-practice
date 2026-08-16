@@ -41,12 +41,21 @@ import {
   getPracticeItemTitle,
 } from "@/lib/practice-item-key";
 import {
+  isBookmarked,
+  loadBookmarks,
+  removeBookmark,
+  toggleBookmark,
+  type BookmarkEntry,
+} from "@/lib/bookmarks";
+import {
   addRetryQueueEntry,
   isInRetryQueue,
   loadRetryQueue,
   removeRetryQueueEntry,
   type RetryQueueEntry,
 } from "@/lib/retry-queue";
+import { ProcessingStatusBar } from "@/components/ProcessingStatusBar";
+import { BookmarkPanel } from "@/components/BookmarkPanel";
 import { FeedbackActions } from "@/components/FeedbackActions";
 import { FeedbackChecklist } from "@/components/FeedbackChecklist";
 import { PracticeGrowthPanel } from "@/components/PracticeGrowthPanel";
@@ -87,10 +96,16 @@ export function SpeakingPractice() {
   const [previousHistory, setPreviousHistory] = useState<PracticeHistoryEntry | null>(null);
   const [comparisonHistory, setComparisonHistory] = useState<PracticeHistoryEntry | null>(null);
   const [retryQueue, setRetryQueue] = useState<RetryQueueEntry[]>([]);
-  const pendingRetryRef = useRef<{ patternId: PatternId; itemKey: string } | null>(null);
+  const [bookmarks, setBookmarks] = useState<BookmarkEntry[]>([]);
+  const [bookmarked, setBookmarked] = useState(false);
+  const pendingNavigateRef = useRef<{ patternId: PatternId; itemKey: string } | null>(null);
 
   const refreshRetryQueue = useCallback(() => {
     setRetryQueue(loadRetryQueue());
+  }, []);
+
+  const refreshBookmarks = useCallback(() => {
+    setBookmarks(loadBookmarks());
   }, []);
 
   const { addEntry } = useWordList();
@@ -207,7 +222,12 @@ export function SpeakingPractice() {
 
   useEffect(() => {
     refreshRetryQueue();
-  }, [refreshRetryQueue]);
+    refreshBookmarks();
+  }, [refreshRetryQueue, refreshBookmarks]);
+
+  useEffect(() => {
+    setBookmarked(isBookmarked(patternId, currentItemKey));
+  }, [patternId, currentItemKey]);
 
   useEffect(() => {
     setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
@@ -271,7 +291,7 @@ export function SpeakingPractice() {
   }, [patternId]);
 
   useEffect(() => {
-    const pending = pendingRetryRef.current;
+    const pending = pendingNavigateRef.current;
     if (!pending || pending.patternId !== patternId || itemCount === 0) return;
 
     const nextIndex = findIndexByItemKey(patternId, pending.itemKey, {
@@ -286,7 +306,7 @@ export function SpeakingPractice() {
     setText("");
     setFeedback(null);
     setComparisonHistory(null);
-    pendingRetryRef.current = null;
+    pendingNavigateRef.current = null;
   }, [
     patternId,
     itemCount,
@@ -297,6 +317,35 @@ export function SpeakingPractice() {
     interviewQuestions,
     emailScenarios,
   ]);
+
+  const practiceData = useMemo(
+    () => ({
+      images,
+      stories,
+      compareSets,
+      roleplayScenarios,
+      interviewQuestions,
+      emailScenarios,
+    }),
+    [images, stories, compareSets, roleplayScenarios, interviewQuestions, emailScenarios]
+  );
+
+  const navigateToItem = useCallback(
+    (targetPatternId: PatternId, itemKey: string) => {
+      pendingNavigateRef.current = { patternId: targetPatternId, itemKey };
+      if (targetPatternId !== patternId) {
+        setPatternId(targetPatternId);
+        return;
+      }
+      const nextIndex = findIndexByItemKey(targetPatternId, itemKey, practiceData);
+      setIndex(nextIndex);
+      setText("");
+      setFeedback(null);
+      setComparisonHistory(null);
+      pendingNavigateRef.current = null;
+    },
+    [patternId, practiceData]
+  );
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -536,29 +585,34 @@ export function SpeakingPractice() {
   }
 
   function handleRetryQueueSelect(entry: RetryQueueEntry) {
-    pendingRetryRef.current = { patternId: entry.patternId, itemKey: entry.itemKey };
-    if (entry.patternId !== patternId) {
-      setPatternId(entry.patternId);
-    } else {
-      const nextIndex = findIndexByItemKey(entry.patternId, entry.itemKey, {
-        images,
-        stories,
-        compareSets,
-        roleplayScenarios,
-        interviewQuestions,
-        emailScenarios,
-      });
-      setIndex(nextIndex);
-      setText("");
-      setFeedback(null);
-      setComparisonHistory(null);
-      pendingRetryRef.current = null;
-    }
+    navigateToItem(entry.patternId, entry.itemKey);
   }
 
   function handleRemoveFromRetryQueue(id: string) {
     removeRetryQueueEntry(id);
     refreshRetryQueue();
+  }
+
+  function handleToggleBookmark() {
+    if (!hasPracticeItem || busy) return;
+    const result = toggleBookmark({
+      patternId,
+      itemKey: currentItemKey,
+      itemTitleJa: currentItemTitleJa,
+    });
+    refreshBookmarks();
+    setBookmarked(result.bookmarked);
+    showToast(result.bookmarked ? "ブックマークに追加しました" : "ブックマークを解除しました");
+  }
+
+  function handleBookmarkSelect(entry: BookmarkEntry) {
+    navigateToItem(entry.patternId, entry.itemKey);
+  }
+
+  function handleRemoveBookmark(id: string) {
+    removeBookmark(id);
+    refreshBookmarks();
+    setBookmarked(isBookmarked(patternId, currentItemKey));
   }
 
   const previousChecklistScore = previousHistory
@@ -610,6 +664,12 @@ export function SpeakingPractice() {
           ))}
         </div>
       </header>
+
+      <BookmarkPanel
+        entries={bookmarks}
+        onSelect={handleBookmarkSelect}
+        onRemove={handleRemoveBookmark}
+      />
 
       <RetryQueuePanel
         entries={retryQueue}
@@ -722,24 +782,40 @@ export function SpeakingPractice() {
             )}
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <button type="button" className="btn-ghost" onClick={() => void nextItem(-1)} disabled={busy}>
+            <button type="button" className="btn-ghost shrink-0" onClick={() => void nextItem(-1)} disabled={busy}>
               {pattern.navLabel}
             </button>
-            <p className="text-sm text-stone-500">
-              {itemCount ? `${index + 1} / ${itemCount}` : "0 / 0"}
-              {isStory && currentSet
-                ? ` · ${currentSet.title}`
-                : isCompare && currentCompare
-                  ? ` · ${currentCompare.titleJa}`
-                  : isRoleplay && currentScenario
-                    ? ` · ${currentScenario.categoryJa}`
-                    : isInterview && currentInterview
-                      ? ` · ${currentInterview.titleJa}`
-                      : isEmail && currentEmail
-                        ? ` · ${currentEmail.titleJa}`
-                        : ""}
-            </p>
-            <button type="button" className="btn-ghost" onClick={() => void nextItem(1)} disabled={busy}>
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+              <p className="truncate text-center text-sm text-stone-500">
+                {itemCount ? `${index + 1} / ${itemCount}` : "0 / 0"}
+                {isStory && currentSet
+                  ? ` · ${currentSet.title}`
+                  : isCompare && currentCompare
+                    ? ` · ${currentCompare.titleJa}`
+                    : isRoleplay && currentScenario
+                      ? ` · ${currentScenario.categoryJa}`
+                      : isInterview && currentInterview
+                        ? ` · ${currentInterview.titleJa}`
+                        : isEmail && currentEmail
+                          ? ` · ${currentEmail.titleJa}`
+                          : ""}
+              </p>
+              <button
+                type="button"
+                className={`shrink-0 rounded-full px-2 py-1 text-lg leading-none transition ${
+                  bookmarked
+                    ? "text-amber-500 hover:text-amber-600"
+                    : "text-stone-300 hover:text-amber-400"
+                }`}
+                onClick={handleToggleBookmark}
+                disabled={!hasPracticeItem || busy}
+                aria-label={bookmarked ? "ブックマークを解除" : "ブックマークに追加"}
+                title={bookmarked ? "ブックマークを解除" : "ブックマークに追加"}
+              >
+                {bookmarked ? "★" : "☆"}
+              </button>
+            </div>
+            <button type="button" className="btn-ghost shrink-0" onClick={() => void nextItem(1)} disabled={busy}>
               {isCompare
                 ? "次の比較"
                 : isStory
@@ -826,10 +902,15 @@ export function SpeakingPractice() {
                     ? `残り ${secondsLeft} 秒 · 終了後に文字起こし`
                     : `残り ${secondsLeft} 秒`
                 : transcribing
-                  ? "Gemini が確定版を作成中"
-                  : "または下に直接入力"}
+                  ? "音声を解析中..."
+                  : loading
+                    ? "添削を作成中..."
+                    : "または下に直接入力"}
             </span>
           </div>
+
+          <ProcessingStatusBar active={transcribing} phase="transcribe" />
+          <ProcessingStatusBar active={loading} phase="feedback" />
 
           {!recordingOk && (
             <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -863,6 +944,12 @@ export function SpeakingPractice() {
                 <p className="text-2xl">🎙</p>
                 <p className="mt-3 font-medium text-stone-700">録音中...</p>
                 <p className="mt-1">終了後、この欄に文字が入ります</p>
+              </div>
+            ) : transcribing ? (
+              <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 px-4 py-8 text-center text-sm leading-6 text-stone-600">
+                <p className="text-2xl">✦</p>
+                <p className="mt-3 font-medium text-amber-900">音声を解析しています</p>
+                <p className="mt-1">完了するとここに文字が入ります</p>
               </div>
             ) : (
               <textarea

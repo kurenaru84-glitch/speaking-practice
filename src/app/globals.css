@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f1ea;
+  --background: #f7f5f2;
   --foreground: #1c1917;
+  --surface: #ffffff;
+  --border: #e7e5e4;
+  --accent: #b45309;
+  --accent-hover: #92400e;
+  --muted: #78716c;
 }
 
 @theme inline {
@@ -17,11 +22,59 @@ body {
 }
 
 .btn-primary {
-  @apply rounded-full bg-amber-700 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50;
+  @apply rounded-xl bg-amber-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.btn-secondary {
+  @apply rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:border-stone-300 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 .btn-ghost {
-  @apply rounded-full px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100;
+  @apply rounded-lg px-3 py-1.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.card {
+  @apply rounded-2xl border border-stone-200 bg-white;
+}
+
+.card-muted {
+  @apply rounded-2xl border border-stone-200 bg-stone-50;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.badge-accent {
+  @apply inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900;
+}
+
+.badge-neutral {
+  @apply inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700;
+}
+
+.badge-success {
+  @apply inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800;
+}
+
+.notice {
+  @apply rounded-xl border px-3 py-2 text-sm leading-6;
+}
+
+.notice-muted {
+  @apply rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm leading-6 text-stone-700;
+}
+
+.notice-accent {
+  @apply rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950;
+}
+
+.notice-error {
+  @apply rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm leading-6 text-red-800;
+}
+
+.label-caps {
+  @apply text-[11px] font-semibold uppercase tracking-wider text-stone-500;
 }
 
 .select-text {
@@ -50,4 +103,18 @@ body {
 
 .processing-bar-shimmer {
   animation: processing-bar-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.mic-pulse {
+  animation: mic-pulse 1.4s ease-in-out infinite;
 }

@@ -8,7 +8,7 @@ import { useSettings } from "@/lib/use-settings";
 import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
-import { getPattern, PATTERNS, type PatternId } from "@/lib/patterns";
+import { getPattern, type PatternId } from "@/lib/patterns";
 import { FREE_TIER_ENABLED } from "@/lib/feature-flags";
 import {
   FREE_DAILY_LIMIT,
@@ -56,6 +56,13 @@ import {
 } from "@/lib/retry-queue";
 import { ProcessingStatusBar } from "@/components/ProcessingStatusBar";
 import { BookmarkPanel } from "@/components/BookmarkPanel";
+import { PatternNavigator } from "@/components/PatternNavigator";
+import {
+  PracticeStepIndicator,
+  resolvePracticeStep,
+  type PracticeStep,
+} from "@/components/PracticeStepIndicator";
+import { IconLock, IconMic, IconSparkles, IconStar, IconStarOutline } from "@/components/icons";
 import { FeedbackActions } from "@/components/FeedbackActions";
 import { FeedbackChecklist } from "@/components/FeedbackChecklist";
 import { PracticeGrowthPanel } from "@/components/PracticeGrowthPanel";
@@ -113,6 +120,7 @@ export function SpeakingPractice() {
   const { recording, start, stop } = useRecorder();
   const { start: startPreview, stop: stopPreview } = useLivePreview();
   const timerRef = useRef<number | null>(null);
+  const feedbackSectionRef = useRef<HTMLElement | null>(null);
 
   const pattern = getPattern(patternId);
   const isCompare = pattern.imageLayout === "compare";
@@ -145,6 +153,13 @@ export function SpeakingPractice() {
       : !!currentEmail
     : hasVisual;
   const busy = recording || transcribing || loading;
+  const practiceStep: PracticeStep = resolvePracticeStep({
+    feedback,
+    recording,
+    transcribing,
+    loading,
+    hasText: !!text.trim(),
+  });
   const mixedLanguage = containsNativeLanguage(text, nativeLanguage);
   const itemCount = isCompare
     ? compareSets.length
@@ -224,6 +239,13 @@ export function SpeakingPractice() {
     refreshRetryQueue();
     refreshBookmarks();
   }, [refreshRetryQueue, refreshBookmarks]);
+
+  useEffect(() => {
+    if (!feedback) return;
+    window.requestAnimationFrame(() => {
+      feedbackSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [feedback]);
 
   useEffect(() => {
     setBookmarked(isBookmarked(patternId, currentItemKey));
@@ -620,50 +642,50 @@ export function SpeakingPractice() {
     : null;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 md:px-8">
-      <header className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-medium tracking-wide text-amber-800">Picture Speaking</p>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/settings"
-              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50"
-            >
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-8 md:px-8">
+      <header className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="label-caps">Picture Speaking</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
+              {pattern.title}
+            </h1>
+            {settingsReady && (
+              <p className="mt-1.5 text-xs text-stone-500">
+                {learningLabel}
+                <span className="mx-1.5 text-stone-300">·</span>
+                解説: {nativeLabel}
+                <Link href="/settings" className="ml-2 font-medium text-amber-800 hover:underline">
+                  変更
+                </Link>
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link href="/settings" className="btn-secondary">
               設定
             </Link>
             <Link
               href="/word-list"
-              className={`rounded-full px-4 py-2 text-sm font-medium ring-1 transition ${
-                wordListEnabled
-                  ? "bg-white text-stone-700 ring-stone-200 hover:bg-stone-50"
-                  : "bg-stone-100 text-stone-500 ring-stone-200"
+              className={`btn-secondary inline-flex items-center gap-1.5 ${
+                wordListEnabled ? "" : "text-stone-500"
               }`}
             >
-              単語リスト{!wordListEnabled ? " 🔒" : ""}
+              単語リスト
+              {!wordListEnabled && <IconLock className="h-3.5 w-3.5" />}
             </Link>
           </div>
         </div>
-        <h1 className="text-2xl font-semibold text-stone-900 md:text-3xl">{pattern.title}</h1>
-        <p className="max-w-2xl text-sm leading-6 text-stone-600">{pattern.description}</p>
+        <p className="max-w-2xl text-sm leading-7 text-stone-600">{pattern.description}</p>
 
-        <div className="flex flex-wrap gap-2">
-          {PATTERNS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              disabled={busy}
-              onClick={() => setPatternId(p.id)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                patternId === p.id
-                  ? "bg-amber-700 text-white"
-                  : "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <PatternNavigator
+          patternId={patternId}
+          onPatternChange={setPatternId}
+          disabled={busy}
+        />
       </header>
+
+      <PracticeStepIndicator step={practiceStep} loading={loading || transcribing} />
 
       <BookmarkPanel
         entries={bookmarks}
@@ -677,15 +699,13 @@ export function SpeakingPractice() {
         onRemove={handleRemoveFromRetryQueue}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
-        <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-stone-200">
+      <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr]">
+        <section className="card overflow-hidden">
           <div className={`relative bg-stone-100 ${isMultiVisual || isTextPractice ? "p-3" : "aspect-[4/3]"}`}>
             {isInterview ? (
               currentInterview ? (
-                <div className="flex min-h-[280px] flex-col justify-center rounded-2xl bg-white px-6 py-8 shadow-sm ring-1 ring-stone-200">
-                  <p className="inline-flex w-fit rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
-                    {currentInterview.categoryJa}
-                  </p>
+                <div className="flex min-h-[280px] flex-col justify-center rounded-xl border border-stone-200 bg-white px-6 py-8">
+                  <p className="badge-accent w-fit">{currentInterview.categoryJa}</p>
                   <h2 className="mt-4 text-xl font-semibold text-stone-900">{currentInterview.titleJa}</h2>
                   <p className="mt-4 text-base leading-7 text-stone-800">{currentInterview.promptJa}</p>
                   <p className="mt-4 border-t border-stone-100 pt-4 text-sm leading-6 text-stone-500">
@@ -699,14 +719,10 @@ export function SpeakingPractice() {
               )
             ) : isEmail ? (
               currentEmail ? (
-                <div className="flex min-h-[280px] flex-col rounded-2xl bg-white px-6 py-8 shadow-sm ring-1 ring-stone-200">
+                <div className="flex min-h-[280px] flex-col rounded-xl border border-stone-200 bg-white px-6 py-8">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="inline-flex rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
-                      {currentEmail.categoryJa}
-                    </p>
-                    <p className="inline-flex rounded-full bg-stone-100 px-3 py-0.5 text-xs font-medium text-stone-700">
-                      {currentEmail.type === "reply" ? "返信" : "新規作成"}
-                    </p>
+                    <p className="badge-accent">{currentEmail.categoryJa}</p>
+                    <p className="badge-neutral">{currentEmail.type === "reply" ? "返信" : "新規作成"}</p>
                   </div>
                   <h2 className="mt-4 text-xl font-semibold text-stone-900">{currentEmail.titleJa}</h2>
                   <p className="mt-4 text-base leading-7 text-stone-800">{currentEmail.promptJa}</p>
@@ -771,13 +787,13 @@ export function SpeakingPractice() {
               </div>
             )}
             {recording && (
-              <div className="absolute left-4 top-4 rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white">
+              <div className="absolute left-4 top-4 badge bg-red-600 text-white">
                 REC {secondsLeft}s
               </div>
             )}
             {transcribing && (
-              <div className="absolute left-4 top-4 rounded-full bg-stone-800 px-3 py-1 text-xs font-medium text-white">
-                確定版を作成中...
+              <div className="absolute left-4 top-4 badge bg-stone-800 text-white">
+                解析中...
               </div>
             )}
           </div>
@@ -802,17 +818,17 @@ export function SpeakingPractice() {
               </p>
               <button
                 type="button"
-                className={`shrink-0 rounded-full px-2 py-1 text-lg leading-none transition ${
+                className={`shrink-0 rounded-lg p-1.5 transition-colors ${
                   bookmarked
-                    ? "text-amber-500 hover:text-amber-600"
-                    : "text-stone-300 hover:text-amber-400"
+                    ? "text-amber-600 hover:text-amber-700"
+                    : "text-stone-300 hover:text-amber-500"
                 }`}
                 onClick={handleToggleBookmark}
                 disabled={!hasPracticeItem || busy}
                 aria-label={bookmarked ? "ブックマークを解除" : "ブックマークに追加"}
                 title={bookmarked ? "ブックマークを解除" : "ブックマークに追加"}
               >
-                {bookmarked ? "★" : "☆"}
+                {bookmarked ? <IconStar className="h-5 w-5" /> : <IconStarOutline className="h-5 w-5" />}
               </button>
             </div>
             <button type="button" className="btn-ghost shrink-0" onClick={() => void nextItem(1)} disabled={busy}>
@@ -831,48 +847,24 @@ export function SpeakingPractice() {
           </div>
         </section>
 
-        <section className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
-          <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-6 text-stone-800">
-            <p className="font-medium text-amber-900">課題</p>
-            {isCompare && currentCompare && (
-              <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
-                {currentCompare.titleJa}
-              </p>
-            )}
+        <section className="card flex flex-col gap-4 p-5">
+          <div className="notice-accent">
+            <p className="label-caps">課題</p>
+            {isCompare && currentCompare && <p className="badge-accent mt-2">{currentCompare.titleJa}</p>}
             {isRoleplay && currentScenario && (
-              <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
-                {currentScenario.categoryJa}
-              </p>
+              <p className="badge-accent mt-2">{currentScenario.categoryJa}</p>
             )}
             {isInterview && currentInterview && (
-              <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
-                {currentInterview.titleJa}
-              </p>
+              <p className="badge-accent mt-2">{currentInterview.titleJa}</p>
             )}
             {isEmail && currentEmail && (
-              <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-900">
+              <p className="badge-accent mt-2">
                 {currentEmail.titleJa}
                 {currentEmail.type === "reply" ? "（返信）" : "（新規作成）"}
               </p>
             )}
-            <p className="mt-1">{taskJa}</p>
-            <p className="mt-2 text-xs text-stone-500">{taskEn}</p>
-          </div>
-
-          <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-medium text-stone-500">学ぶ言語</p>
-                <p className="font-medium text-stone-900">{settingsReady ? learningLabel : "…"}</p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-stone-500">母国語（解説）</p>
-                <p className="font-medium text-stone-900">{settingsReady ? nativeLabel : "…"}</p>
-              </div>
-              <Link href="/settings" className="text-xs font-medium text-amber-800 hover:underline">
-                変更
-              </Link>
-            </div>
+            <p className="mt-2 leading-7">{taskJa}</p>
+            <p className="mt-2 text-xs leading-6 text-stone-500">{taskEn}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -913,13 +905,13 @@ export function SpeakingPractice() {
           <ProcessingStatusBar active={loading} phase="feedback" />
 
           {!recordingOk && (
-            <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p className="notice-accent">
               このブラウザは録音非対応です。HTTPS 環境の Chrome / Safari を使うか、テキストで入力してください。
             </p>
           )}
 
           {recording && !livePreview && !previewCapable && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-stone-700">
+            <div className="card-muted px-4 py-4 text-sm text-stone-700">
               <p className="font-medium text-red-700">録音中 · 残り {secondsLeft} 秒</p>
               <p className="mt-2 leading-6">
                 {mobile
@@ -940,14 +932,14 @@ export function SpeakingPractice() {
               )}
             </span>
             {recording && !livePreview ? (
-              <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center text-sm leading-6 text-stone-500">
-                <p className="text-2xl">🎙</p>
+              <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center text-sm leading-6 text-stone-500">
+                <IconMic className={`h-8 w-8 text-stone-400 ${recording ? "mic-pulse" : ""}`} />
                 <p className="mt-3 font-medium text-stone-700">録音中...</p>
                 <p className="mt-1">終了後、この欄に文字が入ります</p>
               </div>
             ) : transcribing ? (
-              <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 px-4 py-8 text-center text-sm leading-6 text-stone-600">
-                <p className="text-2xl">✦</p>
+              <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50/40 px-4 py-8 text-center text-sm leading-6 text-stone-600">
+                <IconSparkles className="h-8 w-8 text-amber-600" />
                 <p className="mt-3 font-medium text-amber-900">音声を解析しています</p>
                 <p className="mt-1">完了するとここに文字が入ります</p>
               </div>
@@ -973,13 +965,13 @@ export function SpeakingPractice() {
           </label>
 
           {mixedLanguage && !recording && (
-            <p className="rounded-xl bg-sky-50 px-3 py-2 text-sm text-sky-900">
+            <p className="notice-muted">
               母国語混在を検出しました。添削で学ぶ言語の言い方を確認できます。
             </p>
           )}
 
           {previousHistory && !feedback && (
-            <p className="rounded-xl bg-violet-50 px-3 py-2 text-sm leading-6 text-violet-950">
+            <p className="notice-muted">
               前回の挑戦あり
               {previousChecklistScore && previousChecklistScore.total > 0
                 ? ` · チェック ${previousChecklistScore.passed}/${previousChecklistScore.total}`
@@ -1004,9 +996,7 @@ export function SpeakingPractice() {
                 {sessionUsage.monthlyRemaining}/{FREE_MONTHLY_LIMIT} 回
               </p>
               {!sessionUsage.canUse && (
-                <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                  {sessionLimitMessage(sessionUsage)}
-                </p>
+                <p className="notice-accent">{sessionLimitMessage(sessionUsage)}</p>
               )}
             </>
           )}
@@ -1016,7 +1006,10 @@ export function SpeakingPractice() {
       </div>
 
       {feedback && (
-        <section className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
+        <section
+          ref={feedbackSectionRef}
+          className="card flex scroll-mt-6 flex-col gap-4 p-5"
+        >
           <FeedbackActions
             onRetry={handleRetrySameItem}
             onRewriteWithModel={handleRewriteWithModel}
@@ -1157,7 +1150,7 @@ export function SpeakingPractice() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-medium text-white shadow-lg">
           {toast}
         </div>
       )}

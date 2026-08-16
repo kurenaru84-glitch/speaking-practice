@@ -13,13 +13,13 @@ export function RetryQueuePanel({ entries, onSelect, onRemove }: Props) {
   if (entries.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
-      <h3 className="text-sm font-semibold text-violet-950">再挑戦キュー ({entries.length})</h3>
+    <div className="card-muted p-4">
+      <h3 className="text-sm font-semibold text-stone-900">再挑戦キュー ({entries.length})</h3>
       <ul className="mt-3 space-y-2">
         {entries.map((entry) => (
           <li
             key={entry.id}
-            className="flex items-center justify-between gap-2 rounded-xl bg-white/80 px-3 py-2"
+            className="flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2"
           >
             <button
               type="button"
@@ -31,7 +31,7 @@ export function RetryQueuePanel({ entries, onSelect, onRemove }: Props) {
             </button>
             <button
               type="button"
-              className="shrink-0 text-xs text-stone-500 hover:text-red-700"
+              className="shrink-0 text-xs font-medium text-stone-500 hover:text-red-700"
               onClick={() => onRemove(entry.id)}
               aria-label="キューから削除"
             >

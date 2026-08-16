@@ -12,15 +12,13 @@ export function FeedbackChecklist({ items }: Props) {
   const passed = items.filter((item) => item.passed).length;
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+    <div className="card-muted p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-stone-900">チェックリスト</h3>
         <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            passed === items.length
-              ? "bg-emerald-100 text-emerald-800"
-              : "bg-amber-100 text-amber-900"
-          }`}
+          className={
+            passed === items.length ? "badge-success" : "badge-accent"
+          }
         >
           {passed}/{items.length}
         </span>

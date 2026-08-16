@@ -11,13 +11,13 @@ type Props = {
 
 export function PracticeGrowthPanel({ previous, currentText, feedback }: Props) {
   return (
-    <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
-      <h3 className="text-sm font-semibold text-sky-900">前回との比較</h3>
+    <div className="card-muted p-4">
+      <h3 className="text-sm font-semibold text-stone-900">前回との比較</h3>
       {feedback.growthNote && (
-        <p className="mt-2 text-sm leading-6 text-sky-950">{feedback.growthNote}</p>
+        <p className="mt-2 text-sm leading-7 text-stone-700">{feedback.growthNote}</p>
       )}
       <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl bg-white/80 p-3">
+        <div className="rounded-xl border border-stone-200 bg-white p-3">
           <p className="text-xs font-medium text-stone-500">前回のあなたの回答</p>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-stone-700">
             {previous.userText}
@@ -31,7 +31,7 @@ export function PracticeGrowthPanel({ previous, currentText, feedback }: Props) 
             </div>
           )}
         </div>
-        <div className="rounded-xl bg-white/80 p-3">
+        <div className="rounded-xl border border-stone-200 bg-white p-3">
           <p className="text-xs font-medium text-stone-500">今回のあなたの回答</p>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-stone-800">{currentText}</p>
           {feedback.natural[0]?.text && (

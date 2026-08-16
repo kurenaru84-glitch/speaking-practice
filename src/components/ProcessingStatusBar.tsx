@@ -72,7 +72,7 @@ export function ProcessingStatusBar({ active, phase }: Props) {
 
   return (
     <div
-      className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white px-4 py-4 shadow-sm"
+      className="notice-accent px-4 py-4"
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -82,7 +82,7 @@ export function ProcessingStatusBar({ active, phase }: Props) {
           <p className="text-sm font-semibold text-amber-950">{message}</p>
           <p className="mt-1 text-xs leading-5 text-stone-500">{SUBTEXT[phase]}</p>
         </div>
-        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-amber-900">
+        <span className="badge-accent shrink-0 tabular-nums">
           {progress}%
         </span>
       </div>
@@ -103,11 +103,11 @@ export function ProcessingStatusBar({ active, phase }: Props) {
           return (
             <span
               key={step}
-              className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-medium ${
                 current
                   ? "bg-amber-700 text-white"
                   : done
-                    ? "bg-emerald-100 text-emerald-800"
+                    ? "badge-success"
                     : "bg-stone-100 text-stone-500"
               }`}
             >

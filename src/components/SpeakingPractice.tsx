@@ -19,6 +19,7 @@ import {
   type SessionUsage,
 } from "@/lib/session-usage";
 import { canUseWordList, getPlan } from "@/lib/plan";
+import { getRecordSeconds, getTextCharLimit, textLimitMessage } from "@/lib/text-limits";
 import { useWordList } from "@/lib/use-word-list";
 import type {
   FeedbackResult,
@@ -93,8 +94,6 @@ type PendingNavigate = {
   subcategory?: ContentSubcategoryId;
 };
 
-const RECORD_SECONDS = 60;
-
 export function SpeakingPractice() {
   const [patternId, setPatternId] = useState<PatternId>("describe");
   const [images, setImages] = useState<string[]>([]);
@@ -110,7 +109,8 @@ export function SpeakingPractice() {
   const learningLabel = getLearningLanguage(learningLanguage).label;
   const nativeLabel = getNativeLanguage(nativeLanguage).label;
   const [text, setText] = useState("");
-  const [secondsLeft, setSecondsLeft] = useState(RECORD_SECONDS);
+  const recordSeconds = useMemo(() => getRecordSeconds(getPlan()), []);
+  const [secondsLeft, setSecondsLeft] = useState(() => getRecordSeconds(getPlan()));
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -130,6 +130,7 @@ export function SpeakingPractice() {
   const [bookmarked, setBookmarked] = useState(false);
   const [contentSubcategory, setContentSubcategory] = useState<ContentSubcategoryId>("personal");
   const [textAttempts, setTextAttempts] = useState<TextAttemptEntry[]>([]);
+  const [addedVocabKeys, setAddedVocabKeys] = useState<Set<string>>(() => new Set());
   const pendingNavigateRef = useRef<PendingNavigate | null>(null);
 
   const refreshRetryQueue = useCallback(() => {
@@ -249,6 +250,16 @@ export function SpeakingPractice() {
     currentEmail?.promptEn ??
     pattern.taskEn;
   const outputLabel = isEmail ? "あなたのメール" : "あなたの説明";
+  const textCharLimit = useMemo(
+    () =>
+      getTextCharLimit({
+        patternId,
+        plan: getPlan(),
+        recordSeconds: getRecordSeconds(getPlan()),
+      }),
+    [patternId]
+  );
+  const textOverLimit = text.length > textCharLimit;
 
   const currentItemKey = useMemo(
     () =>
@@ -323,6 +334,10 @@ export function SpeakingPractice() {
     window.requestAnimationFrame(() => {
       feedbackSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  }, [feedback]);
+
+  useEffect(() => {
+    setAddedVocabKeys(new Set());
   }, [feedback]);
 
   useEffect(() => {
@@ -480,7 +495,7 @@ export function SpeakingPractice() {
       setIndex(nextIndex);
       setText("");
       setFeedback(null);
-      setSecondsLeft(RECORD_SECONDS);
+      setSecondsLeft(recordSeconds);
       setError("");
     },
     [busy, clearTimer, stop, stopPreview]
@@ -556,6 +571,7 @@ export function SpeakingPractice() {
   }, []);
 
   function addVocabulary(term: string, note: string) {
+    const vocabKey = `${term}::${note}`;
     if (!wordListEnabled) {
       showToast("単語リストは有料プラン限定です");
       return;
@@ -567,6 +583,9 @@ export function SpeakingPractice() {
       source: "この場面で使える語彙",
       autoTranslate: false,
     });
+    if (result.ok) {
+      setAddedVocabKeys((prev) => new Set(prev).add(vocabKey));
+    }
     showToast(result.ok ? "単語リストに追加しました" : "すでに登録済みです");
   }
 
@@ -584,7 +603,7 @@ export function SpeakingPractice() {
     setError("");
     setFeedback(null);
     setText("");
-    setSecondsLeft(RECORD_SECONDS);
+    setSecondsLeft(recordSeconds);
 
     try {
       await start();
@@ -604,6 +623,11 @@ export function SpeakingPractice() {
 
   async function requestFeedback() {
     if (!hasPracticeItem || !text.trim()) return;
+
+    if (text.length > textCharLimit) {
+      setError(textLimitMessage(textCharLimit));
+      return;
+    }
 
     const usage = getSessionUsage();
     setSessionUsage(usage);
@@ -706,7 +730,7 @@ export function SpeakingPractice() {
     setIndex((prev) => (prev + delta + itemCount) % itemCount);
     setText("");
     setFeedback(null);
-    setSecondsLeft(RECORD_SECONDS);
+    setSecondsLeft(recordSeconds);
     setError("");
   }
 
@@ -971,7 +995,7 @@ export function SpeakingPractice() {
                 onClick={() => void startRecording()}
                 disabled={!recordingOk || transcribing}
               >
-                {RECORD_SECONDS}秒録音する
+                {recordSeconds}秒録音する
               </button>
             )}
             <span className="text-sm text-stone-500">
@@ -1010,13 +1034,28 @@ export function SpeakingPractice() {
           )}
 
           <label className="flex flex-1 flex-col gap-1 text-sm">
-            <span className="font-medium text-stone-700">
-              {outputLabel}
-              {livePreview && (
-                <span className="ml-2 text-xs font-normal text-sky-700">プレビュー（確定版は録音後）</span>
-              )}
-              {livePreview && (
-                <span className="ml-2 text-xs font-normal text-stone-500">母国語は録音後に反映</span>
+            <span className="flex flex-wrap items-baseline justify-between gap-2 font-medium text-stone-700">
+              <span>
+                {outputLabel}
+                {livePreview && (
+                  <span className="ml-2 text-xs font-normal text-sky-700">プレビュー（確定版は録音後）</span>
+                )}
+                {livePreview && (
+                  <span className="ml-2 text-xs font-normal text-stone-500">母国語は録音後に反映</span>
+                )}
+              </span>
+              {!recording && !transcribing && (
+                <span
+                  className={`text-xs font-normal tabular-nums ${
+                    textOverLimit
+                      ? "text-red-600"
+                      : text.length > textCharLimit * 0.9
+                        ? "text-amber-700"
+                        : "text-stone-400"
+                  }`}
+                >
+                  {text.length.toLocaleString("ja-JP")} / {textCharLimit.toLocaleString("ja-JP")}
+                </span>
               )}
             </span>
             {recording && !livePreview ? (
@@ -1034,9 +1073,11 @@ export function SpeakingPractice() {
             ) : (
               <textarea
                 className={`min-h-40 flex-1 resize-y rounded-2xl border px-3 py-2 leading-6 ${
-                  livePreview
-                    ? "border-sky-200 bg-sky-50/60 text-stone-700"
-                    : "border-stone-200 bg-stone-50"
+                  textOverLimit
+                    ? "border-red-300 bg-red-50/40"
+                    : livePreview
+                      ? "border-sky-200 bg-sky-50/60 text-stone-700"
+                      : "border-stone-200 bg-stone-50"
                 }`}
                 placeholder={
                   isEmail
@@ -1046,11 +1087,16 @@ export function SpeakingPractice() {
                       : "話している間ここに文字が出ます。忘れた語は母国語で話してもOK — 録音後に確定版に更新します。"
                 }
                 value={text}
+                maxLength={textCharLimit}
                 readOnly={livePreview || transcribing}
                 onChange={(e) => setText(e.target.value)}
               />
             )}
           </label>
+
+          {textOverLimit && !recording && (
+            <p className="notice-error">{textLimitMessage(textCharLimit)}</p>
+          )}
 
           {mixedLanguage && !recording && (
             <p className="notice-muted">
@@ -1072,7 +1118,7 @@ export function SpeakingPractice() {
             type="button"
             className="btn-primary"
             onClick={requestFeedback}
-            disabled={!text.trim() || busy || (FREE_TIER_ENABLED && !sessionUsage.canUse)}
+            disabled={!text.trim() || busy || textOverLimit || (FREE_TIER_ENABLED && !sessionUsage.canUse)}
           >
             {loading ? "添削中..." : pattern.feedbackButton}
           </button>
@@ -1208,18 +1254,30 @@ export function SpeakingPractice() {
                   <p className="mb-2 text-xs text-stone-500">タップで単語リストに追加</p>
                 )}
                 <ul className="flex flex-wrap gap-2">
-                  {feedback.vocabulary.map((item, i) => (
+                  {feedback.vocabulary.map((item, i) => {
+                    const vocabKey = `${item.term}::${item.note}`;
+                    const added = addedVocabKeys.has(vocabKey);
+                    return (
                     <li key={`${item.term}-${i}`}>
                       {wordListEnabled ? (
                         <button
                           type="button"
-                          className="rounded-xl bg-stone-100 px-3 py-2 text-left text-sm transition hover:bg-sky-100 hover:ring-1 hover:ring-sky-300"
+                          className={`rounded-xl px-3 py-2 text-left text-sm transition active:scale-[0.98] ${
+                            added
+                              ? "bg-sky-200 ring-2 ring-sky-400 text-sky-950"
+                              : "bg-stone-100 hover:bg-sky-100 hover:ring-1 hover:ring-sky-300 active:bg-sky-200"
+                          }`}
                           title={`${item.note} — タップで追加`}
                           onClick={() => addVocabulary(item.term, item.note)}
                         >
-                          <span className="font-medium text-stone-900">{item.term}</span>
-                          <span className="text-stone-500"> · {item.note}</span>
-                          <span className="ml-1 text-xs text-sky-700">＋</span>
+                          <span className="font-medium">{item.term}</span>
+                          <span className={added ? "text-sky-800" : "text-stone-500"}>
+                            {" "}
+                            · {item.note}
+                          </span>
+                          <span className={`ml-1 text-xs ${added ? "text-sky-700" : "text-sky-700"}`}>
+                            {added ? "✓" : "＋"}
+                          </span>
                         </button>
                       ) : (
                         <span className="rounded-xl bg-stone-100 px-3 py-2 text-sm">
@@ -1228,7 +1286,8 @@ export function SpeakingPractice() {
                         </span>
                       )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             )}

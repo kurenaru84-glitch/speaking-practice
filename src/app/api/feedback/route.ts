@@ -4,6 +4,7 @@ import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
 import { getSpeakingFeedback } from "@/lib/gemini";
 import { parseImageUrl, parseSetImageUrls } from "@/lib/images";
 import { getPattern, type PatternId } from "@/lib/patterns";
+import { getTextCharLimit, textLimitMessage } from "@/lib/text-limits";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
@@ -30,6 +31,11 @@ export async function POST(request: Request) {
   }
 
   const pattern = getPattern(body.pattern ?? "describe");
+  const charLimit = getTextCharLimit({ patternId: pattern.id as PatternId });
+  if (text.length > charLimit) {
+    return NextResponse.json({ error: textLimitMessage(charLimit) }, { status: 400 });
+  }
+
   const learning = getLearningLanguage(body.language ?? "en-US");
   const native = getNativeLanguage(body.nativeLanguage ?? "ja-JP");
 

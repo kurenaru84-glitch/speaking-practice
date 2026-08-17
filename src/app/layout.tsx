@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { SITE } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -8,12 +9,12 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Picture Speaking",
-  description: "画像を見て1分で説明するスピーキング練習",
+  title: SITE.appName,
+  description: SITE.tagline,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "Speaking",
+    title: SITE.appName,
     statusBarStyle: "default",
   },
   icons: {
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#b45309",
+  themeColor: "#38bdf8",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

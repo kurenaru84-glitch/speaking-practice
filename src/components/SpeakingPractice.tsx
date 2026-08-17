@@ -58,9 +58,10 @@ import { ProcessingStatusBar } from "@/components/ProcessingStatusBar";
 import { BookmarkMenu } from "@/components/BookmarkMenu";
 import { PatternNavigator } from "@/components/PatternNavigator";
 import { SessionThumbnailGrid } from "@/components/SessionThumbnailGrid";
-import { PracticeImage, preloadImages } from "@/components/PracticeImage";
-import { ProtectedImage } from "@/components/ProtectedImage";
-import { ContentLoadingSkeleton } from "@/components/ContentLoadingSkeleton";
+import { PracticeVisual } from "@/components/PracticeVisual";
+import { PastAttemptsPanel } from "@/components/PastAttemptsPanel";
+import { preloadImages } from "@/components/PracticeImage";
+import { consumeBookmarkNavigate } from "@/components/BookmarksView";
 import {
   PracticeStepIndicator,
   resolvePracticeStep,
@@ -79,6 +80,12 @@ import {
   type ContentSubcategoryId,
 } from "@/lib/pattern-categories";
 import { buildSessionThumbs } from "@/lib/session-thumbs";
+import { SITE } from "@/lib/site";
+import {
+  appendTextAttempt,
+  getTextAttempts,
+  type TextAttemptEntry,
+} from "@/lib/text-attempt-history";
 
 type PendingNavigate = {
   patternId: PatternId;
@@ -122,6 +129,7 @@ export function SpeakingPractice() {
   const [contentLoading, setContentLoading] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
   const [contentSubcategory, setContentSubcategory] = useState<ContentSubcategoryId>("personal");
+  const [textAttempts, setTextAttempts] = useState<TextAttemptEntry[]>([]);
   const pendingNavigateRef = useRef<PendingNavigate | null>(null);
 
   const refreshRetryQueue = useCallback(() => {
@@ -295,6 +303,20 @@ export function SpeakingPractice() {
     refreshRetryQueue();
     refreshBookmarks();
   }, [refreshRetryQueue, refreshBookmarks]);
+
+  useEffect(() => {
+    const payload = consumeBookmarkNavigate();
+    if (!payload) return;
+    pendingNavigateRef.current = {
+      patternId: payload.patternId,
+      itemKey: payload.itemKey,
+    };
+    setPatternId(payload.patternId);
+  }, []);
+
+  useEffect(() => {
+    setTextAttempts(getTextAttempts(currentItemKey, learningLanguage));
+  }, [currentItemKey, learningLanguage]);
 
   useEffect(() => {
     if (!feedback) return;
@@ -498,14 +520,17 @@ export function SpeakingPractice() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "文字起こしに失敗しました。");
-      setText(String(data.text ?? "").trim());
+      const trimmed = String(data.text ?? "").trim();
+      setText(trimmed);
+      appendTextAttempt(currentItemKey, learningLanguage, trimmed);
+      setTextAttempts(getTextAttempts(currentItemKey, learningLanguage));
     } catch (err) {
       setError(err instanceof Error ? err.message : "文字起こしに失敗しました。");
     } finally {
       setTranscribing(false);
       setLivePreview(false);
     }
-  }, [learningLanguage, nativeLanguage]);
+  }, [learningLanguage, nativeLanguage, currentItemKey]);
 
   const finishRecording = useCallback(async () => {
     clearTimer();
@@ -662,6 +687,8 @@ export function SpeakingPractice() {
         feedback: result,
         learningLanguage,
       });
+      appendTextAttempt(currentItemKey, learningLanguage, text.trim());
+      setTextAttempts(getTextAttempts(currentItemKey, learningLanguage));
       setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
     } catch (err) {
       setError(err instanceof Error ? err.message : "フィードバックに失敗しました。");
@@ -733,16 +760,6 @@ export function SpeakingPractice() {
     showToast(result.bookmarked ? "ブックマークに追加しました" : "ブックマークを解除しました");
   }
 
-  function handleBookmarkSelect(entry: BookmarkEntry) {
-    navigateToItem(entry.patternId, entry.itemKey);
-  }
-
-  function handleRemoveBookmark(id: string) {
-    removeBookmark(id);
-    refreshBookmarks();
-    setBookmarked(isBookmarked(patternId, currentItemKey));
-  }
-
   const previousChecklistScore = previousHistory
     ? countChecklistPassed(previousHistory.feedback)
     : null;
@@ -752,7 +769,8 @@ export function SpeakingPractice() {
       <header className="flex flex-col gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="label-caps">Picture Speaking</p>
+            <p className="label-caps">{SITE.appName}</p>
+            <p className="mt-0.5 text-xs text-stone-500">{SITE.tagline}</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
               {pattern.title}
             </h1>
@@ -761,19 +779,14 @@ export function SpeakingPractice() {
                 {learningLabel}
                 <span className="mx-1.5 text-stone-300">·</span>
                 解説: {nativeLabel}
-                <Link href="/settings" className="ml-2 font-medium text-amber-800 hover:underline">
+                <Link href="/settings" className="link-accent ml-2">
                   変更
                 </Link>
               </p>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <BookmarkMenu
-              entries={bookmarks}
-              onSelect={handleBookmarkSelect}
-              onRemove={handleRemoveBookmark}
-              disabled={busy}
-            />
+            <BookmarkMenu entries={bookmarks} disabled={busy} />
             <Link href="/settings" className="btn-secondary">
               設定
             </Link>
@@ -807,119 +820,37 @@ export function SpeakingPractice() {
         onRemove={handleRemoveFromRetryQueue}
       />
 
+      {showSessionPicker && (
+        <section className="card overflow-hidden lg:hidden">
+          <SessionThumbnailGrid
+            items={sessionThumbs}
+            selectedIndex={index}
+            onSelect={applySessionIndex}
+            disabled={busy}
+          />
+        </section>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr]">
         <section className="card no-select overflow-hidden">
-          <div
-            className={`relative bg-stone-100 ${isMultiVisual || isTextPractice ? "p-3" : "aspect-[4/3]"}`}
-            onContextMenu={(event) => event.preventDefault()}
-          >
-            {contentLoading ? (
-              <ContentLoadingSkeleton
-                className={isMultiVisual || isTextPractice ? "min-h-[280px] rounded-xl" : "aspect-[4/3]"}
-              />
-            ) : isInterview ? (
-              currentInterview ? (
-                <div className="flex min-h-[280px] flex-col justify-center rounded-xl border border-stone-200 bg-white px-6 py-8">
-                  <p className="badge-accent w-fit">{currentInterview.categoryJa}</p>
-                  <h2 className="mt-4 text-xl font-semibold text-stone-900">{currentInterview.titleJa}</h2>
-                  <p className="mt-4 text-base leading-7 text-stone-800">{currentInterview.promptJa}</p>
-                  <p className="mt-4 border-t border-stone-100 pt-4 text-sm leading-6 text-stone-500">
-                    {currentInterview.promptEn}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
-                  お題がありません
-                </div>
-              )
-            ) : isEmail ? (
-              currentEmail ? (
-                <div className="flex min-h-[280px] flex-col rounded-xl border border-stone-200 bg-white px-6 py-8">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="badge-accent">{currentEmail.categoryJa}</p>
-                    <p className="badge-neutral">{currentEmail.type === "reply" ? "返信" : "新規作成"}</p>
-                  </div>
-                  <h2 className="mt-4 text-xl font-semibold text-stone-900">{currentEmail.titleJa}</h2>
-                  <p className="mt-4 text-base leading-7 text-stone-800">{currentEmail.promptJa}</p>
-                  <p className="mt-3 text-sm leading-6 text-stone-500">{currentEmail.promptEn}</p>
-                  {currentEmail.type === "reply" && currentEmail.incomingEmailJa && (
-                    <div className="mt-6 rounded-xl border border-stone-200 bg-stone-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">届いたメール</p>
-                      <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-6 text-stone-800">
-                        {currentEmail.incomingEmailJa}
-                      </pre>
-                      {currentEmail.incomingEmailEn && (
-                        <pre className="mt-4 whitespace-pre-wrap border-t border-stone-200 pt-4 font-sans text-sm leading-6 text-stone-500">
-                          {currentEmail.incomingEmailEn}
-                        </pre>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
-                  お題がありません
-                </div>
-              )
-            ) : hasVisual ? (
-              isMultiVisual ? (
-                isCompare ? (
-                  <div className="flex flex-col gap-2">
-                    {currentImages.slice(0, 2).map((src, i) => (
-                      <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                        <ProtectedImage
-                          src={src}
-                          alt={`Option ${String.fromCharCode(65 + i)}`}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <span className="absolute left-2 top-2 rounded-full bg-amber-700 px-2.5 py-0.5 text-xs font-bold text-white">
-                          {i === 0 ? currentCompare?.labelA ?? "A" : currentCompare?.labelB ?? "B"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    {currentImages.map((src, i) => (
-                      <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                        <ProtectedImage
-                          src={src}
-                          alt={`Panel ${i + 1}`}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
-                          {i + 1}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )
-              ) : (
-                <PracticeImage
-                  src={currentImages[0]}
-                  alt="練習用の写真"
-                  className="h-full w-full object-cover"
-                />
-              )
-            ) : (
-              <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-500">
-                お題がありません
-              </div>
-            )}
-            {recording && (
-              <div className="absolute left-4 top-4 badge bg-red-600 text-white">
-                REC {secondsLeft}s
-              </div>
-            )}
-            {transcribing && (
-              <div className="absolute left-4 top-4 badge bg-stone-800 text-white">
-                解析中...
-              </div>
-            )}
+          <div className="hidden lg:block">
+            <PracticeVisual
+              contentLoading={contentLoading}
+              isInterview={isInterview}
+              isEmail={isEmail}
+              isCompare={isCompare}
+              isMultiVisual={isMultiVisual}
+              isStory={isStory}
+              hasVisual={hasVisual}
+              currentInterview={currentInterview}
+              currentEmail={currentEmail}
+              currentCompare={currentCompare}
+              currentScenario={currentScenario}
+              currentImages={currentImages}
+              recording={recording}
+              transcribing={transcribing}
+              secondsLeft={secondsLeft}
+            />
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <button type="button" className="btn-ghost shrink-0" onClick={() => void nextItem(-1)} disabled={busy}>
@@ -944,8 +875,8 @@ export function SpeakingPractice() {
                 type="button"
                 className={`shrink-0 rounded-lg p-1.5 transition-colors ${
                   bookmarked
-                    ? "text-amber-600 hover:text-amber-700"
-                    : "text-stone-300 hover:text-amber-500"
+                    ? "text-sky-600 hover:text-sky-700"
+                    : "text-stone-300 hover:text-sky-500"
                 }`}
                 onClick={handleToggleBookmark}
                 disabled={!hasPracticeItem || busy}
@@ -970,12 +901,14 @@ export function SpeakingPractice() {
             </button>
           </div>
           {showSessionPicker && (
-            <SessionThumbnailGrid
-              items={sessionThumbs}
-              selectedIndex={index}
-              onSelect={applySessionIndex}
-              disabled={busy}
-            />
+            <div className="hidden lg:block">
+              <SessionThumbnailGrid
+                items={sessionThumbs}
+                selectedIndex={index}
+                onSelect={applySessionIndex}
+                disabled={busy}
+              />
+            </div>
           )}
         </section>
 
@@ -998,6 +931,29 @@ export function SpeakingPractice() {
             <p className="mt-2 leading-7">{taskJa}</p>
             <p className="mt-2 text-xs leading-6 text-stone-500">{taskEn}</p>
           </div>
+
+          <div className="lg:hidden">
+            <PracticeVisual
+              compact
+              contentLoading={contentLoading}
+              isInterview={isInterview}
+              isEmail={isEmail}
+              isCompare={isCompare}
+              isMultiVisual={isMultiVisual}
+              isStory={isStory}
+              hasVisual={hasVisual}
+              currentInterview={currentInterview}
+              currentEmail={currentEmail}
+              currentCompare={currentCompare}
+              currentScenario={currentScenario}
+              currentImages={currentImages}
+              recording={recording}
+              transcribing={transcribing}
+              secondsLeft={secondsLeft}
+            />
+          </div>
+
+          <PastAttemptsPanel attempts={textAttempts} disabled={busy} />
 
           <div className="flex flex-wrap items-center gap-3">
             {recording ? (
@@ -1057,7 +1013,7 @@ export function SpeakingPractice() {
             <span className="font-medium text-stone-700">
               {outputLabel}
               {livePreview && (
-                <span className="ml-2 text-xs font-normal text-amber-700">プレビュー（確定版は録音後）</span>
+                <span className="ml-2 text-xs font-normal text-sky-700">プレビュー（確定版は録音後）</span>
               )}
               {livePreview && (
                 <span className="ml-2 text-xs font-normal text-stone-500">母国語は録音後に反映</span>
@@ -1070,16 +1026,16 @@ export function SpeakingPractice() {
                 <p className="mt-1">終了後、この欄に文字が入ります</p>
               </div>
             ) : transcribing ? (
-              <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50/40 px-4 py-8 text-center text-sm leading-6 text-stone-600">
-                <IconSparkles className="h-8 w-8 text-amber-600" />
-                <p className="mt-3 font-medium text-amber-900">音声を解析しています</p>
+              <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-sky-200 bg-sky-50/40 px-4 py-8 text-center text-sm leading-6 text-stone-600">
+                <IconSparkles className="h-8 w-8 text-sky-600" />
+                <p className="mt-3 font-medium text-sky-900">音声を解析しています</p>
                 <p className="mt-1">完了するとここに文字が入ります</p>
               </div>
             ) : (
               <textarea
                 className={`min-h-40 flex-1 resize-y rounded-2xl border px-3 py-2 leading-6 ${
                   livePreview
-                    ? "border-amber-200 bg-amber-50/60 text-stone-700"
+                    ? "border-sky-200 bg-sky-50/60 text-stone-700"
                     : "border-stone-200 bg-stone-50"
                 }`}
                 placeholder={
@@ -1224,8 +1180,8 @@ export function SpeakingPractice() {
                         onToast={showToast}
                       />
                     ) : (
-                      <div key={`natural-${i}`} className="rounded-2xl bg-amber-50 p-4">
-                        <p className="mb-2 text-xs font-medium text-amber-900">例 {i + 1}</p>
+                      <div key={`natural-${i}`} className="rounded-2xl bg-sky-50 p-4">
+                        <p className="mb-2 text-xs font-medium text-sky-900">例 {i + 1}</p>
                         <SelectableText
                           text={example.text}
                           language={learningLanguage}
@@ -1235,7 +1191,7 @@ export function SpeakingPractice() {
                           onToast={showToast}
                         />
                         {example.translationJa && (
-                          <div className="mt-3 border-t border-amber-200/80 pt-3">
+                          <div className="mt-3 border-t border-sky-200/80 pt-3">
                             <p className="mb-1 text-xs font-medium text-stone-500">訳</p>
                             <p className="text-sm leading-7 text-stone-600">{example.translationJa}</p>
                           </div>
@@ -1257,13 +1213,13 @@ export function SpeakingPractice() {
                       {wordListEnabled ? (
                         <button
                           type="button"
-                          className="rounded-xl bg-stone-100 px-3 py-2 text-left text-sm transition hover:bg-amber-100 hover:ring-1 hover:ring-amber-300"
+                          className="rounded-xl bg-stone-100 px-3 py-2 text-left text-sm transition hover:bg-sky-100 hover:ring-1 hover:ring-sky-300"
                           title={`${item.note} — タップで追加`}
                           onClick={() => addVocabulary(item.term, item.note)}
                         >
                           <span className="font-medium text-stone-900">{item.term}</span>
                           <span className="text-stone-500"> · {item.note}</span>
-                          <span className="ml-1 text-xs text-amber-700">＋</span>
+                          <span className="ml-1 text-xs text-sky-700">＋</span>
                         </button>
                       ) : (
                         <span className="rounded-xl bg-stone-100 px-3 py-2 text-sm">
@@ -1286,6 +1242,16 @@ export function SpeakingPractice() {
           {toast}
         </div>
       )}
+
+      <footer className="border-t border-stone-200 pt-4 text-center text-xs text-stone-500">
+        <Link href="/privacy" className="link-accent">
+          プライバシーポリシー
+        </Link>
+        <span className="mx-2 text-stone-300">·</span>
+        <Link href="/terms" className="link-accent">
+          利用規約
+        </Link>
+      </footer>
     </main>
   );
 }

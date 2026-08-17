@@ -71,7 +71,7 @@ export function PatternNavigator({
               onClick={() => onPatternChange(pattern.id)}
               className={`rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
                 selected
-                  ? "bg-amber-700 text-white"
+                  ? "bg-sky-500 text-white"
                   : "border border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
               }`}
             >

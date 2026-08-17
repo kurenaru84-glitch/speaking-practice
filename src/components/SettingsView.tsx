@@ -10,6 +10,7 @@ import {
   type LearningLanguageId,
   type NativeLanguageId,
 } from "@/lib/languages";
+import { SITE } from "@/lib/site";
 import { useSettings } from "@/lib/use-settings";
 
 export function SettingsView() {
@@ -41,7 +42,7 @@ export function SettingsView() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
       <header className="flex flex-col gap-2">
-        <Link href="/" className="text-sm font-medium text-amber-800 hover:underline">
+        <Link href="/" className="link-accent">
           ← 練習に戻る
         </Link>
         <h1 className="text-2xl font-semibold text-stone-900">設定</h1>
@@ -104,6 +105,19 @@ export function SettingsView() {
           {saved ? "保存しました" : "設定を保存"}
         </button>
       </section>
+
+      <footer className="text-center text-xs text-stone-500">
+        <p>{SITE.operator}</p>
+        <p className="mt-2">
+          <Link href="/privacy" className="link-accent">
+            プライバシーポリシー
+          </Link>
+          <span className="mx-2 text-stone-300">·</span>
+          <Link href="/terms" className="link-accent">
+            利用規約
+          </Link>
+        </p>
+      </footer>
     </main>
   );
 }

@@ -79,16 +79,16 @@ export function ProcessingStatusBar({ active, phase }: Props) {
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-amber-950">{message}</p>
+          <p className="text-sm font-semibold text-sky-950">{message}</p>
           <p className="mt-1 text-xs leading-5 text-stone-500">{SUBTEXT[phase]}</p>
         </div>
         <span className="badge-accent shrink-0 tabular-nums">
           {progress}%
         </span>
       </div>
-      <div className="relative h-2.5 overflow-hidden rounded-full bg-amber-100">
+      <div className="relative h-2.5 overflow-hidden rounded-full bg-sky-100">
         <div
-          className="relative h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-700 transition-[width] duration-300 ease-out"
+          className="relative h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-600 transition-[width] duration-300 ease-out"
           style={{ width: `${progress}%` }}
         />
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
@@ -105,7 +105,7 @@ export function ProcessingStatusBar({ active, phase }: Props) {
               key={step}
               className={`rounded-lg px-2.5 py-1 text-[11px] font-medium ${
                 current
-                  ? "bg-amber-700 text-white"
+                  ? "bg-sky-500 text-white"
                   : done
                     ? "badge-success"
                     : "bg-stone-100 text-stone-500"

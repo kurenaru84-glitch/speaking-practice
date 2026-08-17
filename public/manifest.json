@@ -1,11 +1,11 @@
 {
-  "name": "Picture Speaking",
-  "short_name": "Speaking",
-  "description": "画像を見て1分で説明するスピーキング練習",
+  "name": "ピクスピ",
+  "short_name": "ピクスピ",
+  "description": "絵を見て話す・書くAI言語トレーニング",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f1ea",
-  "theme_color": "#b45309",
+  "background_color": "#fcd34d",
+  "theme_color": "#38bdf8",
   "lang": "ja",
   "icons": [
     {

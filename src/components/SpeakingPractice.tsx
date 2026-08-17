@@ -18,8 +18,20 @@ import {
   sessionLimitMessage,
   type SessionUsage,
 } from "@/lib/session-usage";
-import { canUseWordList, getPlan } from "@/lib/plan";
-import { getRecordSeconds, getTextCharLimit, textLimitMessage } from "@/lib/text-limits";
+import { canUseWordList, getPlan, type PlanId } from "@/lib/plan";
+import {
+  getTextCharLimit,
+  RECORD_SECONDS_PRO,
+  RECORD_SECONDS_STANDARD,
+  textLimitMessage,
+  type RecordDurationSeconds,
+} from "@/lib/text-limits";
+import {
+  canUnlockExtendedRecording,
+  getSavedRecordDuration,
+  resolveRecordSeconds,
+  saveRecordDuration,
+} from "@/lib/record-duration";
 import { useWordList } from "@/lib/use-word-list";
 import type {
   FeedbackResult,
@@ -109,8 +121,17 @@ export function SpeakingPractice() {
   const learningLabel = getLearningLanguage(learningLanguage).label;
   const nativeLabel = getNativeLanguage(nativeLanguage).label;
   const [text, setText] = useState("");
-  const recordSeconds = useMemo(() => getRecordSeconds(getPlan()), []);
-  const [secondsLeft, setSecondsLeft] = useState(() => getRecordSeconds(getPlan()));
+  const [plan] = useState<PlanId>(() => getPlan());
+  const [recordDuration, setRecordDuration] = useState<RecordDurationSeconds>(() =>
+    getSavedRecordDuration()
+  );
+  const recordSeconds = useMemo(
+    () => resolveRecordSeconds(plan, recordDuration),
+    [plan, recordDuration]
+  );
+  const [secondsLeft, setSecondsLeft] = useState(() =>
+    resolveRecordSeconds(getPlan(), getSavedRecordDuration())
+  );
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -254,10 +275,22 @@ export function SpeakingPractice() {
     () =>
       getTextCharLimit({
         patternId,
-        plan: getPlan(),
-        recordSeconds: getRecordSeconds(getPlan()),
+        recordSeconds,
       }),
-    [patternId]
+    [patternId, recordSeconds]
+  );
+  const canChooseRecordDuration = canUnlockExtendedRecording(plan) && !isEmail;
+
+  const handleRecordDurationChange = useCallback(
+    (duration: RecordDurationSeconds) => {
+      if (duration === recordDuration) return;
+      setRecordDuration(duration);
+      saveRecordDuration(duration);
+      if (!recording && !transcribing) {
+        setSecondsLeft(resolveRecordSeconds(plan, duration));
+      }
+    },
+    [plan, recordDuration, recording, transcribing]
   );
   const textOverLimit = text.length > textCharLimit;
 
@@ -978,6 +1011,43 @@ export function SpeakingPractice() {
           </div>
 
           <PastAttemptsPanel attempts={textAttempts} disabled={busy} />
+
+          {canChooseRecordDuration && !recording && !transcribing && (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-stone-500">録音時間</span>
+              <div
+                className="inline-flex rounded-lg border border-stone-200 bg-white p-0.5"
+                role="group"
+                aria-label="録音時間"
+              >
+                <button
+                  type="button"
+                  className={`rounded-md px-3 py-1.5 transition ${
+                    recordDuration === RECORD_SECONDS_STANDARD
+                      ? "bg-sky-100 font-medium text-sky-900"
+                      : "text-stone-600 hover:bg-stone-50"
+                  }`}
+                  onClick={() => handleRecordDurationChange(RECORD_SECONDS_STANDARD)}
+                  disabled={busy}
+                >
+                  1分
+                </button>
+                <button
+                  type="button"
+                  className={`rounded-md px-3 py-1.5 transition ${
+                    recordDuration === RECORD_SECONDS_PRO
+                      ? "bg-sky-100 font-medium text-sky-900"
+                      : "text-stone-600 hover:bg-stone-50"
+                  }`}
+                  onClick={() => handleRecordDurationChange(RECORD_SECONDS_PRO)}
+                  disabled={busy}
+                >
+                  2分
+                  <span className="ml-1 text-xs text-sky-700">Pro</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-3">
             {recording ? (

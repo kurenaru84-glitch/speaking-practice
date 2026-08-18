@@ -1,6 +1,13 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { ProtectedImage } from "@/components/ProtectedImage";
+import {
+  getPageForIndex,
+  getSessionPageCount,
+  getSessionPageLabel,
+  SESSION_PAGE_SIZE,
+} from "@/lib/session-pages";
 import type { SessionThumb } from "@/lib/session-thumbs";
 
 export type { SessionThumb };
@@ -10,16 +17,62 @@ type Props = {
   selectedIndex: number;
   onSelect: (index: number) => void;
   disabled?: boolean;
+  pageSize?: number;
 };
 
-export function SessionThumbnailGrid({ items, selectedIndex, onSelect, disabled }: Props) {
+export function SessionThumbnailGrid({
+  items,
+  selectedIndex,
+  onSelect,
+  disabled,
+  pageSize = SESSION_PAGE_SIZE,
+}: Props) {
+  const pageCount = getSessionPageCount(items.length, pageSize);
+  const selectedPage = getPageForIndex(selectedIndex, pageSize);
+  const [activePage, setActivePage] = useState(selectedPage);
+
+  useEffect(() => {
+    setActivePage(selectedPage);
+  }, [selectedPage]);
+
+  const visibleItems = useMemo(() => {
+    const start = activePage * pageSize;
+    return items.slice(start, start + pageSize);
+  }, [activePage, items, pageSize]);
+
   if (items.length <= 1) return null;
 
   return (
     <div className="border-t border-stone-200 px-3 py-3">
       <p className="label-caps mb-2">セッションを選ぶ ({items.length})</p>
+
+      {pageCount > 1 && (
+        <div className="-mx-1 mb-3 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max min-w-full gap-1.5">
+            {Array.from({ length: pageCount }, (_, pageIndex) => {
+              const selected = activePage === pageIndex;
+              return (
+                <button
+                  key={pageIndex}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setActivePage(pageIndex)}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    selected
+                      ? "bg-stone-900 text-white"
+                      : "border border-stone-200 bg-white text-stone-600 hover:border-stone-300"
+                  }`}
+                >
+                  {getSessionPageLabel(pageIndex, items.length, pageSize)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const selected = item.index === selectedIndex;
           return (
             <button

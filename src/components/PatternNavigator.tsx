@@ -38,7 +38,7 @@ export function PatternNavigator({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-1 rounded-xl border border-stone-200 bg-stone-100/80 p-1">
+      <div className="flex gap-0 border-b border-stone-200">
         {PATTERN_CATEGORIES.map((category) => {
           const selected = activeCategory === category.id;
           return (
@@ -47,60 +47,64 @@ export function PatternNavigator({
               type="button"
               disabled={disabled}
               onClick={() => handleCategoryChange(category.id)}
-              className={`min-w-0 flex-1 rounded-lg px-3 py-2 text-left transition-colors sm:text-center ${
-                selected
-                  ? "bg-white text-stone-900 shadow-sm"
-                  : "text-stone-600 hover:text-stone-900"
+              className={`relative min-w-0 flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
+                selected ? "text-stone-900" : "text-stone-500 hover:text-stone-700"
               }`}
             >
-              <span className="block text-sm font-medium">{category.label}</span>
-              <span className="mt-0.5 hidden text-xs text-stone-500 sm:block">{category.description}</span>
+              {category.label}
+              {selected && (
+                <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-sky-500" />
+              )}
             </button>
           );
         })}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {patternsInCategory.map((pattern) => {
-          const selected = patternId === pattern.id;
-          return (
-            <button
-              key={pattern.id}
-              type="button"
-              disabled={disabled}
-              onClick={() => onPatternChange(pattern.id)}
-              className={`rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
-                selected
-                  ? "bg-sky-500 text-white"
-                  : "border border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
-              }`}
-            >
-              {pattern.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {subcategories && onSubcategoryChange && (
-        <div className="flex flex-wrap gap-2">
-          {subcategories.map((sub) => {
-            const selected = subcategoryId === sub.id;
+      <div className="-mx-1 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max min-w-full gap-2">
+          {patternsInCategory.map((pattern) => {
+            const selected = patternId === pattern.id;
             return (
               <button
-                key={sub.id}
+                key={pattern.id}
                 type="button"
                 disabled={disabled}
-                onClick={() => onSubcategoryChange(sub.id)}
-                className={`rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
+                onClick={() => onPatternChange(pattern.id)}
+                className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   selected
-                    ? "bg-stone-800 text-white"
-                    : "border border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
+                    ? "bg-sky-500 text-white shadow-sm"
+                    : "border border-stone-200 bg-white text-stone-700 hover:border-stone-300"
                 }`}
               >
-                {sub.label}
+                {pattern.label}
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {subcategories && onSubcategoryChange && (
+        <div className="-mx-1 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max min-w-full gap-2">
+            {subcategories.map((sub) => {
+              const selected = subcategoryId === sub.id;
+              return (
+                <button
+                  key={sub.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onSubcategoryChange(sub.id)}
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                    selected
+                      ? "bg-stone-800 text-white"
+                      : "border border-stone-200 bg-white text-stone-600 hover:border-stone-300"
+                  }`}
+                >
+                  {sub.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

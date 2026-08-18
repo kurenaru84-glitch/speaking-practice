@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { AppShell } from "@/components/AppShell";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
@@ -33,7 +34,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ja" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full font-sans text-stone-900">{children}</body>
+      <body className="min-h-full font-sans text-stone-900">
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }

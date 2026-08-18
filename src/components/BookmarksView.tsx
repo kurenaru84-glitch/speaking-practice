@@ -72,9 +72,9 @@ export function BookmarksView() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-4 md:py-8">
       <header className="flex flex-col gap-2">
-        <Link href="/" className="text-sm font-medium text-sky-700 hover:underline">
+        <Link href="/" className="hidden text-sm font-medium text-sky-700 hover:underline md:inline">
           ← 練習に戻る
         </Link>
         <div className="flex items-center gap-2">

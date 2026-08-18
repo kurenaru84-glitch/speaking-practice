@@ -822,9 +822,19 @@ export function SpeakingPractice() {
     : null;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-8 md:px-8">
-      <header className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 md:gap-5 md:py-8 md:px-8">
+      <header className="flex flex-col gap-3 md:gap-4">
+        <div className="sticky top-0 z-40 -mx-4 border-b border-stone-200 bg-[var(--background)]/95 px-4 pb-3 pt-1 backdrop-blur-md md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+          <PatternNavigator
+            patternId={patternId}
+            onPatternChange={setPatternId}
+            subcategoryId={contentSubcategory}
+            onSubcategoryChange={setContentSubcategory}
+            disabled={busy}
+          />
+        </div>
+
+        <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
           <div className="min-w-0">
             <p className="label-caps">{SITE.appName}</p>
             <p className="mt-0.5 text-xs text-stone-500">{SITE.tagline}</p>
@@ -858,15 +868,19 @@ export function SpeakingPractice() {
             </Link>
           </div>
         </div>
-        <p className="max-w-2xl text-sm leading-7 text-stone-600">{pattern.description}</p>
 
-        <PatternNavigator
-          patternId={patternId}
-          onPatternChange={setPatternId}
-          subcategoryId={contentSubcategory}
-          onSubcategoryChange={setContentSubcategory}
-          disabled={busy}
-        />
+        <div className="md:hidden">
+          <h1 className="text-lg font-semibold tracking-tight text-stone-900">{pattern.label}</h1>
+          {settingsReady && (
+            <p className="mt-1 text-xs text-stone-500">
+              {learningLabel}
+              <span className="mx-1.5 text-stone-300">·</span>
+              解説: {nativeLabel}
+            </p>
+          )}
+        </div>
+
+        <p className="max-w-2xl text-sm leading-7 text-stone-600">{pattern.description}</p>
       </header>
 
       <PracticeStepIndicator step={practiceStep} loading={loading || transcribing} />

@@ -61,11 +61,11 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 px-2 py-2.5 text-[10px] font-medium transition-colors ${
-                active ? "text-sky-600" : "text-stone-500 hover:text-stone-800"
+                active ? "text-amber-700" : "text-stone-500 hover:text-stone-800"
               }`}
             >
               <span className="relative">
-                <Icon className={`h-6 w-6 ${active ? "text-sky-500" : ""}`} />
+                <Icon className={`h-6 w-6 ${active ? "text-amber-600" : ""}`} />
                 {tab.locked && (
                   <IconLock className="absolute -right-1 -top-0.5 h-3 w-3 text-stone-400" />
                 )}

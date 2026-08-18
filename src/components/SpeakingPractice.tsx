@@ -86,6 +86,7 @@ import { FeedbackChecklist } from "@/components/FeedbackChecklist";
 import { PracticeGrowthPanel } from "@/components/PracticeGrowthPanel";
 import { RetryQueuePanel } from "@/components/RetryQueuePanel";
 import { StructuredNaturalExample } from "@/components/StructuredNaturalExample";
+import { SpeakButton } from "@/components/SpeakButton";
 import { SentenceCorrection } from "@/components/SentenceCorrection";
 import { SelectableText } from "@/components/SelectableText";
 import {
@@ -168,6 +169,8 @@ export function SpeakingPractice() {
   const { start: startPreview, stop: stopPreview } = useLivePreview();
   const timerRef = useRef<number | null>(null);
   const feedbackSectionRef = useRef<HTMLElement | null>(null);
+  const lastRecordingUrlRef = useRef<string | null>(null);
+  const [lastRecordingUrl, setLastRecordingUrl] = useState<string | null>(null);
 
   const pattern = getPattern(patternId);
   const isCompare = pattern.imageLayout === "compare";
@@ -580,15 +583,27 @@ export function SpeakingPractice() {
     }
   }, [learningLanguage, nativeLanguage, currentItemKey]);
 
+  const clearLastRecording = useCallback(() => {
+    if (lastRecordingUrlRef.current) {
+      URL.revokeObjectURL(lastRecordingUrlRef.current);
+      lastRecordingUrlRef.current = null;
+    }
+    setLastRecordingUrl(null);
+  }, []);
+
   const finishRecording = useCallback(async () => {
     clearTimer();
     stopPreview();
     setLivePreview(false);
     const blob = await stop();
     if (blob && blob.size > 0) {
+      clearLastRecording();
+      const url = URL.createObjectURL(blob);
+      lastRecordingUrlRef.current = url;
+      setLastRecordingUrl(url);
       await transcribeBlob(blob);
     }
-  }, [clearTimer, stop, stopPreview, transcribeBlob]);
+  }, [clearTimer, stop, stopPreview, transcribeBlob, clearLastRecording]);
 
   useEffect(() => {
     return () => {
@@ -627,6 +642,14 @@ export function SpeakingPractice() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (lastRecordingUrlRef.current) {
+        URL.revokeObjectURL(lastRecordingUrlRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (recording && secondsLeft === 0) {
       void finishRecording();
     }
@@ -636,6 +659,7 @@ export function SpeakingPractice() {
     setError("");
     setFeedback(null);
     setText("");
+    clearLastRecording();
     setSecondsLeft(recordSeconds);
 
     try {
@@ -946,8 +970,8 @@ export function SpeakingPractice() {
                 type="button"
                 className={`shrink-0 rounded-lg p-1.5 transition-colors ${
                   bookmarked
-                    ? "text-sky-600 hover:text-sky-700"
-                    : "text-stone-300 hover:text-sky-500"
+                    ? "text-amber-700 hover:text-amber-800"
+                    : "text-stone-300 hover:text-amber-600"
                 }`}
                 onClick={handleToggleBookmark}
                 disabled={!hasPracticeItem || busy}
@@ -1038,7 +1062,7 @@ export function SpeakingPractice() {
                   type="button"
                   className={`rounded-md px-3 py-1.5 transition ${
                     recordDuration === RECORD_SECONDS_STANDARD
-                      ? "bg-sky-100 font-medium text-sky-900"
+                      ? "bg-amber-100 font-medium text-amber-900"
                       : "text-stone-600 hover:bg-stone-50"
                   }`}
                   onClick={() => handleRecordDurationChange(RECORD_SECONDS_STANDARD)}
@@ -1050,14 +1074,14 @@ export function SpeakingPractice() {
                   type="button"
                   className={`rounded-md px-3 py-1.5 transition ${
                     recordDuration === RECORD_SECONDS_PRO
-                      ? "bg-sky-100 font-medium text-sky-900"
+                      ? "bg-amber-100 font-medium text-amber-900"
                       : "text-stone-600 hover:bg-stone-50"
                   }`}
                   onClick={() => handleRecordDurationChange(RECORD_SECONDS_PRO)}
                   disabled={busy}
                 >
                   2分
-                  <span className="ml-1 text-xs text-sky-700">Pro</span>
+                  <span className="ml-1 text-xs text-amber-800">Pro</span>
                 </button>
               </div>
             </div>
@@ -1097,6 +1121,13 @@ export function SpeakingPractice() {
             </span>
           </div>
 
+          {lastRecordingUrl && !recording && (
+            <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+              <p className="mb-1.5 text-xs font-medium text-stone-600">自分の録音</p>
+              <audio controls src={lastRecordingUrl} className="h-10 w-full max-w-md" preload="metadata" />
+            </div>
+          )}
+
           <ProcessingStatusBar active={transcribing} phase="transcribe" />
           <ProcessingStatusBar active={loading} phase="feedback" />
 
@@ -1122,7 +1153,7 @@ export function SpeakingPractice() {
               <span>
                 {outputLabel}
                 {livePreview && (
-                  <span className="ml-2 text-xs font-normal text-sky-700">プレビュー（確定版は録音後）</span>
+                  <span className="ml-2 text-xs font-normal text-amber-800">プレビュー（確定版は録音後）</span>
                 )}
                 {livePreview && (
                   <span className="ml-2 text-xs font-normal text-stone-500">母国語は録音後に反映</span>
@@ -1149,9 +1180,9 @@ export function SpeakingPractice() {
                 <p className="mt-1">終了後、この欄に文字が入ります</p>
               </div>
             ) : transcribing ? (
-              <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-sky-200 bg-sky-50/40 px-4 py-8 text-center text-sm leading-6 text-stone-600">
-                <IconSparkles className="h-8 w-8 text-sky-600" />
-                <p className="mt-3 font-medium text-sky-900">音声を解析しています</p>
+              <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50/40 px-4 py-8 text-center text-sm leading-6 text-stone-600">
+                <IconSparkles className="h-8 w-8 text-amber-700" />
+                <p className="mt-3 font-medium text-amber-900">音声を解析しています</p>
                 <p className="mt-1">完了するとここに文字が入ります</p>
               </div>
             ) : (
@@ -1160,7 +1191,7 @@ export function SpeakingPractice() {
                   textOverLimit
                     ? "border-red-300 bg-red-50/40"
                     : livePreview
-                      ? "border-sky-200 bg-sky-50/60 text-stone-700"
+                      ? "border-amber-200 bg-amber-50/60 text-stone-700"
                       : "border-stone-200 bg-stone-50"
                 }`}
                 placeholder={
@@ -1308,10 +1339,19 @@ export function SpeakingPractice() {
                         sourceLabel={pattern.naturalTitle}
                         allowAdd={wordListEnabled}
                         onToast={showToast}
+                        speakIdPrefix={`natural-${currentItemKey}`}
                       />
                     ) : (
-                      <div key={`natural-${i}`} className="rounded-2xl bg-sky-50 p-4">
-                        <p className="mb-2 text-xs font-medium text-sky-900">例 {i + 1}</p>
+                      <div key={`natural-${i}`} className="rounded-2xl bg-amber-50 p-4">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <p className="text-xs font-medium text-amber-900">例 {i + 1}</p>
+                          <SpeakButton
+                            text={example.text}
+                            languageId={learningLanguage}
+                            speakId={`natural-${currentItemKey}-${i}`}
+                            label={`例${i + 1}を読み上げ`}
+                          />
+                        </div>
                         <SelectableText
                           text={example.text}
                           language={learningLanguage}
@@ -1321,7 +1361,7 @@ export function SpeakingPractice() {
                           onToast={showToast}
                         />
                         {example.translationJa && (
-                          <div className="mt-3 border-t border-sky-200/80 pt-3">
+                          <div className="mt-3 border-t border-amber-200/80 pt-3">
                             <p className="mb-1 text-xs font-medium text-stone-500">訳</p>
                             <p className="text-sm leading-7 text-stone-600">{example.translationJa}</p>
                           </div>
@@ -1348,18 +1388,18 @@ export function SpeakingPractice() {
                           type="button"
                           className={`rounded-xl px-3 py-2 text-left text-sm transition active:scale-[0.98] ${
                             added
-                              ? "bg-sky-200 ring-2 ring-sky-400 text-sky-950"
-                              : "bg-stone-100 hover:bg-sky-100 hover:ring-1 hover:ring-sky-300 active:bg-sky-200"
+                              ? "bg-amber-200 ring-2 ring-amber-400 text-amber-950"
+                              : "bg-stone-100 hover:bg-amber-100 hover:ring-1 hover:ring-amber-300 active:bg-amber-200"
                           }`}
                           title={`${item.note} — タップで追加`}
                           onClick={() => addVocabulary(item.term, item.note)}
                         >
                           <span className="font-medium">{item.term}</span>
-                          <span className={added ? "text-sky-800" : "text-stone-500"}>
+                          <span className={added ? "text-amber-900" : "text-stone-500"}>
                             {" "}
                             · {item.note}
                           </span>
-                          <span className={`ml-1 text-xs ${added ? "text-sky-700" : "text-sky-700"}`}>
+                          <span className={`ml-1 text-xs ${added ? "text-amber-800" : "text-amber-800"}`}>
                             {added ? "✓" : "＋"}
                           </span>
                         </button>

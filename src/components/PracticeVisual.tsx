@@ -131,7 +131,7 @@ export function PracticeVisual({
                     loading="lazy"
                     decoding="async"
                   />
-                  <span className="absolute left-2 top-2 rounded-full bg-sky-600 px-2.5 py-0.5 text-xs font-bold text-white">
+                  <span className="absolute left-2 top-2 rounded-full bg-amber-700 px-2.5 py-0.5 text-xs font-bold text-white">
                     {i === 0 ? currentCompare?.labelA ?? "A" : currentCompare?.labelB ?? "B"}
                   </span>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SpeakButton } from "@/components/SpeakButton";
 import type { WordListEntry } from "@/lib/word-list";
 
 function shuffle<T>(items: T[]): T[] {
@@ -63,9 +64,19 @@ export function WordListFlashcards({ entries, onSetLearned, onClose }: WordListF
         <p className="text-sm font-medium text-stone-700">
           暗記テスト · {index + 1} / {deckIds.length}
         </p>
-        <button type="button" className="btn-ghost" onClick={onClose}>
-          終了
-        </button>
+        <div className="flex items-center gap-2">
+          {!flipped && (
+            <SpeakButton
+              text={current.term}
+              languageId={current.language}
+              speakId={`flashcard-${current.id}`}
+              label={`${current.term}を読み上げ`}
+            />
+          )}
+          <button type="button" className="btn-ghost" onClick={onClose}>
+            終了
+          </button>
+        </div>
       </div>
 
       <button

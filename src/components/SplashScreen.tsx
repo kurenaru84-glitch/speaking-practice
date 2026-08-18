@@ -34,7 +34,7 @@ export function SplashScreen() {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-b from-sky-50 to-white transition-opacity duration-300 ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-b from-amber-50 to-white transition-opacity duration-300 ${
         phase === "fading" ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
       aria-hidden={phase === "fading"}
@@ -44,7 +44,7 @@ export function SplashScreen() {
         alt=""
         width={96}
         height={96}
-        className="rounded-[22px] shadow-lg ring-1 ring-sky-100"
+        className="rounded-[22px] shadow-lg ring-1 ring-amber-100"
         priority
       />
       <p className="mt-5 text-2xl font-bold tracking-tight text-stone-900">{SITE.appName}</p>

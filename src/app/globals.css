@@ -5,10 +5,10 @@
   --foreground: #1c1917;
   --surface: #ffffff;
   --border: #e7e5e4;
-  --accent: #38bdf8;
-  --accent-hover: #0ea5e9;
-  --accent-soft: #e0f2fe;
-  --accent-text: #0c4a6e;
+  --accent: #b45309;
+  --accent-hover: #92400e;
+  --accent-soft: #fef3c7;
+  --accent-text: #78350f;
   --highlight: #fcd34d;
   --muted: #78716c;
 }
@@ -25,7 +25,7 @@ body {
 }
 
 .btn-primary {
-  @apply rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-50;
+  @apply rounded-xl bg-amber-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 .btn-secondary {
@@ -49,7 +49,7 @@ body {
 }
 
 .badge-accent {
-  @apply inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-900;
+  @apply inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900;
 }
 
 .badge-neutral {
@@ -69,7 +69,7 @@ body {
 }
 
 .notice-accent {
-  @apply rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm leading-6 text-sky-950;
+  @apply rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950;
 }
 
 .notice-error {
@@ -81,7 +81,7 @@ body {
 }
 
 .link-accent {
-  @apply font-medium text-sky-700 hover:text-sky-800 hover:underline;
+  @apply font-medium text-amber-800 hover:text-amber-900 hover:underline;
 }
 
 .select-text {
@@ -164,5 +164,5 @@ body {
 }
 
 .legal-prose a {
-  @apply text-sky-700 underline hover:text-sky-800;
+  @apply text-amber-800 underline hover:text-amber-900;
 }

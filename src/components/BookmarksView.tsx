@@ -74,11 +74,11 @@ export function BookmarksView() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-4 md:py-8">
       <header className="flex flex-col gap-2">
-        <Link href="/" className="hidden text-sm font-medium text-sky-700 hover:underline md:inline">
+        <Link href="/" className="hidden text-sm font-medium text-amber-800 hover:underline md:inline">
           ← 練習に戻る
         </Link>
         <div className="flex items-center gap-2">
-          <IconStar className="h-6 w-6 text-sky-500" />
+          <IconStar className="h-6 w-6 text-amber-600" />
           <h1 className="text-2xl font-semibold text-stone-900">お気に入り</h1>
         </div>
         <p className="text-sm leading-6 text-stone-600">
@@ -116,7 +116,7 @@ export function BookmarksView() {
                         loading="lazy"
                       />
                     ) : (
-                      <div className="flex h-full w-full flex-col justify-center gap-1 bg-gradient-to-br from-sky-50 to-white p-2">
+                      <div className="flex h-full w-full flex-col justify-center gap-1 bg-gradient-to-br from-amber-50 to-white p-2">
                         <span className="badge-neutral inline-flex w-fit text-[10px]">
                           {PATTERN_LABELS[entry.patternId]}
                         </span>

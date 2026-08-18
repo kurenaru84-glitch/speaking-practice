@@ -82,7 +82,7 @@ export function SessionThumbnailGrid({
               onClick={() => onSelect(item.index)}
               className={`overflow-hidden rounded-xl border text-left transition-colors ${
                 selected
-                  ? "border-sky-500 ring-2 ring-sky-200"
+                  ? "border-amber-600 ring-2 ring-amber-200"
                   : "border-stone-200 hover:border-stone-300"
               }`}
             >
@@ -100,7 +100,7 @@ export function SessionThumbnailGrid({
                     <p className="mt-2 line-clamp-3 text-xs leading-5 text-stone-500">{item.subtitle}</p>
                   )}
                   {selected && (
-                    <span className="absolute right-1.5 top-1.5 badge bg-sky-600 text-white">
+                    <span className="absolute right-1.5 top-1.5 badge bg-amber-700 text-white">
                       選択中
                     </span>
                   )}
@@ -118,7 +118,7 @@ export function SessionThumbnailGrid({
                     {item.label}
                   </span>
                   {selected && (
-                    <span className="absolute right-1.5 top-1.5 badge bg-sky-600 text-white">
+                    <span className="absolute right-1.5 top-1.5 badge bg-amber-700 text-white">
                       選択中
                     </span>
                   )}

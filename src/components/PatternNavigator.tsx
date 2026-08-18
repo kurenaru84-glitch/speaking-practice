@@ -53,7 +53,7 @@ export function PatternNavigator({
             >
               {category.label}
               {selected && (
-                <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-sky-500" />
+                <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-amber-700" />
               )}
             </button>
           );
@@ -72,7 +72,7 @@ export function PatternNavigator({
                 onClick={() => onPatternChange(pattern.id)}
                 className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   selected
-                    ? "bg-sky-500 text-white shadow-sm"
+                    ? "bg-amber-700 text-white shadow-sm"
                     : "border border-stone-200 bg-white text-stone-700 hover:border-stone-300"
                 }`}
               >

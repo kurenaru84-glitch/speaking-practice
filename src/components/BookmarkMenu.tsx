@@ -16,7 +16,7 @@ export function BookmarkMenu({ entries, disabled }: Props) {
       className={`btn-secondary inline-flex items-center gap-1.5 ${disabled ? "pointer-events-none opacity-50" : ""}`}
       aria-label="お気に入り一覧"
     >
-      <IconStar className="h-4 w-4 text-sky-500" />
+      <IconStar className="h-4 w-4 text-amber-600" />
       お気に入り
       {entries.length > 0 && (
         <span className="badge-accent tabular-nums">{entries.length}</span>

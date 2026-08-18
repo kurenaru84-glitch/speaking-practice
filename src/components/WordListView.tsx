@@ -7,6 +7,7 @@ import { canUseWordList, getPlan } from "@/lib/plan";
 import { useWordList } from "@/lib/use-word-list";
 import { WordListFlashcards } from "@/components/WordListFlashcards";
 import { WordListPaywall } from "@/components/WordListPaywall";
+import { SpeakButton } from "@/components/SpeakButton";
 
 type Filter = "all" | "learning" | "learned";
 
@@ -209,6 +210,12 @@ export function WordListView() {
                       >
                         {entry.term}
                       </p>
+                      <SpeakButton
+                        text={entry.term}
+                        languageId={entry.language}
+                        speakId={`word-${entry.id}`}
+                        label={`${entry.term}を読み上げ`}
+                      />
                       {entry.learned ? (
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
                           覚えた

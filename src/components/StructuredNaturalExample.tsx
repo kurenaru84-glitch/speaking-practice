@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SpeakButton } from "@/components/SpeakButton";
 import type { LanguageId } from "@/lib/languages";
 import type { NaturalExample } from "@/lib/types";
 import { SelectableText } from "@/components/SelectableText";
@@ -12,6 +13,7 @@ type Props = {
   sourceLabel: string;
   allowAdd: boolean;
   onToast: (message: string) => void;
+  speakIdPrefix?: string;
 };
 
 export function StructuredNaturalExample({
@@ -21,6 +23,7 @@ export function StructuredNaturalExample({
   sourceLabel,
   allowAdd,
   onToast,
+  speakIdPrefix = "natural",
 }: Props) {
   const [expanded, setExpanded] = useState(true);
   const hasSections = (example.sections?.length ?? 0) > 0;
@@ -29,15 +32,23 @@ export function StructuredNaturalExample({
     <div className="rounded-2xl bg-amber-50 p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-amber-900">例 {index + 1}</p>
-        {hasSections && (
-          <button
-            type="button"
-            className="text-xs font-medium text-amber-800 hover:underline"
-            onClick={() => setExpanded((prev) => !prev)}
-          >
-            {expanded ? "型を折りたたむ" : "型を見る"}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <SpeakButton
+            text={example.text}
+            languageId={language}
+            speakId={`${speakIdPrefix}-${index}`}
+            label={`例${index + 1}を読み上げ`}
+          />
+          {hasSections && (
+            <button
+              type="button"
+              className="text-xs font-medium text-amber-800 hover:underline"
+              onClick={() => setExpanded((prev) => !prev)}
+            >
+              {expanded ? "型を折りたたむ" : "型を見る"}
+            </button>
+          )}
+        </div>
       </div>
 
       {hasSections && expanded && (

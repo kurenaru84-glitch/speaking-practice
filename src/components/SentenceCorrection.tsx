@@ -3,6 +3,7 @@
 import type { LanguageId } from "@/lib/languages";
 import { diffWordStrings, renderDiffTokens } from "@/lib/text-diff";
 import { SelectableText } from "@/components/SelectableText";
+import { SpeakButton } from "@/components/SpeakButton";
 
 type Props = {
   original: string;
@@ -10,6 +11,7 @@ type Props = {
   language: LanguageId;
   allowAdd: boolean;
   onToast: (message: string) => void;
+  speakId: string;
 };
 
 function DiffLine({
@@ -61,9 +63,18 @@ function DiffLine({
   );
 }
 
-export function SentenceCorrection({ original, fixed, language, allowAdd, onToast }: Props) {
+export function SentenceCorrection({
+  original,
+  fixed,
+  language,
+  allowAdd,
+  onToast,
+  speakId,
+}: Props) {
   const needsFix = fixed.trim() !== original.trim();
+  const speakText = (needsFix ? fixed : original).trim();
 
+  const body = (() => {
   if (!needsFix) {
     return (
       <SelectableText
@@ -115,5 +126,21 @@ export function SentenceCorrection({ original, fixed, language, allowAdd, onToas
         <DiffLine segments={diff.fixedSegments} side="fixed" />
       </p>
     </>
+  );
+  })();
+
+  return (
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0 flex-1">{body}</div>
+      {speakText && (
+        <SpeakButton
+          text={speakText}
+          languageId={language}
+          speakId={speakId}
+          label="例文を読み上げ"
+          className="shrink-0"
+        />
+      )}
+    </div>
   );
 }

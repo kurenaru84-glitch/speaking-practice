@@ -1299,6 +1299,7 @@ export function SpeakingPractice() {
                       language={learningLanguage}
                       allowAdd={wordListEnabled}
                       onToast={showToast}
+                      speakId={`sentence-${currentItemKey}-${i}`}
                     />
                     <p className={`mt-1 ${needsFix ? "text-stone-600" : "text-emerald-700"}`}>
                       {item.comment}

@@ -9,6 +9,7 @@ import { useWordList } from "@/lib/use-word-list";
 import { WordListFlashcards } from "@/components/WordListFlashcards";
 import { WordListPaywall } from "@/components/WordListPaywall";
 import { SpeakButton } from "@/components/SpeakButton";
+import { downloadWordListCsv } from "@/lib/export-word-list";
 
 type Filter = "all" | "learning" | "learned";
 
@@ -67,6 +68,12 @@ export function WordListView() {
     if (filter === "learned") return languageEntries.filter((e) => e.learned);
     return languageEntries;
   }, [languageEntries, filter]);
+
+  function handleExport() {
+    const safeLabel = learningLabel.replace(/\s+/g, "-");
+    const date = new Date().toISOString().slice(0, 10);
+    downloadWordListCsv(languageEntries, `pic-speak-words-${safeLabel}-${date}`);
+  }
 
   function handleManualAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -176,6 +183,13 @@ export function WordListView() {
               {label} ({counts[id]})
             </button>
           ))}
+          <button
+            type="button"
+            className="rounded-full bg-white px-4 py-2 text-sm font-medium text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
+            onClick={handleExport}
+          >
+            Excelにエクスポート
+          </button>
           <button
             type="button"
             className="ml-auto rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white"

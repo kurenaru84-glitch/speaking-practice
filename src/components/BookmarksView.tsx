@@ -11,7 +11,7 @@ import {
 } from "@/lib/bookmarks";
 import { resolveBookmarkThumb } from "@/lib/bookmark-thumb";
 import { PATTERN_LABELS } from "@/lib/pattern-labels";
-import type { ImagesResponse } from "@/lib/types";
+import type { ImageCatalog } from "@/lib/image-catalog-types";
 import { SITE } from "@/lib/site";
 
 const NAVIGATE_KEY = "pikuspi-bookmark-navigate";
@@ -39,7 +39,7 @@ export function stashBookmarkNavigate(payload: BookmarkNavigatePayload) {
 
 export function BookmarksView() {
   const [entries, setEntries] = useState<BookmarkEntry[]>([]);
-  const [imageData, setImageData] = useState<ImagesResponse | null>(null);
+  const [imageCatalog, setImageCatalog] = useState<ImageCatalog | null>(null);
 
   const refresh = useCallback(() => {
     setEntries(loadBookmarks());
@@ -47,14 +47,14 @@ export function BookmarksView() {
 
   useEffect(() => {
     refresh();
-    fetch("/api/images")
+    fetch("/api/images/catalog")
       .then((res) => res.json())
-      .then((data: ImagesResponse) => setImageData(data))
-      .catch(() => setImageData(null));
+      .then((data: ImageCatalog) => setImageCatalog(data))
+      .catch(() => setImageCatalog(null));
   }, [refresh]);
 
   const rows = useMemo(() => {
-    if (!imageData) {
+    if (!imageCatalog) {
       return entries.map((entry) => ({
         entry,
         thumb: { label: entry.itemTitleJa, kind: "text" as const, thumbnail: undefined as string | undefined },
@@ -62,9 +62,9 @@ export function BookmarksView() {
     }
     return entries.map((entry) => ({
       entry,
-      thumb: resolveBookmarkThumb(entry, imageData),
+      thumb: resolveBookmarkThumb(entry, imageCatalog),
     }));
-  }, [entries, imageData]);
+  }, [entries, imageCatalog]);
 
   function handleRemove(id: string) {
     removeBookmark(id);
@@ -107,7 +107,7 @@ export function BookmarksView() {
                   }
                   className="flex min-w-0 flex-1 items-center gap-3 p-3 pr-2 transition-colors hover:bg-stone-50"
                 >
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200 md:h-16 md:w-16">
                     {thumb.thumbnail ? (
                       <ProtectedImage
                         src={thumb.thumbnail}

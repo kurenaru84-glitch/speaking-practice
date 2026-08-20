@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LANGUAGES, type LanguageId } from "@/lib/languages";
+import { getLearningLanguage, LANGUAGES, type LanguageId } from "@/lib/languages";
 import { canUseWordList, getPlan } from "@/lib/plan";
+import { useSettings } from "@/lib/use-settings";
 import { useWordList } from "@/lib/use-word-list";
 import { WordListFlashcards } from "@/components/WordListFlashcards";
 import { WordListPaywall } from "@/components/WordListPaywall";
@@ -13,18 +14,32 @@ type Filter = "all" | "learning" | "learned";
 
 export function WordListView() {
   const [wordListEnabled] = useState(() => canUseWordList(getPlan()));
+  const { settings, ready: settingsReady } = useSettings();
+  const learningLanguage = settings.learningLanguage;
+  const learningLabel = getLearningLanguage(learningLanguage).label;
   const { entries, addEntry, removeEntry, updateNote, setLearned, translateNote } = useWordList();
   const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<Filter>("all");
   const [testMode, setTestMode] = useState(false);
   const [newTerm, setNewTerm] = useState("");
   const [newNote, setNewNote] = useState("");
-  const [newLanguage, setNewLanguage] = useState<LanguageId>("en-US");
+  const [newLanguage, setNewLanguage] = useState<LanguageId>(learningLanguage);
   const [addError, setAddError] = useState("");
   const requestedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    for (const entry of entries) {
+    if (settingsReady) {
+      setNewLanguage(learningLanguage);
+    }
+  }, [settingsReady, learningLanguage]);
+
+  const languageEntries = useMemo(
+    () => entries.filter((entry) => entry.language === learningLanguage),
+    [entries, learningLanguage]
+  );
+
+  useEffect(() => {
+    for (const entry of languageEntries) {
       if (entry.note.trim() || requestedRef.current.has(entry.id)) continue;
       requestedRef.current.add(entry.id);
       setTranslatingIds((prev) => new Set(prev).add(entry.id));
@@ -36,22 +51,22 @@ export function WordListView() {
         });
       });
     }
-  }, [entries, translateNote]);
+  }, [languageEntries, translateNote]);
 
   const counts = useMemo(
     () => ({
-      all: entries.length,
-      learning: entries.filter((e) => !e.learned).length,
-      learned: entries.filter((e) => e.learned).length,
+      all: languageEntries.length,
+      learning: languageEntries.filter((e) => !e.learned).length,
+      learned: languageEntries.filter((e) => e.learned).length,
     }),
-    [entries]
+    [languageEntries]
   );
 
   const filtered = useMemo(() => {
-    if (filter === "learning") return entries.filter((e) => !e.learned);
-    if (filter === "learned") return entries.filter((e) => e.learned);
-    return entries;
-  }, [entries, filter]);
+    if (filter === "learning") return languageEntries.filter((e) => !e.learned);
+    if (filter === "learned") return languageEntries.filter((e) => e.learned);
+    return languageEntries;
+  }, [languageEntries, filter]);
 
   function handleManualAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -88,7 +103,7 @@ export function WordListView() {
         </Link>
         <h1 className="text-2xl font-semibold text-stone-900">単語リスト</h1>
         <p className="text-sm leading-6 text-stone-600">
-          練習から追加した語句や、自分で入力した語句を管理できます。メモが空の項目は設定の母国語で自動訳を付けます。
+          設定の「学ぶ言語」（現在: {learningLabel}）で登録した語句を表示します。言語を変えるとリストも切り替わります。
         </p>
       </header>
 
@@ -139,7 +154,7 @@ export function WordListView() {
         </div>
       </form>
 
-      {entries.length > 0 && (
+      {languageEntries.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           {(
             [
@@ -171,9 +186,9 @@ export function WordListView() {
         </div>
       )}
 
-      {testMode && entries.length > 0 ? (
+      {testMode && languageEntries.length > 0 ? (
         <WordListFlashcards
-          entries={entries}
+          entries={languageEntries}
           onSetLearned={setLearned}
           onClose={() => setTestMode(false)}
         />
@@ -182,7 +197,7 @@ export function WordListView() {
           <p className="text-sm text-stone-500">
             {entries.length === 0
               ? "まだ登録がありません。上のフォームから追加できます。"
-              : "このカテゴリの単語はありません。"}
+              : `${learningLabel}の単語はまだありません。設定で学ぶ言語を変えるか、練習から追加してください。`}
           </p>
         </div>
       ) : (

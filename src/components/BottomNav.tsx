@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconBook, IconList, IconLock, IconSettings, IconStar } from "@/components/icons";
 import { canUseWordList, getPlan } from "@/lib/plan";
 
@@ -14,9 +14,29 @@ type Tab = {
   match: (pathname: string) => boolean;
 };
 
+function readWordSelectOpen() {
+  if (typeof document === "undefined") return false;
+  return document.body.dataset.wordSelectOpen === "1";
+}
+
 export function BottomNav() {
   const pathname = usePathname();
   const [wordListEnabled] = useState(() => canUseWordList(getPlan()));
+  const [wordSelectOpen, setWordSelectOpen] = useState(false);
+
+  useEffect(() => {
+    setWordSelectOpen(readWordSelectOpen());
+    const observer = new MutationObserver(() => {
+      setWordSelectOpen(readWordSelectOpen());
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["data-word-select-open"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  if (wordSelectOpen) return null;
 
   const tabs: Tab[] = [
     {

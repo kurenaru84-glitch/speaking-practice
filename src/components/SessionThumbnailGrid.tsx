@@ -18,6 +18,8 @@ type Props = {
   onSelect: (index: number) => void;
   disabled?: boolean;
   pageSize?: number;
+  layout?: "grid" | "mobile-large";
+  itemCountLabel?: string;
 };
 
 export function SessionThumbnailGrid({
@@ -26,10 +28,13 @@ export function SessionThumbnailGrid({
   onSelect,
   disabled,
   pageSize = SESSION_PAGE_SIZE,
+  layout = "grid",
+  itemCountLabel,
 }: Props) {
   const pageCount = getSessionPageCount(items.length, pageSize);
   const selectedPage = getPageForIndex(selectedIndex, pageSize);
   const [activePage, setActivePage] = useState(selectedPage);
+  const mobileLarge = layout === "mobile-large";
 
   useEffect(() => {
     setActivePage(selectedPage);
@@ -44,7 +49,12 @@ export function SessionThumbnailGrid({
 
   return (
     <div className="border-t border-stone-200 px-3 py-3">
-      <p className="label-caps mb-2">セッションを選ぶ ({items.length})</p>
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <p className="label-caps">セッションを選ぶ ({items.length})</p>
+        {itemCountLabel && (
+          <p className="text-xs font-medium text-stone-500">{itemCountLabel}</p>
+        )}
+      </div>
 
       {pageCount > 1 && (
         <div className="-mx-1 mb-3 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -71,7 +81,13 @@ export function SessionThumbnailGrid({
         </div>
       )}
 
-      <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1">
+      <div
+        className={`grid overflow-y-auto pr-1 ${
+          mobileLarge
+            ? "max-h-none grid-cols-1 gap-3"
+            : "max-h-72 grid-cols-2 gap-2"
+        }`}
+      >
         {visibleItems.map((item) => {
           const selected = item.index === selectedIndex;
           return (
@@ -106,7 +122,11 @@ export function SessionThumbnailGrid({
                   )}
                 </div>
               ) : (
-                <div className="relative aspect-[4/3] bg-stone-100">
+                <div
+                  className={`relative bg-stone-100 ${
+                    mobileLarge ? "aspect-[16/10]" : "aspect-[4/3]"
+                  }`}
+                >
                   <ProtectedImage
                     src={item.thumbnail ?? ""}
                     alt={item.label}

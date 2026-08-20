@@ -145,6 +145,17 @@ export function SelectableText({
   }, []);
 
   useEffect(() => {
+    if (popup && touchUi && allowAdd) {
+      document.body.dataset.wordSelectOpen = "1";
+    } else {
+      delete document.body.dataset.wordSelectOpen;
+    }
+    return () => {
+      delete document.body.dataset.wordSelectOpen;
+    };
+  }, [popup, touchUi, allowAdd]);
+
+  useEffect(() => {
     if (touchUi) return;
 
     const onSelectionChange = () => scheduleSelectionCheck(120);
@@ -191,7 +202,11 @@ export function SelectableText({
           aria-label="選択して単語リストに追加"
           value={text}
           rows={estimateRows(text)}
-          className={`select-text selectable-textarea w-full resize-none border-0 bg-transparent p-0 leading-inherit outline-none ${sharedClassName}`}
+          className={`select-text selectable-textarea w-full resize-none border-0 bg-transparent p-0 leading-inherit outline-none [-webkit-tap-highlight-color:transparent] ${sharedClassName}`}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           onSelect={() => scheduleSelectionCheck(0)}
           onTouchEnd={() => scheduleSelectionCheck(250)}
         />
@@ -207,13 +222,13 @@ export function SelectableText({
       {popup && allowAdd && touchUi ? (
         <div
           data-add-word-popup
-          className="fixed inset-x-0 bottom-0 z-[60] border-t border-stone-200 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur-sm"
+          className="fixed inset-x-0 bottom-0 z-[100] border-t border-stone-200 bg-white px-4 py-3 shadow-[0_-8px_30px_rgba(0,0,0,0.15)]"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
           <p className="mb-2 truncate text-xs text-stone-500">選択: {preview}</p>
           <button
             type="button"
-            className="w-full rounded-full bg-stone-900 px-4 py-3 text-sm font-medium text-white"
+            className="w-full rounded-full bg-stone-900 px-4 py-3.5 text-sm font-medium text-white"
             onMouseDown={keepSelection}
             onTouchStart={keepSelection}
             onClick={handleAdd}

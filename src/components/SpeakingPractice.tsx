@@ -922,6 +922,8 @@ export function SpeakingPractice() {
             selectedIndex={index}
             onSelect={applySessionIndex}
             disabled={busy}
+            layout="mobile-large"
+            itemCountLabel={itemCount ? `${index + 1} / ${itemCount}` : undefined}
           />
         </section>
       )}
@@ -947,7 +949,7 @@ export function SpeakingPractice() {
               secondsLeft={secondsLeft}
             />
           </div>
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="hidden items-center justify-between gap-3 px-4 py-3 md:flex">
             <button type="button" className="btn-ghost shrink-0" onClick={() => void nextItem(-1)} disabled={busy}>
               {pattern.navLabel}
             </button>
@@ -1104,6 +1106,22 @@ export function SpeakingPractice() {
                 disabled={!recordingOk || transcribing}
               >
                 {recordSeconds}秒録音する
+              </button>
+            )}
+            {mobile && (
+              <button
+                type="button"
+                className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+                  bookmarked
+                    ? "border-amber-300 bg-amber-50 text-amber-700"
+                    : "border-stone-200 bg-white text-stone-400 hover:border-amber-200 hover:text-amber-600"
+                }`}
+                onClick={handleToggleBookmark}
+                disabled={!hasPracticeItem || busy}
+                aria-label={bookmarked ? "お気に入りを解除" : "お気に入りに追加"}
+                title={bookmarked ? "お気に入りを解除" : "お気に入りに追加"}
+              >
+                {bookmarked ? <IconStar className="h-5 w-5" /> : <IconStarOutline className="h-5 w-5" />}
               </button>
             )}
             <span className="text-sm text-stone-500">

@@ -170,6 +170,7 @@ export function SpeakingPractice() {
   const timerRef = useRef<number | null>(null);
   const feedbackSectionRef = useRef<HTMLElement | null>(null);
   const lastRecordingUrlRef = useRef<string | null>(null);
+  const lastRecordingSessionRef = useRef<{ patternId: PatternId; index: number } | null>(null);
   const [lastRecordingUrl, setLastRecordingUrl] = useState<string | null>(null);
 
   const pattern = getPattern(patternId);
@@ -588,8 +589,19 @@ export function SpeakingPractice() {
       URL.revokeObjectURL(lastRecordingUrlRef.current);
       lastRecordingUrlRef.current = null;
     }
+    lastRecordingSessionRef.current = null;
     setLastRecordingUrl(null);
   }, []);
+
+  useEffect(() => {
+    clearLastRecording();
+  }, [patternId, index, contentSubcategory, clearLastRecording]);
+
+  const showLastRecording =
+    Boolean(lastRecordingUrl) &&
+    lastRecordingSessionRef.current?.patternId === patternId &&
+    lastRecordingSessionRef.current?.index === index &&
+    !recording;
 
   const finishRecording = useCallback(async () => {
     clearTimer();
@@ -600,10 +612,11 @@ export function SpeakingPractice() {
       clearLastRecording();
       const url = URL.createObjectURL(blob);
       lastRecordingUrlRef.current = url;
+      lastRecordingSessionRef.current = { patternId, index };
       setLastRecordingUrl(url);
       await transcribeBlob(blob);
     }
-  }, [clearTimer, stop, stopPreview, transcribeBlob, clearLastRecording]);
+  }, [clearTimer, stop, stopPreview, transcribeBlob, clearLastRecording, patternId, index]);
 
   useEffect(() => {
     return () => {
@@ -1139,7 +1152,7 @@ export function SpeakingPractice() {
             </span>
           </div>
 
-          {lastRecordingUrl && !recording && (
+          {showLastRecording && lastRecordingUrl && (
             <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
               <p className="mb-1.5 text-xs font-medium text-stone-600">自分の録音</p>
               <audio controls src={lastRecordingUrl} className="h-10 w-full max-w-md" preload="metadata" />

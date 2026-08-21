@@ -18,7 +18,6 @@ type Props = {
   onSelect: (index: number) => void;
   disabled?: boolean;
   pageSize?: number;
-  layout?: "grid" | "mobile-large";
   itemCountLabel?: string;
 };
 
@@ -28,13 +27,11 @@ export function SessionThumbnailGrid({
   onSelect,
   disabled,
   pageSize = SESSION_PAGE_SIZE,
-  layout = "grid",
   itemCountLabel,
 }: Props) {
   const pageCount = getSessionPageCount(items.length, pageSize);
   const selectedPage = getPageForIndex(selectedIndex, pageSize);
   const [activePage, setActivePage] = useState(selectedPage);
-  const mobileLarge = layout === "mobile-large";
 
   useEffect(() => {
     setActivePage(selectedPage);
@@ -81,13 +78,7 @@ export function SessionThumbnailGrid({
         </div>
       )}
 
-      <div
-        className={`grid overflow-y-auto pr-1 ${
-          mobileLarge
-            ? "max-h-none grid-cols-1 gap-3"
-            : "max-h-72 grid-cols-2 gap-2"
-        }`}
-      >
+      <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1">
         {visibleItems.map((item) => {
           const selected = item.index === selectedIndex;
           return (
@@ -122,11 +113,7 @@ export function SessionThumbnailGrid({
                   )}
                 </div>
               ) : (
-                <div
-                  className={`relative bg-stone-100 ${
-                    mobileLarge ? "aspect-[16/10]" : "aspect-[4/3]"
-                  }`}
-                >
+                <div className="relative aspect-[4/3] bg-stone-100">
                   <ProtectedImage
                     src={item.thumbnail ?? ""}
                     alt={item.label}

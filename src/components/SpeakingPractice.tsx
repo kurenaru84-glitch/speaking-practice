@@ -935,7 +935,6 @@ export function SpeakingPractice() {
             selectedIndex={index}
             onSelect={applySessionIndex}
             disabled={busy}
-            layout="mobile-large"
             itemCountLabel={itemCount ? `${index + 1} / ${itemCount}` : undefined}
           />
         </section>

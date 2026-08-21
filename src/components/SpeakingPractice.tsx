@@ -83,6 +83,7 @@ import {
 import { IconLock, IconMic, IconSparkles, IconStar, IconStarOutline } from "@/components/icons";
 import { FeedbackActions } from "@/components/FeedbackActions";
 import { FeedbackChecklist } from "@/components/FeedbackChecklist";
+import { FeedbackGradeBadge } from "@/components/FeedbackGrade";
 import { PracticeGrowthPanel } from "@/components/PracticeGrowthPanel";
 import { RetryQueuePanel } from "@/components/RetryQueuePanel";
 import { StructuredNaturalExample } from "@/components/StructuredNaturalExample";
@@ -1448,6 +1449,10 @@ export function SpeakingPractice() {
             )}
           </div>
           </div>
+
+          {feedback.grade && (
+            <FeedbackGradeBadge grade={feedback.grade} gradeNote={feedback.gradeNote} />
+          )}
         </section>
       )}
 

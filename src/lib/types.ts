@@ -28,6 +28,8 @@ export type ChecklistItem = {
   note?: string;
 };
 
+export type FeedbackGrade = "A" | "B" | "C" | "D" | "E";
+
 export type FeedbackResult = {
   sentences: SentenceFeedback[];
   natural: NaturalExample[];
@@ -35,6 +37,8 @@ export type FeedbackResult = {
   summary: string;
   checklist?: ChecklistItem[];
   growthNote?: string;
+  grade?: FeedbackGrade;
+  gradeNote?: string;
 };
 
 export type StorySet = {

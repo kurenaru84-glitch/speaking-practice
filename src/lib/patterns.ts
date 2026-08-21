@@ -138,7 +138,35 @@ export function getPattern(id: string): Pattern {
   return PATTERNS.find((p) => p.id === id) ?? PATTERNS[0];
 }
 
+const GRADE_RULES = (nativeLanguageName: string) => `
+Grade rules:
+- Assign exactly one overall letter grade: "A", "B", "C", "D", or "E". No numeric score.
+- Be warm and encouraging. The learner should feel motivated to try again, never discouraged.
+- gradeNote must be 1-2 short sentences in ${nativeLanguageName}, ALWAYS in this order:
+  1) Start with genuine praise for what they did well (effort, clarity, vocabulary used, task attempt, etc.)
+  2) If improvement is needed, frame it gently as "次の一歩" / "もう一歩" — never harsh or discouraging language.
+- Grade meanings (for your internal use; do NOT repeat these labels verbatim in gradeNote):
+  - A = excellent overall
+  - B = solid attempt; mostly clear with room to polish expression
+  - C = message gets through; building blocks are there
+  - D = early stage but effort visible; needs simpler structure
+  - E = very first steps; praise the attempt itself
+- Example gradeNote tones:
+  - A: "内容がよく伝わっていて、とても自然な説明でした。この調子で続けましょう。"
+  - B: "しっかり説明できています。表現を少し豊かにすると、さらに自然になりますよ。"
+  - C: "伝えたいことは伝わっています。次は文型を整えると、もっと自信を持って話せます。"
+  - D: "話そうとしている姿勢が伝わります。短い文から一緒に積み上げていきましょう。"
+  - E: "まずは話してみた、それが大切な一歩です。キーワードだけでもOK。次は1文ずつ増やしていきましょう。"
+- Never use words like "問題", "ダメ", "伝わらない", "不足" in gradeNote.`;
+
+function gradeJsonFields(nativeLanguageName: string) {
+  return `
+  "grade": "A" | "B" | "C" | "D" | "E",
+  "gradeNote": "1-2 warm, encouraging sentences in ${nativeLanguageName} (praise first, then gentle next step)",`;
+}
+
 const SHARED_RULES = (nativeLanguageName: string) => `
+${GRADE_RULES(nativeLanguageName)}
 Sentence feedback rules:
 - Split the learner text into sentences. Create one "sentences" entry per substantive sentence.
 - SKIP fillers, discourse markers, and standalone short responses (e.g. "Yes", "Um", "Well", "Yeah", "OK", "えー", "うん", "はい"). Do NOT create entries for them.
@@ -189,7 +217,7 @@ function buildJsonShape(
   ],
   "vocabulary": [
     { "term": "useful word or phrase in ${languageName}", "note": "short ${nativeLanguageName} explanation" }
-  ],
+  ],${gradeJsonFields(nativeLanguageName)}
   "summary": "${summaryHint}"
 }`;
 }
@@ -288,7 +316,7 @@ ${checklistLines}
   }
   "vocabulary": [
     { "term": "useful word or phrase in ${languageName}", "note": "short ${nativeLanguageName} explanation" }
-  ],
+  ],${gradeJsonFields(nativeLanguageName)}
   "summary": "${summaryHint}"
 }`;
 }

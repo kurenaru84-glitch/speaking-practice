@@ -3,7 +3,7 @@ import {
   buildTranscribePrompt,
   looksLikeRunOnTranscript,
 } from "@/lib/code-switch";
-import type { ChecklistItem, FeedbackResult, NaturalExample, NaturalSection } from "@/lib/types";
+import type { ChecklistItem, FeedbackGrade, FeedbackResult, NaturalExample, NaturalSection } from "@/lib/types";
 import { filterFeedbackSentences } from "@/lib/skip-feedback-sentences";
 import { buildFeedbackPrompt, type PatternId, type PreviousAttemptContext } from "@/lib/patterns";
 
@@ -297,6 +297,15 @@ function normalizeChecklist(value: unknown): ChecklistItem[] | undefined {
   return items.length > 0 ? items : undefined;
 }
 
+const VALID_GRADES = new Set<FeedbackGrade>(["A", "B", "C", "D", "E"]);
+
+function normalizeGrade(value: unknown): FeedbackGrade | undefined {
+  const grade = String(value ?? "")
+    .trim()
+    .toUpperCase();
+  return VALID_GRADES.has(grade as FeedbackGrade) ? (grade as FeedbackGrade) : undefined;
+}
+
 function normalizeFeedback(raw: unknown): FeedbackResult {
   const data = raw as Partial<FeedbackResult> & {
     corrections?: Array<{ original: string; fixed: string; note: string }>;
@@ -306,6 +315,8 @@ function normalizeFeedback(raw: unknown): FeedbackResult {
 
   const growthNote = String(data.growthNote ?? "").trim() || undefined;
   const checklist = normalizeChecklist(data.checklist);
+  const grade = normalizeGrade(data.grade);
+  const gradeNote = String(data.gradeNote ?? "").trim() || undefined;
 
   const base = (sentences: FeedbackResult["sentences"]) => ({
     sentences: filterFeedbackSentences(sentences),
@@ -314,6 +325,8 @@ function normalizeFeedback(raw: unknown): FeedbackResult {
     summary: data.summary ?? "",
     checklist,
     growthNote,
+    grade,
+    gradeNote: grade ? gradeNote : undefined,
   });
 
   if (Array.isArray(data.sentences) && data.sentences.length > 0) {

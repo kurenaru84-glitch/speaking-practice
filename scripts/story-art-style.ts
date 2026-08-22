@@ -1,27 +1,27 @@
 /**
- * PicSpeak original story-panel art style.
- * Simple unified line art — NOT based on or imitating any existing comic / artist.
+ * PicSpeak story-panel art style — rough doodle line art with a blended casual-comic feel.
+ * Essence of loose diary/webcomic sketch (~30%) mixed with original ESL-app illustration.
+ * Do not aim to replicate any single artist or series.
  */
 export const STORY_PANEL_STYLE_PROMPT = `
-MANDATORY ART STYLE — original simple line-art illustration for a language-learning app. Use the SAME visual rules in every image:
+MANDATORY ART STYLE — use IDENTICALLY in every image for cross-story consistency:
 
-Line work: clean medium-thin black outlines, evenly weighted, soft rounded corners. Hand-drawn feel but neat and consistent — not scratchy, not messy scribbles.
+Line work: ROUGH hand-drawn doodle pen lines — uneven, sketchy, authentic, slightly wobbly. NOT clean vector, NOT polished digital art, NOT anime, NOT Ghibli, NOT picture-book painting.
 
-Original character design (do NOT imitate Sarah's Scribbles or any known webcomic):
-- Round soft face shape (slightly wider chin, gentle curve)
-- Eyes: small solid dot eyes with a tiny white highlight speck (NOT large empty circles, NOT anime eyes)
-- Eyebrows: one short curved stroke above each eye
-- Nose: optional tiny dot or omitted
-- Mouth: small gentle curve or soft "o" shape
-- Hair: simple smooth silhouette with clean outline — side part or short bob, NO jagged messy scribble hair
-- Body: rounded torso, simple arms and legs, mitten-like rounded hands
-- Default outfit: plain crew-neck shirt and simple pants (adjust only when story needs a clear prop like helmet or apron — keep same face template)
+UNIFIED CHARACTER DESIGN (same face/body template in EVERY panel and EVERY story):
+- Round head
+- Large EMPTY white circle eyes with thin black outline, NO pupils, NO highlights — eyes should be big and readable
+- LARGE clear expressive mouth and eyebrows — exaggerate emotion so feelings read instantly (wide open O for shock, big smile arc, wavy line for worry). Expression is the focus.
+- Hair: slightly rough messy sketch outline, short-to-medium length, a few loose strokes — NOT neat salon hair, NOT ultra-scribble chaos
+- Simple body: thin sketchy limbs, small rounded hands, plain short-sleeve shirt and pants (add one obvious prop like cap, apron, or helmet only when the story requires it — face template stays the same)
 
-Color: mostly black lines on white. Optional ONE muted flat accent color per panel on a key object only (soft blue, soft coral, or soft green — never loud saturation). No gradients, no gray shading, no anime, no Ghibli, no Nordic picture book, no polished digital painting.
+Color: mostly black rough lines on white. Optional ONE small flat accent on a key object per panel (muted red, blue, or yellow). No gradients, no shading.
 
-Background: very sparse — a few lines for floor, wall, or horizon. Props as simple geometric shapes.
+Background: minimal — a few sketch lines for setting. Props drawn simply.
 
-Layout: single square image, 2x2 grid of four equal panels with white gutters. Each panel has a simple circled number 1, 2, 3, or 4 in the top-left corner. No speech bubbles, no captions except panel numbers, no watermarks, no logos.
+Blend tone: casual diary webcomic sketch energy (~30%) mixed with simple original language-app illustration — NOT a copy of any specific comic, character, or series.
+
+Layout: single square image, 2x2 grid, four equal panels, white gutters. Circled numbers 1, 2, 3, 4 in top-left of each panel. No speech bubbles, no text except numbers, no watermarks.
 `.trim();
 
 export type StoryStripPlot = {
@@ -43,107 +43,108 @@ Panel 4 bottom-right (number 4): ${p4}
 `;
 }
 
+const UNIFIED_FACE =
+  "Use the UNIFIED CHARACTER DESIGN above — large empty circle eyes, large expressive mouth, slightly rough hair, rough pen lines.";
+
 export const STORY_PLOTS: StoryStripPlot[] = [
   {
     setId: "missed-bus",
-    character:
-      "SAME protagonist throughout: round face, dot eyes with highlight, side-part smooth hair, crew-neck shirt and pants.",
+    character: `SAME protagonist in all four panels. ${UNIFIED_FACE}`,
     panels: [
-      "Wakes up surprised in bed, alarm clock on nightstand ringing.",
-      "Running hurriedly along a simple street.",
-      "At bus stop as bus drives away, one hand raised.",
-      "Walking into building entrance looking tired.",
+      "Wakes up with HUGE shocked open mouth, alarm clock ringing on nightstand (small red accent on clock).",
+      "Running frantically, big panicked expression, coffee cup in hand.",
+      "At bus stop, bus driving away, arm stretched out, mouth open yelling.",
+      "Slumping through building door, tired defeated expression.",
     ],
   },
   {
     setId: "lost-tourist",
-    character:
-      "SAME protagonist with baseball cap and small backpack — same round face and dot-eye design as other stories.",
+    character: `SAME protagonist wearing simple cap and backpack. ${UNIFIED_FACE}`,
     panels: [
-      "Standing on street, unfolded map, confused expression.",
-      "Asking passerby for directions, both gesturing simply.",
-      "Walking down narrow path looking uncertain.",
-      "Smiling beside a simple fountain statue landmark.",
+      "Holding unfolded map, confused wavy mouth, looking around.",
+      "Asking passerby directions, both with animated gesturing arms.",
+      "Walking wrong way, worried eyebrows, uncertain mouth.",
+      "Big happy smile at simple fountain landmark, relieved pose.",
     ],
   },
   {
     setId: "rain-surprise",
-    character: "SAME two friends — identical face template, one with ponytail, one with short side-part hair.",
+    character: `SAME two friends — identical face template, distinguish by ponytail vs short rough hair only. ${UNIFIED_FACE}`,
     panels: [
-      "Picnic blanket on grass under simple sun symbol.",
-      "Rain lines falling, both look up surprised.",
-      "Running together under one small umbrella.",
-      "Under shop awning, sharing warm drink, smiling.",
+      "Picnic on blanket, big cheerful smiles, simple sun.",
+      "Rain lines, both look up with surprised wide-open eyes and O mouths.",
+      "Running under tiny umbrella, scared/excited big expressions.",
+      "Under awning, wet hair strokes, laughing big smiles sharing drink.",
     ],
   },
   {
     setId: "dog-escape",
-    character: "SAME person and small round simple dog with floppy ears — person uses standard face template.",
+    character: `SAME person and simple sketch dog with floppy ears. ${UNIFIED_FACE}`,
     panels: [
-      "Opening front door, dog waiting happily.",
-      "Dog runs outside, person reaching out surprised.",
-      "Walking through simple park trees calling dog.",
-      "Kneeling to hug dog at gate, relieved smile.",
+      "Opening door, dog tail wagging, person smiling.",
+      "Dog bolting out, person wide shocked eyes and open mouth reaching.",
+      "In park calling dog, hands cupped around mouth, worried face.",
+      "Hugging dog at gate, eyes closed happy big smile.",
     ],
   },
   {
     setId: "cooking-disaster",
-    character: "SAME protagonist in apron over crew-neck shirt, standard round face design.",
+    character: `SAME protagonist in sketchy apron over shirt. ${UNIFIED_FACE}`,
     panels: [
-      "Stirring pot on stove, content expression.",
-      "Pot boiling over, wavy smoke lines, worried face.",
-      "Standing on chair waving cloth at ceiling alarm.",
-      "Messy counter, holding pizza box, awkward smile.",
+      "Stirring pot, content medium smile.",
+      "Pot overflowing, HUGE panicked open mouth, smoke scribbles rising.",
+      "On tiptoe waving cloth at smoke alarm, stressed expression.",
+      "Messy counter, holding pizza box, awkward sheepish half-smile.",
     ],
   },
   {
     setId: "surprise-birthday",
-    character: "SAME friend group — all use identical round-face dot-eye template, varied hair only.",
+    character: `SAME friend group — all identical face template, vary hair length only. ${UNIFIED_FACE}`,
     panels: [
-      "People hiding behind sofa, finger to lips.",
-      "Birthday person opening door with paper bag.",
-      "Lights on, friends stepping out with happy poses.",
-      "Table with simple cake, everyone smiling together.",
+      "Hiding behind sofa, finger on lips, playful big eyes.",
+      "Birthday person opening door, neutral curious expression with bag.",
+      "Lights on, everyone jumping with HUGE surprised happy open mouths.",
+      "Around table with cake, big grins, arms raised celebration.",
     ],
   },
   {
     setId: "moving-day",
-    character: "SAME two people — standard face template, one ponytail one side-part hair.",
+    character: `SAME two people moving — identical face template. ${UNIFIED_FACE}`,
     panels: [
-      "Room filled with stacked box shapes.",
-      "Carrying sofa up stairs together, straining.",
-      "Dropped box, books and lamp on floor, surprised faces.",
-      "Sitting on sofa among boxes eating pizza slice.",
+      "Room full of sketch box squares, overwhelmed big sigh expression.",
+      "Carrying couch upstairs, straining gritted-teeth exaggerated effort faces.",
+      "Box dropped, items spill, both shocked wide O mouths.",
+      "Collapsed on couch among boxes eating pizza, tired but big relieved smile.",
     ],
   },
   {
     setId: "bike-flat",
-    character: "SAME cyclist — standard face template with simple bike helmet.",
+    character: `SAME cyclist with simple helmet, rough hair peeking out. ${UNIFIED_FACE}`,
     panels: [
-      "Riding bicycle on road with simple cloud lines.",
-      "Stopped, looking at flat front tire.",
-      "Kneeling with small tool beside bicycle chain.",
-      "Walking bike along road toward simple horizon line.",
+      "Riding bike happily, big wind-in-hair smile.",
+      "Stopped, looking down at flat tire, sad wobble mouth.",
+      "Kneeling fixing chain, tongue-out concentrating face.",
+      "Walking bike at sunset, calm small smile, tired eyes.",
     ],
   },
   {
     setId: "blackout",
-    character: "SAME parent and two children — all same round-face design, children slightly shorter.",
+    character: `SAME parent and two kids — kids use same face template but smaller. ${UNIFIED_FACE}`,
     panels: [
-      "Living room, reading book and board game, lamp lit.",
-      "Room dark, surprised faces lit by window moon.",
-      "Lighting candles and flashlight on wall.",
-      "Playing cards at table by candlelight, smiling.",
+      "Living room lamp on, reading and playing, calm happy faces.",
+      "Sudden darkness, all three wide white circle eyes and shocked O mouths.",
+      "Lighting candles and flashlight, curious wondering expressions.",
+      "Playing cards by candlelight, big cozy smiles.",
     ],
   },
   {
     setId: "lost-wallet",
-    character: "SAME protagonist at outdoor cafe table — standard round face, side-part hair.",
+    character: `SAME protagonist at cafe table. ${UNIFIED_FACE}`,
     panels: [
-      "Hand reaching into pocket at cafe table to pay.",
-      "Checking empty pockets and bag, worried expression.",
-      "Looking under park bench on sidewalk.",
-      "Finding wallet under table, relieved smile, waiter nearby.",
+      "Patting pockets at cafe table, starting to look concerned.",
+      "Digging through bag frantically, BIG panicked open mouth.",
+      "Outside looking under bench, worried searching face.",
+      "Finding wallet under table, HUGE relieved grin, shoulders dropped.",
     ],
   },
 ];

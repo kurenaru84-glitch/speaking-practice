@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "generate:roleplay": "npx tsx scripts/generate-roleplay-prompts.ts",
-    "optimize:images": "npx tsx scripts/optimize-images.ts"
+    "optimize:images": "npx tsx scripts/optimize-images.ts",
+    "split:story": "npx tsx scripts/split-story-strip.ts"
   },
   "dependencies": {
     "next": "16.3.0",

@@ -1,7 +1,14 @@
+/** Preferred style (sessions 1–3 reference): soft manga line art, minimal pale wash, no text. */
+export const STORY_REFERENCE_MANGA_PROMPT = `
+Art style: soft Japanese manga/webcomic illustration. Clean thin brown-black line art.
+Character: young woman, wavy shoulder-length light blue hair, beige trench coat, white collared shirt, dark pants — SAME in every panel.
+Color: almost none — line art only, or extremely faint pale gray-blue wash. Mostly white.
+NO text, NO numbers, NO speech bubbles, NO labels, NO onomatopoeia anywhere.
+Layout: single square 2x2 grid, four equal panels, white gutters.
+`.trim();
+
 /**
- * PicSpeak story-panel art style — rough doodle line art with a blended casual-comic feel.
- * Essence of loose diary/webcomic sketch (~30%) mixed with original ESL-app illustration.
- * Do not aim to replicate any single artist or series.
+ * Legacy doodle style for sessions 4+ until migrated.
  */
 export const STORY_PANEL_STYLE_PROMPT = `
 MANDATORY ART STYLE — use IDENTICALLY in every image for cross-story consistency:

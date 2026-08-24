@@ -1,4 +1,13 @@
-/** Preferred style (sessions 1–3 reference): soft manga line art, minimal pale wash, no text. */
+/** Kirara-style chibi strips (sessions 7–10): vertical 4-koma, minimal detail. */
+export const STORY_KIRARA_PROMPT = `
+Art style: Manga Time Kirara / K-On slice-of-life chibi manga. 2.5 head proportions, big expressive face, tiny simple body.
+Character: light blue hair, beige cardigan — SAME in every panel.
+Minimal detail: white background, 1 simple prop max per panel, thick clean lines, faint pale wash only.
+NO text, NO numbers, NO speech bubbles.
+Layout: single tall vertical image, 4 panels stacked top-to-bottom with white gutters.
+`.trim();
+
+/** Preferred style (sessions 1–6): soft manga line art, minimal pale wash, no text. */
 export const STORY_REFERENCE_MANGA_PROMPT = `
 Art style: soft Japanese manga/webcomic illustration. Clean thin brown-black line art.
 Character: young woman, wavy shoulder-length light blue hair, beige trench coat, white collared shirt, dark pants — SAME in every panel.

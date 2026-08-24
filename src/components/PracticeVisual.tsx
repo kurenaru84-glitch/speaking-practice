@@ -36,6 +36,7 @@ export function PracticeVisual({
   isEmail,
   isCompare,
   isMultiVisual,
+  isStory,
   hasVisual,
   currentInterview,
   currentEmail,
@@ -49,8 +50,12 @@ export function PracticeVisual({
   className = "",
 }: Props) {
   const shellClass = compact
-    ? "relative overflow-hidden rounded-xl bg-stone-100 aspect-[4/3]"
-    : `relative bg-stone-100 ${isMultiVisual || isInterview || isEmail ? "p-3" : "aspect-[4/3]"}`;
+    ? isStory
+      ? "relative overflow-hidden rounded-xl bg-stone-100"
+      : "relative overflow-hidden rounded-xl bg-stone-100 aspect-[4/3]"
+    : `relative bg-stone-100 ${
+        isStory ? "p-2" : isMultiVisual || isInterview || isEmail ? "p-3" : "aspect-[4/3]"
+      }`;
 
   return (
     <div
@@ -133,6 +138,26 @@ export function PracticeVisual({
                   />
                   <span className="absolute left-2 top-2 rounded-full bg-amber-700 px-2.5 py-0.5 text-xs font-bold text-white">
                     {i === 0 ? currentCompare?.labelA ?? "A" : currentCompare?.labelB ?? "B"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : isStory ? (
+            <div className={`flex flex-col gap-1.5 ${compact ? "p-1.5" : ""}`}>
+              {currentImages.slice(0, 4).map((src, i) => (
+                <div
+                  key={src}
+                  className="relative w-full overflow-hidden rounded-lg bg-white ring-1 ring-stone-200/80"
+                >
+                  <ProtectedImage
+                    src={src}
+                    alt={`Panel ${i + 1}`}
+                    className="w-full object-contain"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span className="absolute left-2 top-2 rounded-full bg-amber-700/90 px-2 py-0.5 text-xs font-bold text-white">
+                    {i + 1}
                   </span>
                 </div>
               ))}

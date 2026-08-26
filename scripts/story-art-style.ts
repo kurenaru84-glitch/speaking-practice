@@ -1,166 +1,156 @@
-/** Kirara-style chibi strips (sessions 7–10): vertical 4-koma, minimal detail. */
-export const STORY_KIRARA_PROMPT = `
-Art style: Manga Time Kirara / K-On slice-of-life chibi manga. 2.5 head proportions, big expressive face, tiny simple body.
-Character: light blue hair, beige cardigan — SAME in every panel.
-Minimal detail: white background, 1 simple prop max per panel, thick clean lines, faint pale wash only.
-NO text, NO numbers, NO speech bubbles.
-Layout: single tall vertical image, 4 panels stacked top-to-bottom with white gutters.
-`.trim();
-
-/** Preferred style (sessions 1–6): soft manga line art, minimal pale wash, no text. */
-export const STORY_REFERENCE_MANGA_PROMPT = `
-Art style: soft Japanese manga/webcomic illustration. Clean thin brown-black line art.
-Character: young woman, wavy shoulder-length light blue hair, beige trench coat, white collared shirt, dark pants — SAME in every panel.
-Color: almost none — line art only, or extremely faint pale gray-blue wash. Mostly white.
-NO text, NO numbers, NO speech bubbles, NO labels, NO onomatopoeia anywhere.
-Layout: single square 2x2 grid, four equal panels, white gutters.
-`.trim();
-
 /**
- * Legacy doodle style for sessions 4+ until migrated.
+ * PicSpeak story strips — original essay-manga chibi for young adults (20s–30s).
+ * Four fixed characters. Vertical 4-koma. No text in images.
  */
-export const STORY_PANEL_STYLE_PROMPT = `
-MANDATORY ART STYLE — use IDENTICALLY in every image for cross-story consistency:
 
-Line work: ROUGH hand-drawn doodle pen lines — uneven, sketchy, authentic, slightly wobbly. NOT clean vector, NOT polished digital art, NOT anime, NOT Ghibli, NOT picture-book painting.
+export const CHARACTERS = {
+  haru: `CHARACTER A "Haru" (ALWAYS draw exactly like this when she appears):
+Young woman ~25, office worker. Pale blue-gray bob hair with side part. Beige long open cardigan, white crew-neck tee, black slim pants. Chibi ~3 heads tall, young ADULT face (NOT child). Small simple eyes, clear readable expression. Original design — NOT K-On, NOT any anime series character.`,
+  ren: `CHARACTER B "Ren" (ALWAYS draw exactly like this when he appears):
+Young man ~27, young professional. Short neat dark brown hair, thin rectangular glasses, navy zip-up jacket, light shirt, chinos. Chibi ~3 heads tall, mature young adult face. Small simple eyes. Original design — NOT K-On, NOT any anime series character.`,
+  mei: `CHARACTER C "Mei" (ALWAYS draw exactly like this when she appears):
+Young woman ~24. Chestnut brown hair in low ponytail, olive green casual shirt, dark jeans. Chibi ~3 heads tall, young adult face, friendly expression. Small simple eyes. Original design — NOT K-On, NOT any anime series character.`,
+  taku: `CHARACTER D "Taku" (ALWAYS draw exactly like this when he appears):
+Young man ~22, university age. Tousled sandy brown hair, gray hoodie, jeans, small backpack. Chibi ~3 heads tall, young adult face. Small simple eyes. Original design — NOT K-On, NOT any anime series character.`,
+} as const;
 
-UNIFIED CHARACTER DESIGN (same face/body template in EVERY panel and EVERY story):
-- Round head
-- Large EMPTY white circle eyes with thin black outline, NO pupils, NO highlights — eyes should be big and readable
-- LARGE clear expressive mouth and eyebrows — exaggerate emotion so feelings read instantly (wide open O for shock, big smile arc, wavy line for worry). Expression is the focus.
-- Hair: slightly rough messy sketch outline, short-to-medium length, a few loose strokes — NOT neat salon hair, NOT ultra-scribble chaos
-- Simple body: thin sketchy limbs, small rounded hands, plain short-sleeve shirt and pants (add one obvious prop like cap, apron, or helmet only when the story requires it — face template stays the same)
+export const STORY_ESSAY_CHIBI_PROMPT = `
+Art style: ORIGINAL Japanese essay manga / slice-of-life 4-koma for young adults (office workers, university students). Chibi simplified bodies (~3 heads tall) but mature young-adult faces — NOT childish, NOT toddler-like, NOT copying K-On or any existing manga/anime.
 
-Color: mostly black rough lines on white. Optional ONE small flat accent on a key object per panel (muted red, blue, or yellow). No gradients, no shading.
+Line work: clean medium pen lines, slightly hand-drawn warmth. Minimal detail, essence only — white or near-white background, at most 1–2 simple props per panel. Very faint pale color wash optional; mostly line art.
 
-Background: minimal — a few sketch lines for setting. Props drawn simply.
+Expressions: clear and readable but restrained — essay comic tone, not flashy anime.
 
-Blend tone: casual diary webcomic sketch energy (~30%) mixed with simple original language-app illustration — NOT a copy of any specific comic, character, or series.
+NO text, NO numbers, NO speech bubbles, NO labels, NO onomatopoeia, NO watermarks anywhere.
 
-Layout: single square image, 2x2 grid, four equal panels, white gutters. Circled numbers 1, 2, 3, 4 in top-left of each panel. No speech bubbles, no text except numbers, no watermarks.
+Layout: single TALL vertical image, 4 equal panels stacked top-to-bottom with thin white horizontal gutters between panels.
 `.trim();
 
 export type StoryStripPlot = {
   setId: string;
-  character: string;
+  cast: string;
   panels: [string, string, string, string];
 };
 
 export function buildStoryStripPrompt(plot: StoryStripPlot): string {
   const [p1, p2, p3, p4] = plot.panels;
-  return `${STORY_PANEL_STYLE_PROMPT}
+  return `${STORY_ESSAY_CHIBI_PROMPT}
 
-${plot.character}
+CAST (use ONLY these characters, keep designs fixed):
+${plot.cast}
 
-Panel 1 top-left (number 1): ${p1}
-Panel 2 top-right (number 2): ${p2}
-Panel 3 bottom-left (number 3): ${p3}
-Panel 4 bottom-right (number 4): ${p4}
+Top panel: ${p1}
+Second panel: ${p2}
+Third panel: ${p3}
+Bottom panel: ${p4}
 `;
 }
 
-const UNIFIED_FACE =
-  "Use the UNIFIED CHARACTER DESIGN above — large empty circle eyes, large expressive mouth, slightly rough hair, rough pen lines.";
-
 export const STORY_PLOTS: StoryStripPlot[] = [
   {
-    setId: "missed-bus",
-    character: `SAME protagonist in all four panels. ${UNIFIED_FACE}`,
-    panels: [
-      "Wakes up with HUGE shocked open mouth, alarm clock ringing on nightstand (small red accent on clock).",
-      "Running frantically, big panicked expression, coffee cup in hand.",
-      "At bus stop, bus driving away, arm stretched out, mouth open yelling.",
-      "Slumping through building door, tired defeated expression.",
-    ],
-  },
-  {
-    setId: "lost-tourist",
-    character: `SAME protagonist wearing simple cap and backpack. ${UNIFIED_FACE}`,
-    panels: [
-      "Holding unfolded map, confused wavy mouth, looking around.",
-      "Asking passerby directions, both with animated gesturing arms.",
-      "Walking wrong way, worried eyebrows, uncertain mouth.",
-      "Big happy smile at simple fountain landmark, relieved pose.",
-    ],
-  },
-  {
-    setId: "rain-surprise",
-    character: `SAME two friends — identical face template, distinguish by ponytail vs short rough hair only. ${UNIFIED_FACE}`,
-    panels: [
-      "Picnic on blanket, big cheerful smiles, simple sun.",
-      "Rain lines, both look up with surprised wide-open eyes and O mouths.",
-      "Running under tiny umbrella, scared/excited big expressions.",
-      "Under awning, wet hair strokes, laughing big smiles sharing drink.",
-    ],
-  },
-  {
-    setId: "dog-escape",
-    character: `SAME person and simple sketch dog with floppy ears. ${UNIFIED_FACE}`,
-    panels: [
-      "Opening door, dog tail wagging, person smiling.",
-      "Dog bolting out, person wide shocked eyes and open mouth reaching.",
-      "In park calling dog, hands cupped around mouth, worried face.",
-      "Hugging dog at gate, eyes closed happy big smile.",
-    ],
-  },
-  {
-    setId: "cooking-disaster",
-    character: `SAME protagonist in sketchy apron over shirt. ${UNIFIED_FACE}`,
-    panels: [
-      "Stirring pot, content medium smile.",
-      "Pot overflowing, HUGE panicked open mouth, smoke scribbles rising.",
-      "On tiptoe waving cloth at smoke alarm, stressed expression.",
-      "Messy counter, holding pizza box, awkward sheepish half-smile.",
-    ],
-  },
-  {
-    setId: "surprise-birthday",
-    character: `SAME friend group — all identical face template, vary hair length only. ${UNIFIED_FACE}`,
-    panels: [
-      "Hiding behind sofa, finger on lips, playful big eyes.",
-      "Birthday person opening door, neutral curious expression with bag.",
-      "Lights on, everyone jumping with HUGE surprised happy open mouths.",
-      "Around table with cake, big grins, arms raised celebration.",
-    ],
-  },
-  {
-    setId: "moving-day",
-    character: `SAME two people moving — identical face template. ${UNIFIED_FACE}`,
-    panels: [
-      "Room full of sketch box squares, overwhelmed big sigh expression.",
-      "Carrying couch upstairs, straining gritted-teeth exaggerated effort faces.",
-      "Box dropped, items spill, both shocked wide O mouths.",
-      "Collapsed on couch among boxes eating pizza, tired but big relieved smile.",
-    ],
-  },
-  {
     setId: "bike-flat",
-    character: `SAME cyclist with simple helmet, rough hair peeking out. ${UNIFIED_FACE}`,
+    cast: CHARACTERS.haru,
     panels: [
-      "Riding bike happily, big wind-in-hair smile.",
-      "Stopped, looking down at flat tire, sad wobble mouth.",
-      "Kneeling fixing chain, tongue-out concentrating face.",
-      "Walking bike at sunset, calm small smile, tired eyes.",
+      "Haru riding bicycle to work, calm morning expression.",
+      "Stopped beside road, looking at flat tire, troubled face.",
+      "Kneeling with small repair kit, focused expression.",
+      "Walking bike along road toward city skyline, tired but okay.",
     ],
   },
   {
     setId: "blackout",
-    character: `SAME parent and two kids — kids use same face template but smaller. ${UNIFIED_FACE}`,
+    cast: `${CHARACTERS.haru}\n${CHARACTERS.ren}\n${CHARACTERS.taku}\nThree young adult roommates sharing an apartment.`,
     panels: [
-      "Living room lamp on, reading and playing, calm happy faces.",
-      "Sudden darkness, all three wide white circle eyes and shocked O mouths.",
-      "Lighting candles and flashlight, curious wondering expressions.",
-      "Playing cards by candlelight, big cozy smiles.",
+      "Evening apartment: Haru reading on sofa, Ren at table, Taku playing cards — lamp lit.",
+      "Sudden darkness, all three surprised faces in moonlight from window.",
+      "Haru lighting candle, Ren with phone flashlight, calm teamwork.",
+      "Three sitting on floor playing cards by candlelight, relaxed small smiles.",
+    ],
+  },
+  {
+    setId: "cooking-disaster",
+    cast: CHARACTERS.ren,
+    panels: [
+      "Ren happily cooking at stove, stirring pot.",
+      "Smoke rising from burnt pan, Ren shocked stiff expression.",
+      "Ren on stool waving towel at ceiling alarm, stressed.",
+      "Ren sitting with takeout pizza box, awkward relieved half-smile, messy kitchen behind.",
+    ],
+  },
+  {
+    setId: "dog-escape",
+    cast: `${CHARACTERS.mei}\nSimple small dog with floppy ears (Mei's pet).`,
+    panels: [
+      "Mei opening apartment door, dog waiting eagerly.",
+      "Dog dashing outside, Mei reaching surprised.",
+      "Mei searching in small park area, calling dog worried.",
+      "Mei kneeling hugging dog at building entrance, relieved smile.",
+    ],
+  },
+  {
+    setId: "lost-tourist",
+    cast: `${CHARACTERS.taku}\nTaku wearing baseball cap, backpack on.`,
+    panels: [
+      "Taku on street holding phone map, confused look.",
+      "Taku asking shop staff for directions, both gesturing.",
+      "Taku walking uncertainly down side street.",
+      "Taku smiling relieved near simple landmark fountain.",
     ],
   },
   {
     setId: "lost-wallet",
-    character: `SAME protagonist at cafe table. ${UNIFIED_FACE}`,
+    cast: CHARACTERS.haru,
     panels: [
-      "Patting pockets at cafe table, starting to look concerned.",
-      "Digging through bag frantically, BIG panicked open mouth.",
-      "Outside looking under bench, worried searching face.",
-      "Finding wallet under table, HUGE relieved grin, shoulders dropped.",
+      "Haru at cafe table reaching for wallet to pay.",
+      "Searching bag and pockets, growing panic expression.",
+      "Outside bending to look under bench.",
+      "Finding wallet under cafe table, huge relieved exhale smile.",
+    ],
+  },
+  {
+    setId: "missed-bus",
+    cast: CHARACTERS.haru,
+    panels: [
+      "Haru waking in bed shocked, alarm on nightstand.",
+      "Haru running with coffee cup, hurried expression.",
+      "At bus stop as bus leaves, arm outstretched.",
+      "Entering office building entrance, exhausted slump.",
+    ],
+  },
+  {
+    setId: "moving-day",
+    cast: `${CHARACTERS.haru}\n${CHARACTERS.mei}`,
+    panels: [
+      "New apartment full of stacked boxes, Haru and Mei overwhelmed sigh.",
+      "Both carrying couch up stairs, straining effort faces.",
+      "Box dropped on floor, both shocked open mouths.",
+      "Sitting on couch among boxes sharing pizza, tired happy smiles.",
+    ],
+  },
+  {
+    setId: "rain-surprise",
+    cast: `${CHARACTERS.haru}\n${CHARACTERS.mei}`,
+    panels: [
+      "Haru and Mei picnic on blanket, pleasant smiles.",
+      "Sudden rain, both look up surprised.",
+      "Running together under one small umbrella.",
+      "Under shop awning sharing warm drink, wet hair, laughing.",
+    ],
+  },
+  {
+    setId: "surprise-birthday",
+    cast: `${CHARACTERS.mei}\n${CHARACTERS.ren}\n${CHARACTERS.taku}\nMei is the birthday person. Ren and Taku plan the surprise.`,
+    panels: [
+      "Ren and Taku hiding behind sofa, quiet excited faces.",
+      "Mei opening front door with grocery bag, unaware.",
+      "Lights on, Ren and Taku jumping out, Mei shocked happy.",
+      "Three around small cake on table, warm celebration smiles.",
     ],
   },
 ];
+
+/** @deprecated Use STORY_ESSAY_CHIBI_PROMPT */
+export const STORY_KIRARA_PROMPT = STORY_ESSAY_CHIBI_PROMPT;
+
+/** @deprecated Use STORY_ESSAY_CHIBI_PROMPT */
+export const STORY_REFERENCE_MANGA_PROMPT = STORY_ESSAY_CHIBI_PROMPT;

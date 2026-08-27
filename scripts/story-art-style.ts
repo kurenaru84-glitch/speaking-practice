@@ -21,7 +21,12 @@ Color: mostly black and white. Use SMALL accent colors on key props when clarity
 
 NO text, NO numbers, NO speech bubbles, NO labels, NO watermarks.
 
-Layout: single TALL vertical image, 4 equal panels stacked top-to-bottom with thin white horizontal gutters.
+Layout: single TALL vertical image, 4 equal panels stacked top-to-bottom with thin white horizontal gutters ONLY at the 3 boundaries between panels.
+
+PANEL BORDERS (CRITICAL — avoid split artifacts):
+- Draw EXACTLY 4 panels. Separate them ONLY with thin white horizontal gutters at panel edges.
+- NEVER draw extra horizontal or vertical lines inside a panel that look like panel dividers.
+- NO stray lines cutting through characters or backgrounds mid-panel. NO duplicate borders.
 
 CHARACTER CONSISTENCY (CRITICAL): Elena and Marco must look IDENTICAL to the reference image whenever they appear — same hair shape, same face (dot eyes), same clothes.
 
@@ -68,12 +73,12 @@ export const STORY_PLOTS: StoryStripPlot[] = [
   {
     setId: "blackout",
     cast: `${CHARACTERS.elena}\n${CHARACTERS.marco}`,
-    accents: "Yellow warm glow on lit bulb and candle/match. Blue-white rays from phone flashlight. Dark panels use black fill for night.",
+    accents: "Panel 1 ONLY: hanging bulb filled YELLOW with warm glow lines (power ON). Panel 2: bulb has NO yellow — plain outline only (blackout). Panel 3: yellow candle flame. Panel 4: yellow candle glow. Blue-white phone light in panel 3.",
     panels: [
-      "Apartment: Elena on sofa reading, Marco at round table with cards. Hanging bulb lit with yellow glow lines. Window shows city.",
-      "Same room, bulb off, dark. Elena and Marco surprised O mouths. Crescent moon in window.",
-      "Same dark room: Elena lighting candle on table (yellow flame glow), Marco holding phone with blue-white light rays.",
-      "Same room: Elena and Marco on floor playing cards by candle (yellow glow), small smiles.",
+      "Apartment: Elena on sofa reading, Marco at round table with cards. Hanging bulb lit — bulb itself YELLOW with glow lines. Window shows city.",
+      "Same room, power out: bulb has NO yellow color, just dark outline, no glow. Elena and Marco surprised O mouths. Crescent moon in window.",
+      "Same dark room: Elena lighting candle on table (yellow flame), Marco holding phone with blue-white light rays. Bulb still off, no yellow.",
+      "Same room: Elena and Marco on floor playing cards by yellow candle glow, small smiles.",
     ],
   },
   {
@@ -100,13 +105,13 @@ export const STORY_PLOTS: StoryStripPlot[] = [
   },
   {
     setId: "lost-tourist",
-    cast: CHARACTERS.leo,
-    accents: "Blue accent on phone map screen. Red backpack accent.",
+    cast: CHARACTERS.marco,
+    accents: "Blue accent on phone map screen. Simple landmark (cathedral dome or fountain) visible in panel 1 and 4.",
     panels: [
-      "Leo alone on European street holding phone with blue map screen, confused face. Same Leo design.",
-      "Leo asking simple shop staff stick figure for directions, both gesturing.",
-      "Leo walking uncertainly down narrow side street, still holding phone.",
-      "Leo smiling relieved near simple fountain landmark, phone lowered.",
+      "Marco alone on European street, phone with blue map screen, looking toward famous landmark (cathedral dome) in far distance — his sightseeing goal. Confused which way to go.",
+      "Marco walking down wrong narrow alley, checking phone map, worried face. Landmark NOT visible — he is lost.",
+      "Marco asking simple shop staff stick figure for directions, both gesturing toward correct path.",
+      "Marco standing in front of SAME landmark (fountain or cathedral plaza), arrived successfully, big relieved happy smile. Goal reached.",
     ],
   },
   {
@@ -114,60 +119,66 @@ export const STORY_PLOTS: StoryStripPlot[] = [
     cast: CHARACTERS.elena,
     accents: "Brown wallet accent when visible.",
     panels: [
-      "Elena at café table reaching for brown wallet to pay. Same Elena design.",
-      "Elena searching bag and pockets, panicked expression. Wallet missing.",
-      "Elena outside bending to look under bench, worried.",
-      "Elena at same café table finding brown wallet underneath, huge relieved smile.",
+      "Elena at café table with coffee cup, reaching into shoulder bag to pay. Same Elena design, same café.",
+      "Same café: Elena frantically searching open shoulder bag, panicked O mouth, sweat drops. Brown wallet NOT in bag.",
+      "Same café: Elena hand in coat pocket, pulling out brown wallet, surprised relieved expression — it was in pocket all along.",
+      "Same café counter: Elena paying with cash bills/coins from wallet to cashier — wallet stays in her other hand or pocket, NOT handed over. Relieved happy smile.",
     ],
   },
   {
     setId: "missed-bus",
     cast: CHARACTERS.elena,
-    accents: "Red alarm clock accent. Yellow bus accent in panel 3.",
+    accents: "Red alarm clock accent panel 1. Yellow bus accent panel 3.",
     panels: [
-      "Elena waking in bed shocked, red alarm on nightstand ringing.",
-      "Elena running with coffee cup, hurried expression.",
-      "At bus stop as yellow bus drives away, Elena arm outstretched.",
-      "Entering building entrance, exhausted slump.",
+      "Elena in bed shocked awake, red alarm clock ringing on nightstand. Morning rush.",
+      "Same Elena rushing down street holding coffee cup, hurried panicked expression.",
+      "Same Elena at bus stop, yellow bus driving away in distance, Elena arm outstretched too late.",
+      "Same Elena entering office building entrance, exhausted slump shoulders, late for work.",
     ],
   },
   {
     setId: "moving-day",
     cast: `${CHARACTERS.elena}\n${CHARACTERS.marco}`,
-    accents: "Red pizza box accent in panel 4.",
+    accents: "Red pizza box accent panel 4.",
     panels: [
-      "New apartment stacked boxes, Elena and Marco overwhelmed sigh.",
-      "Both carrying couch up stairs, straining faces.",
-      "Box dropped on floor, both shocked open mouths.",
-      "Sitting on couch among boxes sharing pizza from red box, tired happy smiles.",
+      "New apartment full of stacked moving boxes, Elena and Marco standing overwhelmed sigh.",
+      "Same apartment stairwell: both carrying same couch up stairs, straining effort faces.",
+      "Same apartment: couch box dropped on floor, both shocked open mouths.",
+      "Same apartment: sitting on couch among boxes, sharing pizza from red box, tired happy smiles.",
     ],
   },
   {
     setId: "rain-surprise",
     cast: `${CHARACTERS.elena}\n${CHARACTERS.leo}`,
-    accents: "Blue rain lines in panel 2. Yellow umbrella accent in panel 3.",
+    accents: "Blue rain lines panel 2. Yellow umbrella accent panel 3.",
     panels: [
-      "Elena and Leo picnic on blanket in park, pleasant smiles.",
-      "Sudden blue rain lines, both look up surprised.",
-      "Running together under one yellow umbrella.",
-      "Under shop awning sharing warm drink, wet hair, laughing.",
+      "Elena and Leo picnic on blanket in sunny park, pleasant smiles. Same designs.",
+      "Same park: sudden blue rain lines falling, both look up surprised.",
+      "Same park: running together under one yellow umbrella, wet.",
+      "Under shop awning: Elena and Leo sharing warm drink cups, wet hair, laughing.",
     ],
   },
   {
     setId: "surprise-birthday",
     cast: `${CHARACTERS.elena}\n${CHARACTERS.marco}\n${CHARACTERS.leo}\nElena is birthday person. Marco and Leo plan surprise.`,
-    accents: "Pink/yellow candle glow on small cake in panel 4.",
+    accents: "Yellow/pink candle glow on small cake panel 4.",
     panels: [
-      "Marco and Leo hiding behind sofa, quiet excited faces.",
-      "Elena opening front door with grocery bag, unaware.",
-      "Lights on, Marco and Leo jumping out, Elena shocked happy.",
-      "Three around small cake with candle glow, warm smiles.",
+      "Same apartment: Marco and Leo hiding quietly behind sofa, excited faces. Elena NOT present.",
+      "Elena opening front door with grocery bag, unaware, entering apartment.",
+      "Lights on: Marco and Leo jumping out from behind sofa, Elena shocked happy face.",
+      "Same apartment: three around small table with birthday cake, yellow candle glow, warm smiles.",
     ],
   },
 ];
 
 /** First 6 story sets for batch generation */
 export const STORY_PLOTS_BATCH_1_6 = STORY_PLOTS.slice(0, 6);
+
+/** Story sets 5 and 7–10 */
+export const STORY_PLOTS_BATCH_5_7_10 = [
+  STORY_PLOTS[4]!,
+  ...STORY_PLOTS.slice(6, 10),
+];
 
 /** @deprecated Use STORY_DOODLE_STYLE_PROMPT */
 export const STORY_ESSAY_CHIBI_PROMPT = STORY_DOODLE_STYLE_PROMPT;

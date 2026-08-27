@@ -188,3 +188,5 @@ export const STORY_KIRARA_PROMPT = STORY_DOODLE_STYLE_PROMPT;
 
 /** @deprecated Use STORY_DOODLE_STYLE_PROMPT */
 export const STORY_REFERENCE_MANGA_PROMPT = STORY_DOODLE_STYLE_PROMPT;
+
+export { STORY_PLOTS_11_20 } from "./story-plots-draft-11-20";

@@ -6,7 +6,7 @@
 import type { StoryStripPlot } from "./story-art-style";
 import { CHARACTERS } from "./story-art-style";
 
-export const STORY_PLOTS_DRAFT_11_20: StoryStripPlot[] = [
+export const STORY_PLOTS_11_20: StoryStripPlot[] = [
   {
     setId: "locked-out",
     cast: CHARACTERS.elena,
@@ -52,14 +52,14 @@ export const STORY_PLOTS_DRAFT_11_20: StoryStripPlot[] = [
     ],
   },
   {
-    setId: "dead-phone",
+    setId: "power-bank",
     cast: CHARACTERS.elena,
-    accents: "Blue phone screen panel 1 only. Black blank screen panel 2.",
+    accents: "Red low-battery icon panel 1. Black dead screen panel 2. Blue power bank accent panels 3–4.",
     panels: [
-      "Elena on European street following blue map on phone, walking confidently.",
-      "Same street: phone screen black/dead battery, Elena staring at phone worried.",
-      "Elena asking simple passerby stick figure for directions, both gesturing.",
-      "Elena smiling relieved near correct shop/landmark she was looking for.",
+      "Elena on European street using phone, red low-battery warning on screen, slight worry.",
+      "Same street: phone screen completely black dead battery, Elena staring at phone troubled face.",
+      "Elena at small electronics/phone shop counter buying blue portable power bank, paying cashier.",
+      "Elena sitting on bench, phone plugged into SAME blue power bank charging, screen lit again, relieved smile.",
     ],
   },
   {
@@ -85,14 +85,14 @@ export const STORY_PLOTS_DRAFT_11_20: StoryStripPlot[] = [
     ],
   },
   {
-    setId: "windy-umbrella",
+    setId: "pharmacy-cold",
     cast: CHARACTERS.elena,
-    accents: "Yellow umbrella accent. Blue wind lines panel 2.",
+    accents: "Green pharmacy cross sign. Orange medicine box accent.",
     panels: [
-      "Elena walking on European street with yellow umbrella, windy but fine.",
-      "Strong blue wind lines, yellow umbrella blown inside-out, Elena struggling surprised.",
-      "Elena closing broken umbrella, hair messy, walking on without it.",
-      "Elena under café awning drinking hot drink, hair still messy, laughing at herself.",
+      "Elena walking on European street sneezing, hand near mouth, not feeling well.",
+      "Elena entering pharmacy with green cross sign above door.",
+      "Elena at pharmacy counter buying orange medicine box/cough drops, pharmacist handing bag.",
+      "Elena at home on sofa with warm drink and medicine, small relieved smile, feeling better.",
     ],
   },
   {
@@ -119,10 +119,5 @@ export const STORY_PLOTS_DRAFT_11_20: StoryStripPlot[] = [
   },
 ];
 
-/** Human-readable index for review */
-export const STORY_DRAFT_11_20_SUMMARY = STORY_PLOTS_DRAFT_11_20.map((p, i) => ({
-  number: i + 11,
-  setId: p.setId,
-  cast: p.cast.includes("Leo") ? (p.cast.includes("Marco") && p.cast.includes("elena") ? "Elena+Marco" : p.cast.includes("Marco") ? "Marco+Leo" : "Elena+Leo") : p.cast.includes("Marco") ? (p.cast.includes("elena") ? "Elena+Marco" : "Marco") : "Elena",
-  panels: p.panels,
-}));
+/** @deprecated Use STORY_PLOTS_11_20 */
+export const STORY_PLOTS_DRAFT_11_20 = STORY_PLOTS_11_20;

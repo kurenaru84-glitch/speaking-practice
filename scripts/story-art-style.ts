@@ -1,42 +1,49 @@
 /**
- * PicSpeak story strips — original essay-manga chibi for young adults (20s–30s).
- * Four fixed characters. Vertical 4-koma. No text in images.
+ * PicSpeak story strips — locked Style C (reference: public/style-tests/reference-style-blackout.png).
+ * Elena / Marco / Leo: fixed face + outfit every story. B&W + accent colors. Vertical 4-koma.
  */
 
+export const REFERENCE_STYLE_IMAGE = "public/style-tests/reference-style-blackout.png";
+
 export const CHARACTERS = {
-  haru: `CHARACTER A "Haru" (ALWAYS draw exactly like this when she appears):
-Young woman ~25, office worker. Pale blue-gray bob hair with side part. Beige long open cardigan, white crew-neck tee, black slim pants. Chibi ~3 heads tall, young ADULT face (NOT child). Small simple eyes, clear readable expression. Original design — NOT K-On, NOT any anime series character.`,
-  ren: `CHARACTER B "Ren" (ALWAYS draw exactly like this when he appears):
-Young man ~27, young professional. Short neat dark brown hair, thin rectangular glasses, navy zip-up jacket, light shirt, chinos. Chibi ~3 heads tall, mature young adult face. Small simple eyes. Original design — NOT K-On, NOT any anime series character.`,
-  mei: `CHARACTER C "Mei" (ALWAYS draw exactly like this when she appears):
-Young woman ~24. Chestnut brown hair in low ponytail, olive green casual shirt, dark jeans. Chibi ~3 heads tall, young adult face, friendly expression. Small simple eyes. Original design — NOT K-On, NOT any anime series character.`,
-  taku: `CHARACTER D "Taku" (ALWAYS draw exactly like this when he appears):
-Young man ~22, university age. Tousled sandy brown hair, gray hoodie, jeans, small backpack. Chibi ~3 heads tall, young adult face. Small simple eyes. Original design — NOT K-On, NOT any anime series character.`,
+  elena: `CHARACTER "Elena" — LOCKED DESIGN (face and outfit NEVER change between stories):
+Round head. Dark chin-length bob with wavy/curly texture (solid black hair shape with a few inner curl lines) — EXACTLY like reference. Two small black dot eyes. Simple curved line mouth. Loose long-sleeved plain dress/top (same silhouette every time). Same body proportions every story. NO glasses. NO outfit changes.`,
+  marco: `CHARACTER "Marco" — LOCKED DESIGN (face and outfit NEVER change between stories):
+Round head. Short dark messy hair with a few strands pointing up at front and back — NO glasses, handsome simple face. Two small black dot eyes. Simple curved line mouth. Collared button-down shirt (same every time). Same body proportions every story. NO outfit changes.`,
+  leo: `CHARACTER "Leo" — LOCKED DESIGN (face and outfit NEVER change between stories):
+Smaller round head than adults, same art style as Elena/Marco reference. Short simple hair scribble. Two dot eyes. Horizontal striped shirt (blue accent stripes). Small square backpack (red accent). Same design every story.`,
 } as const;
 
-export const STORY_ESSAY_CHIBI_PROMPT = `
-Art style: ORIGINAL Japanese essay manga / slice-of-life 4-koma for young adults (office workers, university students). Chibi simplified bodies (~3 heads tall) but mature young-adult faces — NOT childish, NOT toddler-like, NOT copying K-On or any existing manga/anime.
+export const STORY_DOODLE_STYLE_PROMPT = `
+MATCH the attached reference image art style EXACTLY: minimalist black-and-white line art like Sarah's Scribbles. Clean uniform black outlines on white. Round heads, dot eyes, simple mouth lines. Sparse backgrounds (few lines only). Same line weight and character proportions as reference.
 
-Line work: clean medium pen lines, slightly hand-drawn warmth. Minimal detail, essence only — white or near-white background, at most 1–2 simple props per panel. Very faint pale color wash optional; mostly line art.
+Color: mostly black and white. Use SMALL accent colors on key props when clarity needs it (yellow warm glow for lights/candles, blue phone screen light, green bicycle, red flat tire, gray smoke, etc.). Do NOT fully color characters except Leo's stripe/backpack accents.
 
-Expressions: clear and readable but restrained — essay comic tone, not flashy anime.
+NO text, NO numbers, NO speech bubbles, NO labels, NO watermarks.
 
-NO text, NO numbers, NO speech bubbles, NO labels, NO onomatopoeia, NO watermarks anywhere.
+Layout: single TALL vertical image, 4 equal panels stacked top-to-bottom with thin white horizontal gutters.
 
-Layout: single TALL vertical image, 4 equal panels stacked top-to-bottom with thin white horizontal gutters between panels.
+CHARACTER CONSISTENCY (CRITICAL): Elena and Marco must look IDENTICAL to the reference image whenever they appear — same hair shape, same face (dot eyes), same clothes.
+
+NARRATIVE CONTINUITY (CRITICAL):
+- Same props/clothes in every panel. One bicycle = same green bike, two wheels only, never extra wheels on ground.
+- Objects do not vanish between panels without reason.
+- Each panel continues the same story in order.
 `.trim();
 
 export type StoryStripPlot = {
   setId: string;
   cast: string;
   panels: [string, string, string, string];
+  accents?: string;
 };
 
 export function buildStoryStripPrompt(plot: StoryStripPlot): string {
   const [p1, p2, p3, p4] = plot.panels;
-  return `${STORY_ESSAY_CHIBI_PROMPT}
+  return `${STORY_DOODLE_STYLE_PROMPT}
+${plot.accents ? `\nAccent colors for this story: ${plot.accents}` : ""}
 
-CAST (use ONLY these characters, keep designs fixed):
+CAST (use ONLY these characters — omit anyone not listed):
 ${plot.cast}
 
 Top panel: ${p1}
@@ -49,108 +56,124 @@ Bottom panel: ${p4}
 export const STORY_PLOTS: StoryStripPlot[] = [
   {
     setId: "bike-flat",
-    cast: CHARACTERS.haru,
+    cast: CHARACTERS.elena,
+    accents: "Green bicycle frame. Tiny red mark on flat tire in panel 2.",
     panels: [
-      "Haru riding bicycle to work, calm morning expression.",
-      "Stopped beside road, looking at flat tire, troubled face.",
-      "Kneeling with small repair kit, focused expression.",
-      "Walking bike along road toward city skyline, tired but okay.",
+      "Elena alone happily riding ONE green bicycle on simple European street. Only Elena, one bike.",
+      "Elena stopped beside SAME green bicycle upright. ONE tire flat with tiny red mark. Two wheels only, NO extra wheel on ground.",
+      "Elena kneeling pumping SAME green bicycle with hand pump. One bike, two wheels.",
+      "Elena riding SAME green bicycle again, small happy smile. One bike only.",
     ],
   },
   {
     setId: "blackout",
-    cast: `${CHARACTERS.haru}\n${CHARACTERS.ren}\n${CHARACTERS.taku}\nThree young adult roommates sharing an apartment.`,
+    cast: `${CHARACTERS.elena}\n${CHARACTERS.marco}`,
+    accents: "Yellow warm glow on lit bulb and candle/match. Blue-white rays from phone flashlight. Dark panels use black fill for night.",
     panels: [
-      "Evening apartment: Haru reading on sofa, Ren at table, Taku playing cards — lamp lit.",
-      "Sudden darkness, all three surprised faces in moonlight from window.",
-      "Haru lighting candle, Ren with phone flashlight, calm teamwork.",
-      "Three sitting on floor playing cards by candlelight, relaxed small smiles.",
+      "Apartment: Elena on sofa reading, Marco at round table with cards. Hanging bulb lit with yellow glow lines. Window shows city.",
+      "Same room, bulb off, dark. Elena and Marco surprised O mouths. Crescent moon in window.",
+      "Same dark room: Elena lighting candle on table (yellow flame glow), Marco holding phone with blue-white light rays.",
+      "Same room: Elena and Marco on floor playing cards by candle (yellow glow), small smiles.",
     ],
   },
   {
     setId: "cooking-disaster",
-    cast: CHARACTERS.ren,
+    cast: CHARACTERS.marco,
+    accents: "Gray/black wavy smoke lines from pot. Red pizza box accent in panel 4.",
     panels: [
-      "Ren happily cooking at stove, stirring pot.",
-      "Smoke rising from burnt pan, Ren shocked stiff expression.",
-      "Ren on stool waving towel at ceiling alarm, stressed.",
-      "Ren sitting with takeout pizza box, awkward relieved half-smile, messy kitchen behind.",
+      "Marco alone happily stirring pot on stove in simple kitchen. Only Marco, same locked design.",
+      "Same kitchen: gray/black smoke from SAME pot, Marco shocked O mouth. Same stove, same pot.",
+      "Same kitchen: Marco on stool waving towel at ceiling smoke alarm, same smoking pot on stove behind.",
+      "Same kitchen: Marco sitting with red pizza box open, awkward relieved smile. Burnt pot still on stove behind.",
     ],
   },
   {
     setId: "dog-escape",
-    cast: `${CHARACTERS.mei}\nSimple small dog with floppy ears (Mei's pet).`,
+    cast: `${CHARACTERS.elena}\nSmall dog: simple floppy-ear doodle, brown/tan accent on ears.`,
+    accents: "Brown/tan accent on dog. Red leash accent when visible.",
     panels: [
-      "Mei opening apartment door, dog waiting eagerly.",
-      "Dog dashing outside, Mei reaching surprised.",
-      "Mei searching in small park area, calling dog worried.",
-      "Mei kneeling hugging dog at building entrance, relieved smile.",
+      "Elena opening apartment door, small dog waiting eagerly inside. Same Elena design.",
+      "Dog dashing outside through open door, Elena reaching surprised. Red leash trailing.",
+      "Elena in simple park area calling worried, looking around. No dog yet.",
+      "Elena kneeling hugging same dog at building entrance, relieved smile.",
     ],
   },
   {
     setId: "lost-tourist",
-    cast: `${CHARACTERS.taku}\nTaku wearing baseball cap, backpack on.`,
+    cast: CHARACTERS.leo,
+    accents: "Blue accent on phone map screen. Red backpack accent.",
     panels: [
-      "Taku on street holding phone map, confused look.",
-      "Taku asking shop staff for directions, both gesturing.",
-      "Taku walking uncertainly down side street.",
-      "Taku smiling relieved near simple landmark fountain.",
+      "Leo alone on European street holding phone with blue map screen, confused face. Same Leo design.",
+      "Leo asking simple shop staff stick figure for directions, both gesturing.",
+      "Leo walking uncertainly down narrow side street, still holding phone.",
+      "Leo smiling relieved near simple fountain landmark, phone lowered.",
     ],
   },
   {
     setId: "lost-wallet",
-    cast: CHARACTERS.haru,
+    cast: CHARACTERS.elena,
+    accents: "Brown wallet accent when visible.",
     panels: [
-      "Haru at cafe table reaching for wallet to pay.",
-      "Searching bag and pockets, growing panic expression.",
-      "Outside bending to look under bench.",
-      "Finding wallet under cafe table, huge relieved exhale smile.",
+      "Elena at café table reaching for brown wallet to pay. Same Elena design.",
+      "Elena searching bag and pockets, panicked expression. Wallet missing.",
+      "Elena outside bending to look under bench, worried.",
+      "Elena at same café table finding brown wallet underneath, huge relieved smile.",
     ],
   },
   {
     setId: "missed-bus",
-    cast: CHARACTERS.haru,
+    cast: CHARACTERS.elena,
+    accents: "Red alarm clock accent. Yellow bus accent in panel 3.",
     panels: [
-      "Haru waking in bed shocked, alarm on nightstand.",
-      "Haru running with coffee cup, hurried expression.",
-      "At bus stop as bus leaves, arm outstretched.",
-      "Entering office building entrance, exhausted slump.",
+      "Elena waking in bed shocked, red alarm on nightstand ringing.",
+      "Elena running with coffee cup, hurried expression.",
+      "At bus stop as yellow bus drives away, Elena arm outstretched.",
+      "Entering building entrance, exhausted slump.",
     ],
   },
   {
     setId: "moving-day",
-    cast: `${CHARACTERS.haru}\n${CHARACTERS.mei}`,
+    cast: `${CHARACTERS.elena}\n${CHARACTERS.marco}`,
+    accents: "Red pizza box accent in panel 4.",
     panels: [
-      "New apartment full of stacked boxes, Haru and Mei overwhelmed sigh.",
-      "Both carrying couch up stairs, straining effort faces.",
+      "New apartment stacked boxes, Elena and Marco overwhelmed sigh.",
+      "Both carrying couch up stairs, straining faces.",
       "Box dropped on floor, both shocked open mouths.",
-      "Sitting on couch among boxes sharing pizza, tired happy smiles.",
+      "Sitting on couch among boxes sharing pizza from red box, tired happy smiles.",
     ],
   },
   {
     setId: "rain-surprise",
-    cast: `${CHARACTERS.haru}\n${CHARACTERS.mei}`,
+    cast: `${CHARACTERS.elena}\n${CHARACTERS.leo}`,
+    accents: "Blue rain lines in panel 2. Yellow umbrella accent in panel 3.",
     panels: [
-      "Haru and Mei picnic on blanket, pleasant smiles.",
-      "Sudden rain, both look up surprised.",
-      "Running together under one small umbrella.",
+      "Elena and Leo picnic on blanket in park, pleasant smiles.",
+      "Sudden blue rain lines, both look up surprised.",
+      "Running together under one yellow umbrella.",
       "Under shop awning sharing warm drink, wet hair, laughing.",
     ],
   },
   {
     setId: "surprise-birthday",
-    cast: `${CHARACTERS.mei}\n${CHARACTERS.ren}\n${CHARACTERS.taku}\nMei is the birthday person. Ren and Taku plan the surprise.`,
+    cast: `${CHARACTERS.elena}\n${CHARACTERS.marco}\n${CHARACTERS.leo}\nElena is birthday person. Marco and Leo plan surprise.`,
+    accents: "Pink/yellow candle glow on small cake in panel 4.",
     panels: [
-      "Ren and Taku hiding behind sofa, quiet excited faces.",
-      "Mei opening front door with grocery bag, unaware.",
-      "Lights on, Ren and Taku jumping out, Mei shocked happy.",
-      "Three around small cake on table, warm celebration smiles.",
+      "Marco and Leo hiding behind sofa, quiet excited faces.",
+      "Elena opening front door with grocery bag, unaware.",
+      "Lights on, Marco and Leo jumping out, Elena shocked happy.",
+      "Three around small cake with candle glow, warm smiles.",
     ],
   },
 ];
 
-/** @deprecated Use STORY_ESSAY_CHIBI_PROMPT */
-export const STORY_KIRARA_PROMPT = STORY_ESSAY_CHIBI_PROMPT;
+/** First 6 story sets for batch generation */
+export const STORY_PLOTS_BATCH_1_6 = STORY_PLOTS.slice(0, 6);
 
-/** @deprecated Use STORY_ESSAY_CHIBI_PROMPT */
-export const STORY_REFERENCE_MANGA_PROMPT = STORY_ESSAY_CHIBI_PROMPT;
+/** @deprecated Use STORY_DOODLE_STYLE_PROMPT */
+export const STORY_ESSAY_CHIBI_PROMPT = STORY_DOODLE_STYLE_PROMPT;
+
+/** @deprecated Use STORY_DOODLE_STYLE_PROMPT */
+export const STORY_KIRARA_PROMPT = STORY_DOODLE_STYLE_PROMPT;
+
+/** @deprecated Use STORY_DOODLE_STYLE_PROMPT */
+export const STORY_REFERENCE_MANGA_PROMPT = STORY_DOODLE_STYLE_PROMPT;

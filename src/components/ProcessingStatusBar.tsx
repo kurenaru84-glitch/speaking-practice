@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type ProcessingPhase = "transcribe" | "feedback";
+export type ProcessingPhase = "transcribe" | "feedback-quick" | "feedback-detail";
 
 const STEPS: Record<ProcessingPhase, string[]> = {
   transcribe: [
@@ -10,16 +10,20 @@ const STEPS: Record<ProcessingPhase, string[]> = {
     "音声を解析しています...",
     "文字起こしを作成中...",
   ],
-  feedback: [
+  "feedback-quick": [
     "あなたの回答を読み取り中...",
-    "添削コメントを作成中...",
+    "総評と評価を作成中...",
+  ],
+  "feedback-detail": [
+    "文ごとの添削を作成中...",
     "模範例と語彙を準備中...",
   ],
 };
 
 const SUBTEXT: Record<ProcessingPhase, string> = {
   transcribe: "録音内容をテキストに変換しています",
-  feedback: "フィードバックを作成しています",
+  "feedback-quick": "まずは総評と評価を表示します",
+  "feedback-detail": "詳しい添削を追加しています",
 };
 
 function useSimulatedProgress(active: boolean) {

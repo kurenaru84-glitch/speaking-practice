@@ -34,6 +34,8 @@ import {
 } from "@/lib/record-duration";
 import { useWordList } from "@/lib/use-word-list";
 import type {
+  FeedbackDetailResult,
+  FeedbackQuickResult,
   FeedbackResult,
   ImagesResponse,
   CompareSet,
@@ -137,6 +139,7 @@ export function SpeakingPractice() {
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [recordingOk, setRecordingOk] = useState(true);
   const [livePreview, setLivePreview] = useState(false);
@@ -219,12 +222,12 @@ export function SpeakingPractice() {
       ? !!currentInterview
       : !!currentEmail
     : hasVisual;
-  const busy = recording || transcribing || loading;
+  const busy = recording || transcribing || loading || loadingDetail;
   const practiceStep: PracticeStep = resolvePracticeStep({
     feedback,
     recording,
     transcribing,
-    loading,
+    loading: loading || loadingDetail,
     hasText: !!text.trim(),
   });
   const mixedLanguage = containsNativeLanguage(text, nativeLanguage);
@@ -763,6 +766,7 @@ export function SpeakingPractice() {
     }
 
     setLoading(true);
+    setLoadingDetail(false);
     setError("");
     setFeedback(null);
     setComparisonHistory(previousHistory);
@@ -775,75 +779,110 @@ export function SpeakingPractice() {
         ? `${previousChecklist.passed}/${previousChecklist.total} passed`
         : undefined;
 
+    const requestBody = (phase: "quick" | "detail") =>
+      JSON.stringify({
+        phase,
+        ...(isTextPractice
+          ? {}
+          : isMultiVisual
+            ? { images: currentImages }
+            : { image: currentImages[0] }),
+        text: text.trim(),
+        language: learningLanguage,
+        nativeLanguage,
+        pattern: patternId,
+        ...(previousHistory
+          ? {
+              previousUserText: previousHistory.userText,
+              previousChecklistSummary,
+            }
+          : {}),
+        ...(currentCompare
+          ? {
+              scenarioPromptJa: currentCompare.promptJa,
+              scenarioPromptEn: currentCompare.promptEn,
+              compareLabelA: currentCompare.labelA,
+              compareLabelB: currentCompare.labelB,
+            }
+          : currentScenario
+            ? {
+                scenarioPromptJa: currentScenario.promptJa,
+                scenarioPromptEn: currentScenario.promptEn,
+              }
+            : currentInterview
+              ? {
+                  scenarioPromptJa: currentInterview.promptJa,
+                  scenarioPromptEn: currentInterview.promptEn,
+                }
+              : currentEmail
+                ? {
+                    scenarioPromptJa: currentEmail.promptJa,
+                    scenarioPromptEn: currentEmail.promptEn,
+                    emailType: currentEmail.type,
+                    incomingEmailJa: currentEmail.incomingEmailJa,
+                    incomingEmailEn: currentEmail.incomingEmailEn,
+                  }
+                : {}),
+      });
+
     try {
-      const res = await fetch("/api/feedback", {
+      const quickRes = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...(isTextPractice
-            ? {}
-            : isMultiVisual
-              ? { images: currentImages }
-              : { image: currentImages[0] }),
-          text: text.trim(),
-          language: learningLanguage,
-          nativeLanguage,
-          pattern: patternId,
-          ...(previousHistory
-            ? {
-                previousUserText: previousHistory.userText,
-                previousChecklistSummary,
-              }
-            : {}),
-          ...(currentCompare
-            ? {
-                scenarioPromptJa: currentCompare.promptJa,
-                scenarioPromptEn: currentCompare.promptEn,
-                compareLabelA: currentCompare.labelA,
-                compareLabelB: currentCompare.labelB,
-              }
-            : currentScenario
-              ? {
-                  scenarioPromptJa: currentScenario.promptJa,
-                  scenarioPromptEn: currentScenario.promptEn,
-                }
-              : currentInterview
-                ? {
-                    scenarioPromptJa: currentInterview.promptJa,
-                    scenarioPromptEn: currentInterview.promptEn,
-                  }
-                : currentEmail
-                  ? {
-                      scenarioPromptJa: currentEmail.promptJa,
-                      scenarioPromptEn: currentEmail.promptEn,
-                      emailType: currentEmail.type,
-                      incomingEmailJa: currentEmail.incomingEmailJa,
-                      incomingEmailEn: currentEmail.incomingEmailEn,
-                    }
-                  : {}),
-        }),
+        body: requestBody("quick"),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "フィードバックに失敗しました。");
+      const quickData = await quickRes.json();
+      if (!quickRes.ok) throw new Error(quickData.error ?? "フィードバックに失敗しました。");
+
       recordSession();
       refreshSessionUsage();
-      const result = data as FeedbackResult;
-      setFeedback(result);
-      savePracticeHistory({
-        patternId,
-        itemKey: currentItemKey,
-        itemTitleJa: currentItemTitleJa,
-        userText: text.trim(),
-        feedback: result,
-        learningLanguage,
+
+      const quick = quickData as FeedbackQuickResult;
+      setFeedback({
+        ...quick,
+        sentences: [],
+        natural: [],
+        vocabulary: [],
       });
-      appendTextAttempt(currentItemKey, learningLanguage, text.trim());
-      setTextAttempts(getTextAttempts(currentItemKey, learningLanguage));
-      setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
+      setLoading(false);
+      setLoadingDetail(true);
+
+      try {
+        const detailRes = await fetch("/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: requestBody("detail"),
+        });
+        const detailData = await detailRes.json();
+        if (!detailRes.ok) {
+          throw new Error(detailData.error ?? "詳細な添削の取得に失敗しました。");
+        }
+
+        const detail = detailData as FeedbackDetailResult;
+        const result: FeedbackResult = { ...quick, ...detail };
+        setFeedback(result);
+        savePracticeHistory({
+          patternId,
+          itemKey: currentItemKey,
+          itemTitleJa: currentItemTitleJa,
+          userText: text.trim(),
+          feedback: result,
+          learningLanguage,
+        });
+        appendTextAttempt(currentItemKey, learningLanguage, text.trim());
+        setTextAttempts(getTextAttempts(currentItemKey, learningLanguage));
+        setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
+      } catch (detailErr) {
+        setError(
+          detailErr instanceof Error ? detailErr.message : "詳細な添削の取得に失敗しました。"
+        );
+      } finally {
+        setLoadingDetail(false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "フィードバックに失敗しました。");
-    } finally {
       setLoading(false);
+      setLoadingDetail(false);
     }
   }
 
@@ -856,6 +895,7 @@ export function SpeakingPractice() {
     setIndex((prev) => (prev + delta + itemCount) % itemCount);
     setText("");
     setFeedback(null);
+    setLoadingDetail(false);
     setSecondsLeft(recordSeconds);
     setError("");
   }
@@ -863,6 +903,7 @@ export function SpeakingPractice() {
   function handleRetrySameItem() {
     setFeedback(null);
     setComparisonHistory(null);
+    setLoadingDetail(false);
     setText("");
     setError("");
   }
@@ -1202,8 +1243,10 @@ export function SpeakingPractice() {
                 : transcribing
                   ? "音声を解析中..."
                   : loading
-                    ? "添削を作成中..."
-                    : "または下に直接入力"}
+                    ? "総評を作成中..."
+                    : loadingDetail
+                      ? "詳しい添削を読み込み中..."
+                      : "または下に直接入力"}
             </span>
           </div>
 
@@ -1215,7 +1258,7 @@ export function SpeakingPractice() {
           )}
 
           <ProcessingStatusBar active={transcribing} phase="transcribe" />
-          <ProcessingStatusBar active={loading} phase="feedback" />
+          <ProcessingStatusBar active={loading} phase="feedback-quick" />
 
           {!recordingOk && (
             <p className="notice-accent">
@@ -1321,7 +1364,7 @@ export function SpeakingPractice() {
             onClick={requestFeedback}
             disabled={!text.trim() || busy || textOverLimit || (FREE_TIER_ENABLED && !sessionUsage.canUse)}
           >
-            {loading ? "添削中..." : pattern.feedbackButton}
+            {loading ? "総評を作成中..." : loadingDetail ? "詳細を読み込み中..." : pattern.feedbackButton}
           </button>
 
           {FREE_TIER_ENABLED && (
@@ -1352,7 +1395,7 @@ export function SpeakingPractice() {
             inQueue={inRetryQueue}
           />
 
-          {comparisonHistory && (
+          {comparisonHistory && !loadingDetail && (
             <PracticeGrowthPanel
               previous={comparisonHistory}
               currentText={text.trim()}
@@ -1364,16 +1407,23 @@ export function SpeakingPractice() {
             <FeedbackChecklist items={feedback.checklist} />
           )}
 
+          {loadingDetail && (
+            <ProcessingStatusBar active={loadingDetail} phase="feedback-detail" />
+          )}
+
           <div className="grid gap-4 lg:grid-cols-2">
           <div>
             <h2 className="mb-1 text-lg font-semibold text-stone-900">フィードバック</h2>
-            {wordListEnabled && (
+            {wordListEnabled && !loadingDetail && (
               <p className="mb-3 text-xs text-stone-500">
                 {mobile
                   ? "例文を長押しして範囲を選び、下のボタンで単語リストに追加できます"
                   : "例文を選択すると単語リストに追加できます"}
               </p>
             )}
+            {loadingDetail && feedback.sentences.length === 0 ? (
+              <FeedbackDetailSkeleton />
+            ) : (
             <ul className="space-y-3">
               {feedback.sentences.map((item, i) => {
                 const needsFix = item.fixed.trim() !== item.original.trim();
@@ -1394,6 +1444,7 @@ export function SpeakingPractice() {
                 );
               })}
             </ul>
+            )}
             <SelectableText
               text={feedback.summary}
               language={learningLanguage}
@@ -1406,13 +1457,16 @@ export function SpeakingPractice() {
           <div className="flex flex-col gap-4">
             <div>
               <h2 className="mb-1 text-lg font-semibold text-stone-900">{pattern.naturalTitle}</h2>
-              {wordListEnabled && (
+              {wordListEnabled && !loadingDetail && (
                 <p className="mb-3 text-xs text-stone-500">
                   {mobile
                     ? "例文を長押しして範囲を選び、下のボタンで単語リストに追加できます"
                     : "例文を選択すると単語リストに追加できます"}
                 </p>
               )}
+              {loadingDetail && feedback.natural.length === 0 ? (
+                <FeedbackNaturalSkeleton />
+              ) : (
               <div className="flex flex-col gap-3">
                 {feedback.natural
                   .filter((example) => example.text.trim())
@@ -1457,8 +1511,9 @@ export function SpeakingPractice() {
                     )
                   )}
               </div>
+              )}
             </div>
-            {feedback.vocabulary.length > 0 && (
+            {!loadingDetail && feedback.vocabulary.length > 0 && (
               <div>
                 <h3 className="mb-1 text-sm font-semibold text-stone-900">この場面で使える語彙</h3>
                 {wordListEnabled && (
@@ -1527,6 +1582,37 @@ export function SpeakingPractice() {
         </Link>
       </footer>
     </main>
+  );
+}
+
+function FeedbackDetailSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3" aria-hidden>
+      {[0, 1, 2].map((item) => (
+        <div key={item} className="rounded-2xl bg-stone-50 p-3">
+          <div className="h-4 w-4/5 rounded bg-stone-200" />
+          <div className="mt-2 h-3 w-full rounded bg-stone-100" />
+          <div className="mt-2 h-3 w-2/3 rounded bg-stone-100" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FeedbackNaturalSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3" aria-hidden>
+      {[0, 1].map((item) => (
+        <div key={item} className="rounded-2xl bg-amber-50 p-4">
+          <div className="mb-3 h-3 w-16 rounded bg-amber-100" />
+          <div className="space-y-2">
+            <div className="h-3 w-full rounded bg-amber-100" />
+            <div className="h-3 w-full rounded bg-amber-100" />
+            <div className="h-3 w-4/5 rounded bg-amber-100" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

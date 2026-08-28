@@ -2,9 +2,23 @@ import {
   buildTranscribePrompt,
   formatTranscriptLocally,
 } from "@/lib/code-switch";
-import type { ChecklistItem, FeedbackGrade, FeedbackResult, NaturalExample, NaturalSection } from "@/lib/types";
+import type {
+  ChecklistItem,
+  FeedbackDetailResult,
+  FeedbackGrade,
+  FeedbackQuickResult,
+  FeedbackResult,
+  NaturalExample,
+  NaturalSection,
+} from "@/lib/types";
 import { filterFeedbackSentences } from "@/lib/skip-feedback-sentences";
-import { buildFeedbackPrompt, type PatternId, type PreviousAttemptContext } from "@/lib/patterns";
+import {
+  buildFeedbackDetailPrompt,
+  buildFeedbackPrompt,
+  buildFeedbackQuickPrompt,
+  type PatternId,
+  type PreviousAttemptContext,
+} from "@/lib/patterns";
 
 const MODEL = "gemini-3.6-flash";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -164,6 +178,102 @@ Return JSON only:
   return { promptJa, promptEn };
 }
 
+export async function getSpeakingFeedbackQuick(params: {
+  userText: string;
+  languageName: string;
+  nativeLanguageName: string;
+  nativeLanguageId: string;
+  patternId: PatternId;
+  scenario?: {
+    promptJa: string;
+    promptEn: string;
+    labelA?: string;
+    labelB?: string;
+    emailType?: "compose" | "reply";
+    incomingEmailJa?: string;
+    incomingEmailEn?: string;
+  };
+  previousAttempt?: PreviousAttemptContext;
+}): Promise<FeedbackQuickResult> {
+  const prompt = buildFeedbackQuickPrompt(
+    params.patternId,
+    params.languageName,
+    params.nativeLanguageName,
+    params.nativeLanguageId,
+    params.userText,
+    params.scenario,
+    params.previousAttempt
+  );
+
+  const text = await callGemini({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      thinkingConfig: { thinkingLevel: "minimal" },
+    },
+  });
+
+  try {
+    return normalizeQuickFeedback(JSON.parse(text));
+  } catch {
+    throw new Error("AIの応答を解析できませんでした。もう一度お試しください。");
+  }
+}
+
+export async function getSpeakingFeedbackDetail(params: {
+  images?: Array<{ base64: string; mimeType: string }>;
+  userText: string;
+  languageName: string;
+  nativeLanguageName: string;
+  nativeLanguageId: string;
+  patternId: PatternId;
+  scenario?: {
+    promptJa: string;
+    promptEn: string;
+    labelA?: string;
+    labelB?: string;
+    emailType?: "compose" | "reply";
+    incomingEmailJa?: string;
+    incomingEmailEn?: string;
+  };
+  previousAttempt?: PreviousAttemptContext;
+}): Promise<FeedbackDetailResult> {
+  const prompt = buildFeedbackDetailPrompt(
+    params.patternId,
+    params.languageName,
+    params.nativeLanguageName,
+    params.nativeLanguageId,
+    params.userText,
+    params.scenario,
+    params.previousAttempt
+  );
+
+  const imageParts = (params.images ?? []).map((img) => ({
+    inline_data: {
+      mime_type: img.mimeType,
+      data: img.base64,
+    },
+  }));
+
+  const text = await callGemini({
+    contents: [
+      {
+        parts: imageParts.length > 0 ? [...imageParts, { text: prompt }] : [{ text: prompt }],
+      },
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      thinkingConfig: { thinkingLevel: "minimal" },
+    },
+  });
+
+  try {
+    return normalizeDetailFeedback(JSON.parse(text));
+  } catch {
+    throw new Error("AIの応答を解析できませんでした。もう一度お試しください。");
+  }
+}
+
 export async function getSpeakingFeedback(params: {
   images?: Array<{ base64: string; mimeType: string }>;
   userText: string;
@@ -291,6 +401,63 @@ function normalizeGrade(value: unknown): FeedbackGrade | undefined {
     .trim()
     .toUpperCase();
   return VALID_GRADES.has(grade as FeedbackGrade) ? (grade as FeedbackGrade) : undefined;
+}
+
+function normalizeGradeFields(raw: unknown): Pick<FeedbackQuickResult, "grade" | "gradeNote"> {
+  const data = raw as Partial<FeedbackQuickResult>;
+  const grade = normalizeGrade(data.grade);
+  const gradeNote = String(data.gradeNote ?? "").trim() || undefined;
+  return {
+    grade,
+    gradeNote: grade ? gradeNote : undefined,
+  };
+}
+
+function normalizeQuickFeedback(raw: unknown): FeedbackQuickResult {
+  const data = raw as Partial<FeedbackQuickResult>;
+  return {
+    summary: String(data.summary ?? "").trim(),
+    checklist: normalizeChecklist(data.checklist),
+    ...normalizeGradeFields(data),
+  };
+}
+
+function normalizeDetailFeedback(raw: unknown): FeedbackDetailResult {
+  const data = raw as Partial<FeedbackDetailResult> & {
+    corrections?: Array<{ original: string; fixed: string; note: string }>;
+    natural?: string | string[];
+  };
+
+  const growthNote = String(data.growthNote ?? "").trim() || undefined;
+
+  const mapSentences = (sentences: FeedbackResult["sentences"]) => ({
+    sentences: filterFeedbackSentences(sentences),
+    natural: normalizeNatural(data.natural),
+    vocabulary: (data.vocabulary ?? []).slice(0, 10),
+    growthNote,
+  });
+
+  if (Array.isArray(data.sentences) && data.sentences.length > 0) {
+    return mapSentences(
+      data.sentences.map((s) => ({
+        original: s.original ?? "",
+        fixed: s.fixed ?? s.original ?? "",
+        comment: s.comment ?? "",
+      }))
+    );
+  }
+
+  if (Array.isArray(data.corrections)) {
+    return mapSentences(
+      data.corrections.map((c) => ({
+        original: c.original,
+        fixed: c.fixed,
+        comment: c.note,
+      }))
+    );
+  }
+
+  throw new Error("AIの応答形式が不正です。");
 }
 
 function normalizeFeedback(raw: unknown): FeedbackResult {

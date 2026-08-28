@@ -326,21 +326,20 @@ export type PreviousAttemptContext = {
   checklistSummary?: string;
 };
 
-export function buildFeedbackPrompt(
-  patternId: PatternId,
-  languageName: string,
+export type FeedbackScenario = {
+  promptJa: string;
+  promptEn: string;
+  labelA?: string;
+  labelB?: string;
+  emailType?: "compose" | "reply";
+  incomingEmailJa?: string;
+  incomingEmailEn?: string;
+};
+
+function buildFeedbackIntro(
   nativeLanguageName: string,
   nativeLanguageId: string,
   userText: string,
-  scenario?: {
-    promptJa: string;
-    promptEn: string;
-    labelA?: string;
-    labelB?: string;
-    emailType?: "compose" | "reply";
-    incomingEmailJa?: string;
-    incomingEmailEn?: string;
-  },
   previousAttempt?: PreviousAttemptContext
 ): string {
   const previousBlock = previousAttempt
@@ -356,13 +355,523 @@ ${previousAttempt.userText}
     ? `\nThis transcript contains ${nativeLanguageName} mixed in — the learner likely forgot vocabulary. Help them express it in the target language.\n`
     : "";
 
-  const intro = `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
+  return `You are a kind, encouraging language tutor. Always react to EVERY sentence the learner said.
 The learner's native language is ${nativeLanguageName}. All comments, notes, summaries, and translationJa fields must be in ${nativeLanguageName}.
 ${codeSwitchNote}${previousBlock}
 Learner text:
 """
 ${userText}
 """`;
+}
+
+function buildQuickJsonShape(
+  nativeLanguageName: string,
+  summaryHint: string,
+  checklist?: ReadonlyArray<{ id: string; labelJa: string }>
+) {
+  const checklistLines = checklist
+    ? checklist
+        .map(
+          (item) =>
+            `    { "id": "${item.id}", "labelJa": "${item.labelJa}", "passed": true or false, "note": "optional brief note in ${nativeLanguageName}" }`
+        )
+        .join(",\n")
+    : "";
+
+  const checklistBlock = checklist
+    ? `
+  "checklist": [
+${checklistLines}
+  ],`
+    : "";
+
+  return `{${checklistBlock}${gradeJsonFields(nativeLanguageName)}
+  "summary": "${summaryHint}"
+}`;
+}
+
+function buildDetailJsonShape(
+  languageName: string,
+  nativeLanguageName: string,
+  naturalHint: string,
+  includeGrowthNote: boolean
+) {
+  return `{
+  "sentences": [
+    {
+      "original": "one learner sentence exactly as spoken/written",
+      "fixed": "corrected sentence in ${languageName}, or same as original if already good",
+      "comment": "reaction in ${nativeLanguageName}: correction, advice, or praise"
+    }
+  ],
+  "natural": [
+    {
+      "text": "${naturalHint}",
+      "translationJa": "natural ${nativeLanguageName} translation of example 1"
+    },
+    {
+      "text": "A second alternative natural example in ${languageName}. Different wording or angle from the first, same quality. 80-140 words, spoken style.",
+      "translationJa": "natural ${nativeLanguageName} translation of example 2"
+    }
+  ],${
+    includeGrowthNote
+      ? `
+  "growthNote": "1-2 sentences in ${nativeLanguageName} comparing THIS attempt to the learner's PREVIOUS attempt on the same question. Mention concrete improvements (e.g. more examples, better connectors) or what still needs work.",`
+      : ""
+  }
+  "vocabulary": [
+    { "term": "useful word or phrase in ${languageName}", "note": "short ${nativeLanguageName} explanation" }
+  ]
+}`;
+}
+
+function buildStructuredDetailJsonShape(
+  languageName: string,
+  nativeLanguageName: string,
+  naturalHint: string,
+  sections: ReadonlyArray<{ key: string; labelJa: string }>,
+  includeGrowthNote: boolean
+) {
+  const sectionLines = sections
+    .map(
+      (section) =>
+        `        { "key": "${section.key}", "labelJa": "${section.labelJa}", "text": "this part in ${languageName}" }`
+    )
+    .join(",\n");
+
+  const naturalEntry = `{
+      "text": "${naturalHint}",
+      "translationJa": "natural ${nativeLanguageName} translation of the full example",
+      "sections": [
+${sectionLines}
+      ]
+    }`;
+
+  return `{
+  "sentences": [
+    {
+      "original": "one learner sentence exactly as spoken/written",
+      "fixed": "corrected sentence in ${languageName}, or same as original if already good",
+      "comment": "reaction in ${nativeLanguageName}: correction, advice, or praise"
+    }
+  ],
+  "natural": [
+    ${naturalEntry},
+    {
+      "text": "A second alternative example in ${languageName}. Same structure quality, different wording.",
+      "translationJa": "natural ${nativeLanguageName} translation of example 2",
+      "sections": [
+${sectionLines}
+      ]
+    }
+  ],${
+    includeGrowthNote
+      ? `
+  "growthNote": "1-2 sentences in ${nativeLanguageName} comparing THIS attempt to the learner's PREVIOUS attempt on the same question. Mention concrete improvements (e.g. more examples, better connectors) or what still needs work.",`
+      : ""
+  }
+  "vocabulary": [
+    { "term": "useful word or phrase in ${languageName}", "note": "short ${nativeLanguageName} explanation" }
+  ]
+}`;
+}
+
+const QUICK_PHASE_RULES = `Quick assessment only:
+- Do NOT analyze individual sentences yet.
+- Do NOT provide natural examples or vocabulary.
+- Focus on overall impression, task fit, and encouraging next steps.`;
+
+const DETAIL_PHASE_RULES = `Detailed feedback only:
+- Do NOT assign a grade or write an overall summary (those were already shown to the learner).
+- Provide sentence-by-sentence feedback, natural examples, and vocabulary.`;
+
+export function buildFeedbackQuickPrompt(
+  patternId: PatternId,
+  languageName: string,
+  nativeLanguageName: string,
+  nativeLanguageId: string,
+  userText: string,
+  scenario?: FeedbackScenario,
+  previousAttempt?: PreviousAttemptContext
+): string {
+  const intro = buildFeedbackIntro(nativeLanguageName, nativeLanguageId, userText, previousAttempt);
+
+  if (patternId === "story") {
+    return `${intro}
+
+The learner saw photos in order (panel 1 → 2 → 3 → 4) and told the story in ${languageName}.
+
+${QUICK_PHASE_RULES}
+
+Return JSON only:
+${buildQuickJsonShape(
+  nativeLanguageName,
+  `2-4 sentences in ${nativeLanguageName} on connectors, tense consistency, and cause-effect logic`
+)}
+
+${GRADE_RULES(nativeLanguageName)}`;
+  }
+
+  if (patternId === "compare") {
+    const topicBlock = scenario
+      ? `
+Comparison topic shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}
+- Option A: ${scenario.labelA ?? "A"}
+- Option B: ${scenario.labelB ?? "B"}`
+      : "";
+
+    return `${intro}
+${topicBlock}
+
+The learner compared Image A and Image B in ${languageName} and stated a preference.
+
+${QUICK_PHASE_RULES}
+
+Return JSON only:
+${buildQuickJsonShape(
+  nativeLanguageName,
+  `2-4 sentences in ${nativeLanguageName} on comparison structure, vocabulary specificity, and clear reasoning`
+)}
+
+${GRADE_RULES(nativeLanguageName)}`;
+  }
+
+  if (patternId === "roleplay") {
+    const scenarioBlock = scenario
+      ? `
+Scenario shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}`
+      : "";
+
+    return `${intro}
+${scenarioBlock}
+
+The learner did role-play or gave advice about the photo in ${languageName}.
+
+${QUICK_PHASE_RULES}
+
+Return JSON only:
+${buildQuickJsonShape(
+  nativeLanguageName,
+  `2-4 sentences in ${nativeLanguageName} on subjunctive, tone, and situational fit`
+)}
+
+${GRADE_RULES(nativeLanguageName)}`;
+  }
+
+  if (patternId === "interview") {
+    const questionBlock = scenario
+      ? `
+Interview question shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}`
+      : "";
+
+    return `${intro}
+${questionBlock}
+
+The learner answered an interview question in ${languageName} for about one minute.
+
+${QUICK_PHASE_RULES}
+
+Checklist rules:
+- Evaluate each checklist item honestly against the learner's answer.
+- "good_length" passes if the answer has enough substance for ~60 seconds (roughly 70+ words or 4+ substantive sentences).
+
+Return JSON only:
+${buildQuickJsonShape(
+  nativeLanguageName,
+  `2-4 sentences in ${nativeLanguageName} on answer structure, specificity, and interview tone`,
+  INTERVIEW_CHECKLIST
+)}
+
+${GRADE_RULES(nativeLanguageName)}`;
+  }
+
+  if (patternId === "email") {
+    const isReply = scenario?.emailType === "reply";
+    const emailBlock = scenario
+      ? `
+Email task shown to the learner:
+- Type: ${isReply ? "Reply to an incoming email" : "Write a new email from scratch"}
+- Japanese instruction: ${scenario.promptJa}
+- English instruction: ${scenario.promptEn}${
+          isReply && scenario.incomingEmailEn
+            ? `
+
+Incoming email the learner must reply to:
+"""
+${scenario.incomingEmailEn}
+"""`
+            : ""
+        }`
+      : "";
+
+    return `${intro}
+${emailBlock}
+
+The learner wrote an email in ${languageName}.
+
+${QUICK_PHASE_RULES}
+
+Checklist rules:
+- Evaluate each checklist item against the learner's email.
+- For replies, "answers_all_points" passes only if every request/question in the incoming email is addressed.
+
+Return JSON only:
+${buildQuickJsonShape(
+  nativeLanguageName,
+  `2-4 sentences in ${nativeLanguageName} on email structure, tone, completeness, and expressions`,
+  isReply ? EMAIL_REPLY_CHECKLIST : EMAIL_COMPOSE_CHECKLIST
+)}
+
+${GRADE_RULES(nativeLanguageName)}`;
+  }
+
+  if (patternId === "speculate") {
+    return `${intro}
+
+The learner speculated about the photo in ${languageName} (why, before, next).
+
+${QUICK_PHASE_RULES}
+
+Return JSON only:
+${buildQuickJsonShape(
+  nativeLanguageName,
+  `2-4 sentences in ${nativeLanguageName} on modality usage and logical grounding`
+)}
+
+${GRADE_RULES(nativeLanguageName)}`;
+  }
+
+  return `${intro}
+
+The learner described the photo in ${languageName}.
+
+${QUICK_PHASE_RULES}
+
+Return JSON only:
+${buildQuickJsonShape(nativeLanguageName, `2-4 sentences of overall feedback in ${nativeLanguageName}`)}
+
+${GRADE_RULES(nativeLanguageName)}`;
+}
+
+export function buildFeedbackDetailPrompt(
+  patternId: PatternId,
+  languageName: string,
+  nativeLanguageName: string,
+  nativeLanguageId: string,
+  userText: string,
+  scenario?: FeedbackScenario,
+  previousAttempt?: PreviousAttemptContext
+): string {
+  const intro = buildFeedbackIntro(nativeLanguageName, nativeLanguageId, userText, previousAttempt);
+
+  if (patternId === "story") {
+    return `${intro}
+
+The learner saw photos in order (panel 1 → 2 → 3 → 4) and told the story in ${languageName}. Use the attached images.
+
+${DETAIL_PHASE_RULES}
+
+Return JSON only:
+${buildDetailJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A natural 60-second spoken story covering ALL panels in order in ${languageName}. Use First, Then, After that, Eventually, However. 80-160 words, spoken style.`,
+  Boolean(previousAttempt)
+)}
+
+Focus sentence comments on: connectors, tense, causal links, story gaps.
+${SHARED_RULES(nativeLanguageName)}${codeSwitchFeedbackRules(languageName, nativeLanguageName)}`;
+  }
+
+  if (patternId === "compare") {
+    const topicBlock = scenario
+      ? `
+Comparison topic shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}
+- Option A: ${scenario.labelA ?? "A"}
+- Option B: ${scenario.labelB ?? "B"}`
+      : "";
+
+    return `${intro}
+${topicBlock}
+
+The learner compared Image A and Image B in ${languageName}. Use the attached images.
+
+${DETAIL_PHASE_RULES}
+
+Return JSON only:
+${buildDetailJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A natural 60-second comparison in ${languageName}. Choose A or B clearly. Use On the one hand... On the other hand... Therefore... 80-140 words.`,
+  Boolean(previousAttempt)
+)}
+
+Focus sentence comments on: comparison phrases, vague words, missing conclusion.
+Vocabulary: comparison words and scene-specific terms for both images.
+${SHARED_RULES(nativeLanguageName)}${codeSwitchFeedbackRules(languageName, nativeLanguageName)}`;
+  }
+
+  if (patternId === "roleplay") {
+    const scenarioBlock = scenario
+      ? `
+Scenario shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}
+
+Evaluate whether the learner's response fits THIS scenario. They should speak directly to the person in the photo.`
+      : "";
+
+    return `${intro}
+${scenarioBlock}
+
+The learner did role-play or gave advice about the photo in ${languageName}. Use the attached image.
+
+${DETAIL_PHASE_RULES}
+
+Return JSON only:
+${buildDetailJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A natural 60-second role-play in ${languageName}. Use If I were... / I would... and direct speech. Polite and practical. 80-140 words.`,
+  Boolean(previousAttempt)
+)}
+
+Focus sentence comments on: subjunctive, direct address, register, realism.
+${SHARED_RULES(nativeLanguageName)}${codeSwitchFeedbackRules(languageName, nativeLanguageName)}`;
+  }
+
+  if (patternId === "interview") {
+    const questionBlock = scenario
+      ? `
+Interview question shown to the learner:
+- Japanese: ${scenario.promptJa}
+- English: ${scenario.promptEn}
+
+Evaluate whether the learner answered THIS question with enough detail, structure, and natural spoken ${languageName}.`
+      : "";
+
+    return `${intro}
+${questionBlock}
+
+The learner answered an interview question in ${languageName}.
+
+${DETAIL_PHASE_RULES}
+
+Return JSON only:
+${buildStructuredDetailJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A natural 60-second interview answer in ${languageName}. 80-140 words.`,
+  INTERVIEW_SECTIONS,
+  Boolean(previousAttempt)
+)}
+
+Focus sentence comments on: vague answers, missing examples, weak connectors, off-topic content.
+Vocabulary: interview phrases, opinion words, and topic-specific terms the learner could use.
+For each "natural" example, split the text into sections (opening, example, reason, closing) with accurate text fragments.
+${SHARED_RULES(nativeLanguageName)}${codeSwitchFeedbackRules(languageName, nativeLanguageName)}`;
+  }
+
+  if (patternId === "email") {
+    const isReply = scenario?.emailType === "reply";
+    const emailBlock = scenario
+      ? `
+Email task shown to the learner:
+- Type: ${isReply ? "Reply to an incoming email" : "Write a new email from scratch"}
+- Japanese instruction: ${scenario.promptJa}
+- English instruction: ${scenario.promptEn}${
+          isReply && scenario.incomingEmailEn
+            ? `
+
+Incoming email the learner must reply to:
+"""
+${scenario.incomingEmailEn}
+"""`
+            : ""
+        }
+
+Evaluate whether the learner's email fits THIS task.${
+          isReply ? " Every question or request in the incoming email must be answered clearly." : ""
+        }`
+      : "";
+
+    return `${intro}
+${emailBlock}
+
+The learner wrote an email in ${languageName}.
+
+${DETAIL_PHASE_RULES}
+
+Return JSON only:
+${buildStructuredDetailJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A complete model email in ${languageName}. 80-200 words.`,
+  EMAIL_SECTIONS,
+  Boolean(previousAttempt)
+)}
+
+Focus sentence comments on: missing subject, weak greeting/closing, unclear purpose, unanswered points (for replies), register mistakes.
+Vocabulary: useful email phrases and situation-specific expressions (not generic words).
+For each "natural" example, split into sections (subject, greeting, body, closing) with accurate text fragments.
+${SHARED_RULES(nativeLanguageName)}${codeSwitchFeedbackRules(languageName, nativeLanguageName)}`;
+  }
+
+  if (patternId === "speculate") {
+    return `${intro}
+
+The learner speculated about the photo in ${languageName} (why, before, next). Use the attached image.
+
+${DETAIL_PHASE_RULES}
+
+Return JSON only:
+${buildDetailJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A natural 60-second speculation in ${languageName}. Use must/might/could with visible evidence. 80-140 words.`,
+  Boolean(previousAttempt)
+)}
+
+Focus sentence comments on: modal verbs, unsupported leaps.
+${SHARED_RULES(nativeLanguageName)}${codeSwitchFeedbackRules(languageName, nativeLanguageName)}`;
+  }
+
+  return `${intro}
+
+The learner described the photo in ${languageName}. Use the attached image.
+
+${DETAIL_PHASE_RULES}
+
+Return JSON only:
+${buildDetailJsonShape(
+  languageName,
+  nativeLanguageName,
+  `A natural 60-second description of THIS photo in ${languageName}. 80-140 words, spoken style.`,
+  Boolean(previousAttempt)
+)}
+
+Focus sentence comments on grammar, word choice, and clarity.
+${SHARED_RULES(nativeLanguageName)}${codeSwitchFeedbackRules(languageName, nativeLanguageName)}`;
+}
+
+export function buildFeedbackPrompt(
+  patternId: PatternId,
+  languageName: string,
+  nativeLanguageName: string,
+  nativeLanguageId: string,
+  userText: string,
+  scenario?: FeedbackScenario,
+  previousAttempt?: PreviousAttemptContext
+): string {
+  const intro = buildFeedbackIntro(nativeLanguageName, nativeLanguageId, userText, previousAttempt);
 
   if (patternId === "story") {
     return `${intro}

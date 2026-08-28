@@ -41,6 +41,16 @@ export type FeedbackResult = {
   gradeNote?: string;
 };
 
+export type FeedbackQuickResult = Pick<
+  FeedbackResult,
+  "summary" | "checklist" | "grade" | "gradeNote"
+>;
+
+export type FeedbackDetailResult = Pick<
+  FeedbackResult,
+  "sentences" | "natural" | "vocabulary" | "growthNote"
+>;
+
 export type StorySet = {
   id: string;
   title: string;

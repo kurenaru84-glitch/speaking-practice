@@ -1,7 +1,6 @@
 import {
-  buildFormatTranscriptPrompt,
   buildTranscribePrompt,
-  looksLikeRunOnTranscript,
+  formatTranscriptLocally,
 } from "@/lib/code-switch";
 import type { ChecklistItem, FeedbackGrade, FeedbackResult, NaturalExample, NaturalSection } from "@/lib/types";
 import { filterFeedbackSentences } from "@/lib/skip-feedback-sentences";
@@ -82,19 +81,7 @@ export async function transcribeAudio(params: {
     throw new Error("音声を認識できませんでした。もう一度録音してください。");
   }
 
-  text = text.trim();
-  if (looksLikeRunOnTranscript(text)) {
-    text = await callGemini({
-      contents: [
-        {
-          parts: [{ text: buildFormatTranscriptPrompt(params.languageName, text) }],
-        },
-      ],
-      generationConfig: {
-        thinkingConfig: { thinkingLevel: "minimal" },
-      },
-    });
-  }
+  text = formatTranscriptLocally(text.trim());
 
   if (!text.trim()) {
     throw new Error("音声を認識できませんでした。もう一度録音してください。");

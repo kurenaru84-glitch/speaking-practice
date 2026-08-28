@@ -36,16 +36,24 @@ export function isLivePreviewSupported() {
   return Boolean(getSpeechRecognition());
 }
 
-/** 録音中だけ使うライブプレビュー。確定版は Gemini が担当する。 */
+/** Minimum chars to treat browser speech preview as instant transcript (skip blocking API wait). */
+export const INSTANT_TRANSCRIPT_MIN_CHARS = 10;
+
+/** 録音中のブラウザ音声認識。停止時のスナップショットを即時文字起こしに使う。 */
 export function useLivePreview() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const finalTextRef = useRef("");
+  const latestTextRef = useRef("");
   const activeRef = useRef(false);
 
-  const stop = useCallback(() => {
+  const stop = useCallback((): string => {
     activeRef.current = false;
     recognitionRef.current?.stop();
     recognitionRef.current = null;
+    const snapshot = latestTextRef.current.trim();
+    finalTextRef.current = "";
+    latestTextRef.current = "";
+    return snapshot;
   }, []);
 
   const start = useCallback((lang: string, onUpdate: (text: string) => void) => {
@@ -55,6 +63,7 @@ export function useLivePreview() {
     stop();
     activeRef.current = true;
     finalTextRef.current = "";
+    latestTextRef.current = "";
 
     const begin = () => {
       if (!activeRef.current) return;
@@ -75,7 +84,9 @@ export function useLivePreview() {
             interim += piece;
           }
         }
-        onUpdate(`${finalTextRef.current} ${interim}`.trim());
+        const combined = `${finalTextRef.current} ${interim}`.trim();
+        latestTextRef.current = combined;
+        onUpdate(combined);
       };
 
       recognition.onerror = (event) => {

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { containsNativeLanguage } from "@/lib/code-switch";
 import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
 import { useSettings } from "@/lib/use-settings";
-import { isLivePreviewSupported, useLivePreview } from "@/lib/use-live-preview";
+import { isLivePreviewSupported, INSTANT_TRANSCRIPT_MIN_CHARS, useLivePreview } from "@/lib/use-live-preview";
 import { isMobileDevice } from "@/lib/device";
 import { isRecordingSupported, useRecorder } from "@/lib/use-recorder";
 import { getPattern, type PatternId } from "@/lib/patterns";
@@ -557,33 +557,77 @@ export function SpeakingPractice() {
     [patternId, practiceData, applySessionIndex]
   );
 
-  const transcribeBlob = useCallback(async (blob: Blob) => {
-    setTranscribing(true);
-    setError("");
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2200);
+  }, []);
 
-    try {
-      const formData = new FormData();
-      formData.append("audio", blob, "recording.webm");
-      formData.append("language", learningLanguage);
-      formData.append("nativeLanguage", nativeLanguage);
-
-      const res = await fetch("/api/transcribe", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "文字起こしに失敗しました。");
-      const trimmed = String(data.text ?? "").trim();
+  const applyTranscriptText = useCallback(
+    (trimmed: string) => {
       setText(trimmed);
       appendTextAttempt(currentItemKey, learningLanguage, trimmed);
       setTextAttempts(getTextAttempts(currentItemKey, learningLanguage));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "文字起こしに失敗しました。");
-    } finally {
-      setTranscribing(false);
-      setLivePreview(false);
-    }
-  }, [learningLanguage, nativeLanguage, currentItemKey]);
+    },
+    [currentItemKey, learningLanguage]
+  );
+
+  const transcribeBlob = useCallback(
+    async (blob: Blob) => {
+      setTranscribing(true);
+      setError("");
+
+      try {
+        const formData = new FormData();
+        formData.append("audio", blob, "recording.webm");
+        formData.append("language", learningLanguage);
+        formData.append("nativeLanguage", nativeLanguage);
+
+        const res = await fetch("/api/transcribe", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "文字起こしに失敗しました。");
+        applyTranscriptText(String(data.text ?? "").trim());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "文字起こしに失敗しました。");
+      } finally {
+        setTranscribing(false);
+        setLivePreview(false);
+      }
+    },
+    [learningLanguage, nativeLanguage, applyTranscriptText]
+  );
+
+  const refineTranscriptFromAudio = useCallback(
+    async (blob: Blob, instantText: string) => {
+      try {
+        const formData = new FormData();
+        formData.append("audio", blob, "recording.webm");
+        formData.append("language", learningLanguage);
+        formData.append("nativeLanguage", nativeLanguage);
+
+        const res = await fetch("/api/transcribe", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) return;
+
+        const refined = String(data.text ?? "").trim();
+        if (!refined) return;
+
+        const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+        if (normalize(refined) === normalize(instantText)) return;
+
+        applyTranscriptText(refined);
+        showToast("文字起こしを更新しました");
+      } catch {
+        // Keep instant browser transcript on background failure.
+      }
+    },
+    [learningLanguage, nativeLanguage, applyTranscriptText, showToast]
+  );
 
   const clearLastRecording = useCallback(() => {
     if (lastRecordingUrlRef.current) {
@@ -606,7 +650,7 @@ export function SpeakingPractice() {
 
   const finishRecording = useCallback(async () => {
     clearTimer();
-    stopPreview();
+    const instantText = stopPreview();
     setLivePreview(false);
     const blob = await stop();
     if (blob && blob.size > 0) {
@@ -615,9 +659,25 @@ export function SpeakingPractice() {
       lastRecordingUrlRef.current = url;
       lastRecordingSessionRef.current = { patternId, index };
       setLastRecordingUrl(url);
-      await transcribeBlob(blob);
+
+      if (instantText.length >= INSTANT_TRANSCRIPT_MIN_CHARS) {
+        applyTranscriptText(instantText);
+        void refineTranscriptFromAudio(blob, instantText);
+      } else {
+        await transcribeBlob(blob);
+      }
     }
-  }, [clearTimer, stop, stopPreview, transcribeBlob, clearLastRecording, patternId, index]);
+  }, [
+    clearTimer,
+    stop,
+    stopPreview,
+    transcribeBlob,
+    refineTranscriptFromAudio,
+    applyTranscriptText,
+    clearLastRecording,
+    patternId,
+    index,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -626,11 +686,6 @@ export function SpeakingPractice() {
       void stop();
     };
   }, [clearTimer, stop, stopPreview]);
-
-  const showToast = useCallback((message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 2200);
-  }, []);
 
   function addVocabulary(term: string, note: string) {
     const vocabKey = `${term}::${note}`;

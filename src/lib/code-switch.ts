@@ -53,6 +53,32 @@ export function looksLikeRunOnTranscript(text: string): boolean {
   return lines.length === 1 && trimmed.length >= 120;
 }
 
+/** Client-side sentence breaks — avoids a second Gemini round-trip after transcribe. */
+export function formatTranscriptLocally(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed || !looksLikeRunOnTranscript(trimmed)) return trimmed;
+
+  const byPunctuation = trimmed
+    .split(/(?<=[.!?。！？])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (byPunctuation.length >= 2) return byPunctuation.join("\n");
+
+  if (trimmed.length >= 80) {
+    return trimmed
+      .replace(
+        /\s+(And|But|So|Then|Because|However|First|After that|Eventually|Also|Next|Finally)\s+/gi,
+        "\n$1 "
+      )
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  return trimmed;
+}
+
 export function buildFormatTranscriptPrompt(languageName: string, text: string): string {
   return `This is a spoken ${languageName} transcription from a learner. It was written as one long block without enough sentence breaks.
 

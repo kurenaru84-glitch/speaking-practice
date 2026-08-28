@@ -1,9 +1,16 @@
 import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
-import { getSpeakingFeedbackDetail, getSpeakingFeedbackQuick } from "@/lib/gemini";
+import {
+  getSpeakingFeedback,
+  getSpeakingFeedbackDetail,
+  getSpeakingFeedbackQuick,
+  hasDetailContent,
+  hasQuickContent,
+} from "@/lib/gemini";
 import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
 import { parseImageUrl, parseSetImageUrls } from "@/lib/images";
 import { getPattern, type PatternId } from "@/lib/patterns";
+import type { FeedbackDetailResult, FeedbackQuickResult, FeedbackResult } from "@/lib/types";
 import { getTextCharLimit, textLimitMessage } from "@/lib/text-limits";
 
 type FeedbackRequestBody = {
@@ -24,6 +31,22 @@ type FeedbackRequestBody = {
   previousUserText?: string;
   previousChecklistSummary?: string;
 };
+
+type SharedFeedbackParams = {
+  userText: string;
+  languageName: string;
+  nativeLanguageName: string;
+  nativeLanguageId: string;
+  patternId: PatternId;
+  scenario?: ReturnType<typeof buildScenario>;
+  previousAttempt?: ReturnType<typeof buildPreviousAttempt>;
+};
+
+type ImageInput = { base64: string; mimeType: string };
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function buildScenario(body: FeedbackRequestBody) {
   if (!body.scenarioPromptJa?.trim()) return undefined;
@@ -49,7 +72,7 @@ function buildPreviousAttempt(body: FeedbackRequestBody) {
 async function loadImageInputs(
   pattern: ReturnType<typeof getPattern>,
   body: FeedbackRequestBody
-): Promise<Array<{ base64: string; mimeType: string }>> {
+): Promise<ImageInput[]> {
   if (pattern.imageLayout === "interview" || pattern.imageLayout === "email") {
     return [];
   }
@@ -73,6 +96,105 @@ async function loadImageInputs(
   return [{ base64: buffer.toString("base64"), mimeType: parsed.mimeType }];
 }
 
+async function loadImageInputsSafe(
+  pattern: ReturnType<typeof getPattern>,
+  body: FeedbackRequestBody
+): Promise<ImageInput[]> {
+  try {
+    return await loadImageInputs(pattern, body);
+  } catch {
+    return [];
+  }
+}
+
+function toDetailResult(full: FeedbackResult): FeedbackDetailResult {
+  return {
+    sentences: full.sentences,
+    natural: full.natural,
+    vocabulary: full.vocabulary,
+    growthNote: full.growthNote,
+  };
+}
+
+async function fetchFullFeedback(
+  sharedParams: SharedFeedbackParams,
+  imageInputs: ImageInput[]
+): Promise<FeedbackResult | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await getSpeakingFeedback({
+        ...sharedParams,
+        images: imageInputs,
+      });
+    } catch {
+      if (attempt < 2) await sleep(500 * (attempt + 1));
+    }
+  }
+  return null;
+}
+
+async function fetchQuickFeedback(
+  sharedParams: SharedFeedbackParams,
+  body: FeedbackRequestBody,
+  pattern: ReturnType<typeof getPattern>
+): Promise<(FeedbackQuickResult & Partial<FeedbackDetailResult>) & { complete?: boolean }> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const feedback = await getSpeakingFeedbackQuick(sharedParams);
+      if (hasQuickContent(feedback)) {
+        return feedback;
+      }
+    } catch {
+      if (attempt < 2) await sleep(400 * (attempt + 1));
+    }
+  }
+
+  const imageInputs = await loadImageInputsSafe(pattern, body);
+  const full = await fetchFullFeedback(sharedParams, imageInputs);
+  if (!full) {
+    return {
+      summary: "",
+      sentences: [],
+      natural: [],
+      vocabulary: [],
+    };
+  }
+
+  return {
+    summary: full.summary,
+    checklist: full.checklist,
+    grade: full.grade,
+    gradeNote: full.gradeNote,
+    sentences: full.sentences,
+    natural: full.natural,
+    vocabulary: full.vocabulary,
+    growthNote: full.growthNote,
+    complete: true,
+  };
+}
+
+async function fetchDetailFeedback(
+  sharedParams: SharedFeedbackParams,
+  imageInputs: ImageInput[]
+): Promise<FeedbackDetailResult> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const feedback = await getSpeakingFeedbackDetail({
+        ...sharedParams,
+        images: imageInputs,
+      });
+      if (hasDetailContent(feedback)) {
+        return feedback;
+      }
+    } catch {
+      if (attempt < 2) await sleep(400 * (attempt + 1));
+    }
+  }
+
+  const full = await fetchFullFeedback(sharedParams, imageInputs);
+  return full ? toDetailResult(full) : { sentences: [], natural: [], vocabulary: [] };
+}
+
 export async function POST(request: Request) {
   const body = (await request.json()) as FeedbackRequestBody;
   const phase = body.phase === "detail" ? "detail" : "quick";
@@ -93,7 +215,7 @@ export async function POST(request: Request) {
   const scenario = buildScenario(body);
   const previousAttempt = buildPreviousAttempt(body);
 
-  const sharedParams = {
+  const sharedParams: SharedFeedbackParams = {
     userText: text,
     languageName: learning.promptName,
     nativeLanguageName: native.promptName,
@@ -103,28 +225,12 @@ export async function POST(request: Request) {
     previousAttempt,
   };
 
-  try {
-    if (phase === "quick") {
-      const feedback = await getSpeakingFeedbackQuick(sharedParams);
-      return NextResponse.json(feedback);
-    }
-
-    let imageInputs: Array<{ base64: string; mimeType: string }> = [];
-    try {
-      imageInputs = await loadImageInputs(pattern, body);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "画像が見つかりません。";
-      const status = message === "画像セットがありません。" ? 400 : 404;
-      return NextResponse.json({ error: message }, { status });
-    }
-
-    const feedback = await getSpeakingFeedbackDetail({
-      ...sharedParams,
-      images: imageInputs,
-    });
+  if (phase === "quick") {
+    const feedback = await fetchQuickFeedback(sharedParams, body, pattern);
     return NextResponse.json(feedback);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "フィードバックに失敗しました。";
-    return NextResponse.json({ error: message }, { status: 500 });
   }
+
+  const imageInputs = await loadImageInputsSafe(pattern, body);
+  const feedback = await fetchDetailFeedback(sharedParams, imageInputs);
+  return NextResponse.json(feedback);
 }

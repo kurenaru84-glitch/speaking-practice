@@ -64,6 +64,41 @@ async function callGemini(body: Record<string, unknown>) {
   return extractText(data);
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callGeminiWithRetry(body: Record<string, unknown>, attempts = 3) {
+  let lastError: Error | undefined;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await callGemini(body);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < attempts - 1) {
+        await sleep(400 * (attempt + 1));
+      }
+    }
+  }
+  throw lastError ?? new Error("AI API error");
+}
+
+function emptyDetailResult(): FeedbackDetailResult {
+  return { sentences: [], natural: [], vocabulary: [] };
+}
+
+export function hasQuickContent(feedback: FeedbackQuickResult) {
+  return Boolean(feedback.summary?.trim() || feedback.grade);
+}
+
+export function hasDetailContent(feedback: FeedbackDetailResult) {
+  return (
+    feedback.sentences.length > 0 ||
+    feedback.natural.some((example) => example.text.trim()) ||
+    feedback.vocabulary.length > 0
+  );
+}
+
 export async function transcribeAudio(params: {
   audioBase64: string;
   mimeType: string;
@@ -205,7 +240,7 @@ export async function getSpeakingFeedbackQuick(params: {
     params.previousAttempt
   );
 
-  const text = await callGemini({
+  const text = await callGeminiWithRetry({
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       responseMimeType: "application/json",
@@ -214,9 +249,10 @@ export async function getSpeakingFeedbackQuick(params: {
   });
 
   try {
-    return normalizeQuickFeedback(JSON.parse(text));
+    const parsed = JSON.parse(text);
+    return normalizeQuickFeedback(parsed);
   } catch {
-    throw new Error("AIの応答を解析できませんでした。もう一度お試しください。");
+    return { summary: "", checklist: undefined, grade: undefined, gradeNote: undefined };
   }
 }
 
@@ -255,7 +291,7 @@ export async function getSpeakingFeedbackDetail(params: {
     },
   }));
 
-  const text = await callGemini({
+  const text = await callGeminiWithRetry({
     contents: [
       {
         parts: imageParts.length > 0 ? [...imageParts, { text: prompt }] : [{ text: prompt }],
@@ -270,7 +306,7 @@ export async function getSpeakingFeedbackDetail(params: {
   try {
     return normalizeDetailFeedback(JSON.parse(text));
   } catch {
-    throw new Error("AIの応答を解析できませんでした。もう一度お試しください。");
+    return emptyDetailResult();
   }
 }
 
@@ -430,14 +466,14 @@ function normalizeDetailFeedback(raw: unknown): FeedbackDetailResult {
 
   const growthNote = String(data.growthNote ?? "").trim() || undefined;
 
-  const mapSentences = (sentences: FeedbackResult["sentences"]) => ({
+  const mapSentences = (sentences: FeedbackResult["sentences"]): FeedbackDetailResult => ({
     sentences: filterFeedbackSentences(sentences),
     natural: normalizeNatural(data.natural),
-    vocabulary: (data.vocabulary ?? []).slice(0, 10),
+    vocabulary: Array.isArray(data.vocabulary) ? data.vocabulary.slice(0, 10) : [],
     growthNote,
   });
 
-  if (Array.isArray(data.sentences) && data.sentences.length > 0) {
+  if (Array.isArray(data.sentences)) {
     return mapSentences(
       data.sentences.map((s) => ({
         original: s.original ?? "",
@@ -457,7 +493,12 @@ function normalizeDetailFeedback(raw: unknown): FeedbackDetailResult {
     );
   }
 
-  throw new Error("AIの応答形式が不正です。");
+  return {
+    sentences: [],
+    natural: normalizeNatural(data.natural),
+    vocabulary: Array.isArray(data.vocabulary) ? data.vocabulary.slice(0, 10) : [],
+    growthNote,
+  };
 }
 
 function normalizeFeedback(raw: unknown): FeedbackResult {

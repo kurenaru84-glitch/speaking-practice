@@ -825,19 +825,58 @@ export function SpeakingPractice() {
                 : {}),
       });
 
+    const finalizeFeedback = (result: FeedbackResult) => {
+      savePracticeHistory({
+        patternId,
+        itemKey: currentItemKey,
+        itemTitleJa: currentItemTitleJa,
+        userText: text.trim(),
+        feedback: result,
+        learningLanguage,
+      });
+      appendTextAttempt(currentItemKey, learningLanguage, text.trim());
+      setTextAttempts(getTextAttempts(currentItemKey, learningLanguage));
+      setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
+    };
+
     try {
       const quickRes = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: requestBody("quick"),
       });
-      const quickData = await quickRes.json();
-      if (!quickRes.ok) throw new Error(quickData.error ?? "フィードバックに失敗しました。");
+      const quickPayload = (await quickRes.json()) as FeedbackQuickResult &
+        Partial<FeedbackDetailResult> & { complete?: boolean; error?: string };
+      if (!quickRes.ok) {
+        throw new Error(quickPayload.error ?? "フィードバックに失敗しました。");
+      }
 
       recordSession();
       refreshSessionUsage();
 
-      const quick = quickData as FeedbackQuickResult;
+      if (quickPayload.complete) {
+        const result: FeedbackResult = {
+          summary: quickPayload.summary ?? "",
+          checklist: quickPayload.checklist,
+          grade: quickPayload.grade,
+          gradeNote: quickPayload.gradeNote,
+          sentences: quickPayload.sentences ?? [],
+          natural: quickPayload.natural ?? [],
+          vocabulary: quickPayload.vocabulary ?? [],
+          growthNote: quickPayload.growthNote,
+        };
+        setFeedback(result);
+        finalizeFeedback(result);
+        setLoading(false);
+        return;
+      }
+
+      const quick: FeedbackQuickResult = {
+        summary: quickPayload.summary ?? "",
+        checklist: quickPayload.checklist,
+        grade: quickPayload.grade,
+        gradeNote: quickPayload.gradeNote,
+      };
       setFeedback({
         ...quick,
         sentences: [],
@@ -853,29 +892,20 @@ export function SpeakingPractice() {
           headers: { "Content-Type": "application/json" },
           body: requestBody("detail"),
         });
-        const detailData = await detailRes.json();
-        if (!detailRes.ok) {
-          throw new Error(detailData.error ?? "詳細な添削の取得に失敗しました。");
+        const detailData = (await detailRes.json()) as FeedbackDetailResult;
+        if (detailRes.ok) {
+          const result: FeedbackResult = { ...quick, ...detailData };
+          setFeedback(result);
+          if (
+            result.sentences.length > 0 ||
+            result.natural.some((example) => example.text.trim()) ||
+            result.vocabulary.length > 0
+          ) {
+            finalizeFeedback(result);
+          }
         }
-
-        const detail = detailData as FeedbackDetailResult;
-        const result: FeedbackResult = { ...quick, ...detail };
-        setFeedback(result);
-        savePracticeHistory({
-          patternId,
-          itemKey: currentItemKey,
-          itemTitleJa: currentItemTitleJa,
-          userText: text.trim(),
-          feedback: result,
-          learningLanguage,
-        });
-        appendTextAttempt(currentItemKey, learningLanguage, text.trim());
-        setTextAttempts(getTextAttempts(currentItemKey, learningLanguage));
-        setPreviousHistory(getLatestPracticeHistory(currentItemKey, learningLanguage));
-      } catch (detailErr) {
-        setError(
-          detailErr instanceof Error ? detailErr.message : "詳細な添削の取得に失敗しました。"
-        );
+      } catch {
+        // Keep quick feedback visible without showing an error.
       } finally {
         setLoadingDetail(false);
       }

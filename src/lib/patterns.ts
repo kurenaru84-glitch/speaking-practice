@@ -176,13 +176,13 @@ Sentence feedback rules:
 - You may also give brief advice in "comment" even when grammar is fine.
 
 Vocabulary rules:
-- Add 5-10 "vocabulary" items: words or short phrases in the target language that fit THIS image/scene.
+- Add 3-5 "vocabulary" items: words or short phrases in the target language that fit THIS image/scene.
 - "term" is in the learner's target language. "note" is a short ${nativeLanguageName} explanation (what it means or when to use it).
 - Pick practical scene vocabulary (people, objects, actions, places), not generic words.
 
 Natural examples rules:
-- Provide exactly 2 entries in "natural". Two different but equally good ways to say it (different wording or emphasis).
-- Each entry has "text" in the target language and "translationJa": a natural ${nativeLanguageName} translation of that example (not word-for-word if unnatural).
+- Provide exactly 1 entry in "natural".
+- The entry has "text" in the target language (60-100 words, spoken style) and "translationJa": a natural ${nativeLanguageName} translation.
 
 General:
 - Do not wrap JSON in markdown.`;
@@ -208,11 +208,7 @@ function buildJsonShape(
   "natural": [
     {
       "text": "${naturalHint}",
-      "translationJa": "natural ${nativeLanguageName} translation of example 1"
-    },
-    {
-      "text": "A second alternative natural example in ${languageName}. Different wording or angle from the first, same quality. 80-140 words, spoken style.",
-      "translationJa": "natural ${nativeLanguageName} translation of example 2"
+      "translationJa": "natural ${nativeLanguageName} translation of the example"
     }
   ],
   "vocabulary": [
@@ -297,14 +293,7 @@ ${sectionLines}
     }
   ],
   "natural": [
-    ${naturalEntry},
-    {
-      "text": "A second alternative example in ${languageName}. Same structure quality, different wording.",
-      "translationJa": "natural ${nativeLanguageName} translation of example 2",
-      "sections": [
-${sectionLines}
-      ]
-    }
+    ${naturalEntry}
   ],
   "checklist": [
 ${checklistLines}
@@ -326,6 +315,16 @@ export type PreviousAttemptContext = {
   checklistSummary?: string;
 };
 
+function sceneReferenceBlock(sceneDescription: string) {
+  return `
+Scene reference for grading (the learner saw this photo while speaking; use for fact-checking, positions, and vocabulary; do NOT paste this block into feedback):
+"""
+${sceneDescription.trim()}
+"""
+No image is attached to this request — rely on this reference and the learner's text.
+`;
+}
+
 export function buildFeedbackPrompt(
   patternId: PatternId,
   languageName: string,
@@ -341,8 +340,10 @@ export function buildFeedbackPrompt(
     incomingEmailJa?: string;
     incomingEmailEn?: string;
   },
-  previousAttempt?: PreviousAttemptContext
+  previousAttempt?: PreviousAttemptContext,
+  sceneDescription?: string
 ): string {
+  const sceneBlock = sceneDescription?.trim() ? sceneReferenceBlock(sceneDescription) : "";
   const previousBlock = previousAttempt
     ? `
 The learner's PREVIOUS attempt on this same question (for comparison):
@@ -368,12 +369,13 @@ ${userText}
     return `${intro}
 
 The learner saw photos in order (panel 1 → 2 → 3 → 4) and told the story in ${languageName}.
+The attached image is ONE vertical strip: panel 1 at the top, then 2, 3, 4 toward the bottom.
 
 Return JSON only:
 ${buildJsonShape(
   languageName,
   nativeLanguageName,
-  `A natural 60-second spoken story covering ALL panels in order in ${languageName}. Use First, Then, After that, Eventually, However. 80-160 words, spoken style.`,
+  `A natural 60-second spoken story covering ALL panels in order in ${languageName}. Use First, Then, After that, Eventually, However. 60-100 words, spoken style.`,
   `2-4 sentences in ${nativeLanguageName} on connectors, tense consistency, and cause-effect logic`
 )}
 
@@ -395,12 +397,13 @@ Comparison topic shown to the learner:
 ${topicBlock}
 
 The learner compared Image A and Image B in ${languageName} and stated a preference.
+The attached image shows A on the left and B on the right.
 
 Return JSON only:
 ${buildJsonShape(
   languageName,
   nativeLanguageName,
-  `A natural 60-second comparison in ${languageName}. Choose A or B clearly. Use On the one hand... On the other hand... Therefore... 80-140 words.`,
+  `A natural 60-second comparison in ${languageName}. Choose A or B clearly. Use On the one hand... On the other hand... Therefore... 60-100 words.`,
   `2-4 sentences in ${nativeLanguageName} on comparison structure, vocabulary specificity, and clear reasoning`
 )}
 
@@ -421,6 +424,7 @@ Evaluate whether the learner's response fits THIS scenario. They should speak di
 
     return `${intro}
 ${scenarioBlock}
+${sceneBlock}
 
 The learner did role-play or gave advice about the photo in ${languageName}.
 
@@ -428,7 +432,7 @@ Return JSON only:
 ${buildJsonShape(
   languageName,
   nativeLanguageName,
-  `A natural 60-second role-play in ${languageName}. Use If I were... / I would... and direct speech. Polite and practical. 80-140 words.`,
+  `A natural 60-second role-play in ${languageName}. Use If I were... / I would... and direct speech. Polite and practical. 60-100 words.`,
   `2-4 sentences in ${nativeLanguageName} on subjunctive, tone, and situational fit`
 )}
 
@@ -459,7 +463,7 @@ Return JSON only:
 ${buildStructuredJsonShape(
   languageName,
   nativeLanguageName,
-  `A natural 60-second interview answer in ${languageName}. 80-140 words.`,
+  `A natural 60-second interview answer in ${languageName}. 60-100 words.`,
   `2-4 sentences in ${nativeLanguageName} on answer structure, specificity, and interview tone`,
   INTERVIEW_CHECKLIST,
   INTERVIEW_SECTIONS,
@@ -523,6 +527,7 @@ ${sharedRules(languageName, nativeLanguageName)}`;
 
   if (patternId === "speculate") {
     return `${intro}
+${sceneBlock}
 
 The learner speculated about the photo in ${languageName} (why, before, next).
 
@@ -530,7 +535,7 @@ Return JSON only:
 ${buildJsonShape(
   languageName,
   nativeLanguageName,
-  `A natural 60-second speculation in ${languageName}. Use must/might/could with visible evidence. 80-140 words.`,
+  `A natural 60-second speculation in ${languageName}. Use must/might/could with visible evidence. 60-100 words.`,
   `2-4 sentences in ${nativeLanguageName} on modality usage and logical grounding`
 )}
 
@@ -539,6 +544,7 @@ ${sharedRules(languageName, nativeLanguageName)}`;
   }
 
   return `${intro}
+${sceneBlock}
 
 The learner described the photo in ${languageName}.
 
@@ -546,7 +552,7 @@ Return JSON only:
 ${buildJsonShape(
   languageName,
   nativeLanguageName,
-  `A natural 60-second description of THIS photo in ${languageName}. 80-140 words, spoken style.`,
+  `A natural 60-second description of THIS photo in ${languageName}. 60-100 words, spoken style.`,
   `2-4 sentences of overall feedback in ${nativeLanguageName}`
 )}
 

@@ -9,12 +9,14 @@
     "lint": "eslint",
     "generate:roleplay": "npx tsx scripts/generate-roleplay-prompts.ts",
     "optimize:images": "npx tsx scripts/optimize-images.ts",
-    "split:story": "npx tsx scripts/split-story-strip.ts"
+    "split:story": "npx tsx scripts/split-story-strip.ts",
+    "generate:scene-descriptions": "npx tsx scripts/generate-scene-descriptions.ts"
   },
   "dependencies": {
     "next": "16.3.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -23,7 +25,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
-    "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

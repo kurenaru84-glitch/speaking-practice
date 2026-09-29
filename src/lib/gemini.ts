@@ -6,8 +6,11 @@ import type { ChecklistItem, FeedbackGrade, FeedbackResult, NaturalExample, Natu
 import { filterFeedbackSentences } from "@/lib/skip-feedback-sentences";
 import { buildFeedbackPrompt, type PatternId, type PreviousAttemptContext } from "@/lib/patterns";
 
-const MODEL = "gemini-3.6-flash";
+/** Gemini 3.5 Flash-Lite (Google's Flash Lite tier; override via GEMINI_MODEL). */
+const MODEL = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+
+const FEEDBACK_MAX_OUTPUT_TOKENS = 4096;
 
 type GeminiResponse = {
   candidates?: Array<{
@@ -34,9 +37,28 @@ function extractText(data: GeminiResponse) {
   return text.trim();
 }
 
-async function callGemini(body: Record<string, unknown>) {
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableGeminiError(message: string, status?: number) {
+  const lower = message.toLowerCase();
+  return (
+    status === 429 ||
+    status === 503 ||
+    status === 500 ||
+    lower.includes("quota") ||
+    lower.includes("resource_exhausted") ||
+    lower.includes("rate") ||
+    lower.includes("overloaded") ||
+    lower.includes("try again") ||
+    lower.includes("too many requests")
+  );
+}
+
+async function callGeminiOnce(model: string, body: Record<string, unknown>) {
   const apiKey = getApiKey();
-  const url = `${API_BASE}/${MODEL}:generateContent?key=${apiKey}`;
+  const url = `${API_BASE}/${model}:generateContent?key=${apiKey}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -45,9 +67,31 @@ async function callGemini(body: Record<string, unknown>) {
 
   const data = (await res.json()) as GeminiResponse;
   if (!res.ok) {
-    throw new Error(data.error?.message ?? `AI API error (${res.status})`);
+    const message = data.error?.message ?? `AI API error (${res.status})`;
+    const error = new Error(message) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
   }
   return extractText(data);
+}
+
+async function callGemini(body: Record<string, unknown>) {
+  let lastError: Error & { status?: number } | undefined;
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      return await callGeminiOnce(MODEL, body);
+    } catch (error) {
+      lastError = error instanceof Error ? (error as Error & { status?: number }) : new Error(String(error));
+      if (!isRetryableGeminiError(lastError.message, lastError.status)) {
+        throw lastError;
+      }
+      const backoff = 700 * (attempt + 1) + (lastError.status === 429 ? 2500 : 0);
+      await sleep(backoff);
+    }
+  }
+
+  throw lastError ?? new Error("AI API error");
 }
 
 export async function transcribeAudio(params: {
@@ -181,6 +225,7 @@ export async function getSpeakingFeedback(params: {
     incomingEmailEn?: string;
   };
   previousAttempt?: PreviousAttemptContext;
+  sceneDescription?: string;
 }): Promise<FeedbackResult> {
   const prompt = buildFeedbackPrompt(
     params.patternId,
@@ -189,7 +234,8 @@ export async function getSpeakingFeedback(params: {
     params.nativeLanguageId,
     params.userText,
     params.scenario,
-    params.previousAttempt
+    params.previousAttempt,
+    params.sceneDescription
   );
 
   const imageParts = (params.images ?? []).map((img) => ({
@@ -207,6 +253,7 @@ export async function getSpeakingFeedback(params: {
     ],
     generationConfig: {
       responseMimeType: "application/json",
+      maxOutputTokens: FEEDBACK_MAX_OUTPUT_TOKENS,
       thinkingConfig: { thinkingLevel: "minimal" },
     },
   });
@@ -255,7 +302,7 @@ function normalizeNatural(value: unknown): NaturalExample[] {
         return null;
       })
       .filter((item): item is NaturalExample => item !== null);
-    return items.slice(0, 2);
+    return items.slice(0, 1);
   }
   if (typeof value === "string" && value.trim()) {
     return [{ text: value.trim(), translationJa: "" }];
@@ -308,7 +355,7 @@ function normalizeFeedback(raw: unknown): FeedbackResult {
   const base = (sentences: FeedbackResult["sentences"]) => ({
     sentences: filterFeedbackSentences(sentences),
     natural: normalizeNatural(data.natural),
-    vocabulary: (data.vocabulary ?? []).slice(0, 10),
+    vocabulary: (data.vocabulary ?? []).slice(0, 5),
     summary: data.summary ?? "",
     checklist,
     growthNote,

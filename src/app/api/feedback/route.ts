@@ -1,8 +1,9 @@
-import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
-import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
 import { getSpeakingFeedback } from "@/lib/gemini";
+import { readImageForFeedback, readImagesForFeedback } from "@/lib/feedback-images";
+import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
 import { parseImageUrl, parseSetImageUrls } from "@/lib/images";
+import { getSceneDescription } from "@/lib/scene-descriptions";
 import { getPattern, type PatternId } from "@/lib/patterns";
 import { getTextCharLimit, textLimitMessage } from "@/lib/text-limits";
 
@@ -40,9 +41,13 @@ export async function POST(request: Request) {
   const native = getNativeLanguage(body.nativeLanguage ?? "ja-JP");
 
   let imageInputs: Array<{ base64: string; mimeType: string }> = [];
+  const singleImageUrl = body.image?.trim() ?? "";
+  const sceneDescription = singleImageUrl ? getSceneDescription(singleImageUrl) : undefined;
 
   try {
     if (pattern.imageLayout === "interview" || pattern.imageLayout === "email") {
+      imageInputs = [];
+    } else if (sceneDescription) {
       imageInputs = [];
     } else if (pattern.multiImage) {
       const urls = body.images ?? [];
@@ -50,16 +55,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "画像セットがありません。" }, { status: 400 });
       }
       const parsed = parseSetImageUrls(urls, pattern.imageFolder);
-      imageInputs = await Promise.all(
-        parsed.map(async (item) => ({
-          base64: (await readFile(item.fullPath)).toString("base64"),
-          mimeType: item.mimeType,
-        }))
+      const layout = pattern.imageLayout === "compare" ? "horizontal" : "vertical";
+      imageInputs = await readImagesForFeedback(
+        parsed.map((item) => item.fullPath),
+        layout
       );
     } else {
       const parsed = parseImageUrl(body.image ?? "", pattern.imageFolder);
-      const buffer = await readFile(parsed.fullPath);
-      imageInputs = [{ base64: buffer.toString("base64"), mimeType: parsed.mimeType }];
+      imageInputs = [await readImageForFeedback(parsed.fullPath)];
     }
   } catch {
     return NextResponse.json({ error: "画像が見つかりません。" }, { status: 404 });
@@ -68,6 +71,7 @@ export async function POST(request: Request) {
   try {
     const feedback = await getSpeakingFeedback({
       images: imageInputs,
+      sceneDescription,
       userText: text,
       languageName: learning.promptName,
       nativeLanguageName: native.promptName,

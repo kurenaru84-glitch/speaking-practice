@@ -599,36 +599,6 @@ export function SpeakingPractice() {
     [learningLanguage, nativeLanguage, applyTranscriptText]
   );
 
-  const refineTranscriptFromAudio = useCallback(
-    async (blob: Blob, instantText: string) => {
-      try {
-        const formData = new FormData();
-        formData.append("audio", blob, "recording.webm");
-        formData.append("language", learningLanguage);
-        formData.append("nativeLanguage", nativeLanguage);
-
-        const res = await fetch("/api/transcribe", {
-          method: "POST",
-          body: formData,
-        });
-        const data = await res.json();
-        if (!res.ok) return;
-
-        const refined = String(data.text ?? "").trim();
-        if (!refined) return;
-
-        const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
-        if (normalize(refined) === normalize(instantText)) return;
-
-        applyTranscriptText(refined);
-        showToast("文字起こしを更新しました");
-      } catch {
-        // Keep instant browser transcript on background failure.
-      }
-    },
-    [learningLanguage, nativeLanguage, applyTranscriptText, showToast]
-  );
-
   const clearLastRecording = useCallback(() => {
     if (lastRecordingUrlRef.current) {
       URL.revokeObjectURL(lastRecordingUrlRef.current);
@@ -662,7 +632,6 @@ export function SpeakingPractice() {
 
       if (instantText.length >= INSTANT_TRANSCRIPT_MIN_CHARS) {
         applyTranscriptText(instantText);
-        void refineTranscriptFromAudio(blob, instantText);
       } else {
         await transcribeBlob(blob);
       }
@@ -672,7 +641,6 @@ export function SpeakingPractice() {
     stop,
     stopPreview,
     transcribeBlob,
-    refineTranscriptFromAudio,
     applyTranscriptText,
     clearLastRecording,
     patternId,

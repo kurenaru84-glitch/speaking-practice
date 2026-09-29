@@ -30,7 +30,7 @@ function promptForPattern(patternId: SceneDescriptionEntry["patternId"]) {
 Describe ONLY what is visible. Include:
 - Setting / location
 - People: count, apparent roles, left-to-right and foreground/background positions, facing direction
-- Appearance and clothing (colors, notable items)
+- Appearance and clothing (describe colors conservatively, e.g. brown/tan/beige rather than yellow unless clearly yellow)
 - Actions, expressions, and interactions
 - Key objects and background details
 - A short "Spatial layout" line (e.g. "Left: ... Center: ... Right: ...")

@@ -176,13 +176,13 @@ Sentence feedback rules:
 - You may also give brief advice in "comment" even when grammar is fine.
 
 Vocabulary rules:
-- Add 3-5 "vocabulary" items: words or short phrases in the target language that fit THIS image/scene.
+- Add 5-10 "vocabulary" items: words or short phrases in the target language that fit THIS image/scene.
 - "term" is in the learner's target language. "note" is a short ${nativeLanguageName} explanation (what it means or when to use it).
 - Pick practical scene vocabulary (people, objects, actions, places), not generic words.
 
 Natural examples rules:
-- Provide exactly 1 entry in "natural".
-- The entry has "text" in the target language (60-100 words, spoken style) and "translationJa": a natural ${nativeLanguageName} translation.
+- Provide exactly 2 entries in "natural". Two different but equally good ways to say it (different wording or emphasis).
+- Each entry has "text" in the target language (80-140 words, spoken style) and "translationJa": a natural ${nativeLanguageName} translation.
 
 General:
 - Do not wrap JSON in markdown.`;
@@ -208,7 +208,11 @@ function buildJsonShape(
   "natural": [
     {
       "text": "${naturalHint}",
-      "translationJa": "natural ${nativeLanguageName} translation of the example"
+      "translationJa": "natural ${nativeLanguageName} translation of example 1"
+    },
+    {
+      "text": "A second alternative natural example in ${languageName}. Different wording or angle from the first, same quality. 80-140 words, spoken style.",
+      "translationJa": "natural ${nativeLanguageName} translation of example 2"
     }
   ],
   "vocabulary": [
@@ -293,7 +297,14 @@ ${sectionLines}
     }
   ],
   "natural": [
-    ${naturalEntry}
+    ${naturalEntry},
+    {
+      "text": "A second alternative example in ${languageName}. Same structure quality, different wording.",
+      "translationJa": "natural ${nativeLanguageName} translation of example 2",
+      "sections": [
+${sectionLines}
+      ]
+    }
   ],
   "checklist": [
 ${checklistLines}

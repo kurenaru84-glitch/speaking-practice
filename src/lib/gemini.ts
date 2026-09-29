@@ -302,7 +302,7 @@ function normalizeNatural(value: unknown): NaturalExample[] {
         return null;
       })
       .filter((item): item is NaturalExample => item !== null);
-    return items.slice(0, 1);
+    return items.slice(0, 2);
   }
   if (typeof value === "string" && value.trim()) {
     return [{ text: value.trim(), translationJa: "" }];
@@ -355,7 +355,7 @@ function normalizeFeedback(raw: unknown): FeedbackResult {
   const base = (sentences: FeedbackResult["sentences"]) => ({
     sentences: filterFeedbackSentences(sentences),
     natural: normalizeNatural(data.natural),
-    vocabulary: (data.vocabulary ?? []).slice(0, 5),
+    vocabulary: (data.vocabulary ?? []).slice(0, 10),
     summary: data.summary ?? "",
     checklist,
     growthNote,

@@ -3,7 +3,7 @@ import { getSpeakingFeedback } from "@/lib/gemini";
 import { readImageForFeedback, readImagesForFeedback } from "@/lib/feedback-images";
 import { getLearningLanguage, getNativeLanguage } from "@/lib/languages";
 import { parseImageUrl, parseSetImageUrls } from "@/lib/images";
-import { getSceneDescription } from "@/lib/scene-descriptions";
+import { getCompareSceneDescription, getSceneDescription } from "@/lib/scene-descriptions";
 import { getPattern, type PatternId } from "@/lib/patterns";
 import { getTextCharLimit, textLimitMessage } from "@/lib/text-limits";
 
@@ -42,7 +42,17 @@ export async function POST(request: Request) {
 
   let imageInputs: Array<{ base64: string; mimeType: string }> = [];
   const singleImageUrl = body.image?.trim() ?? "";
-  const sceneDescription = singleImageUrl ? getSceneDescription(singleImageUrl) : undefined;
+  let sceneDescription: string | undefined;
+  if (pattern.imageLayout === "compare") {
+    const urls = body.images ?? [];
+    sceneDescription = getCompareSceneDescription(
+      urls,
+      body.compareLabelA?.trim() || "A",
+      body.compareLabelB?.trim() || "B"
+    );
+  } else if (singleImageUrl) {
+    sceneDescription = getSceneDescription(singleImageUrl);
+  }
 
   try {
     if (pattern.imageLayout === "interview" || pattern.imageLayout === "email") {

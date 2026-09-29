@@ -22,7 +22,12 @@ function loadApiKey() {
 function patternForUrl(imageUrl: string): SceneDescriptionEntry["patternId"] {
   if (imageUrl.startsWith("/images/speculate/")) return "speculate";
   if (imageUrl.startsWith("/images/roleplay/")) return "roleplay";
+  if (imageUrl.startsWith("/images/compare/")) return "compare";
   return "describe";
+}
+
+function imageFolderForPattern(patternId: SceneDescriptionEntry["patternId"]) {
+  return patternId;
 }
 
 function promptForPattern(patternId: SceneDescriptionEntry["patternId"]) {
@@ -47,14 +52,18 @@ This photo is for a "speculate" task (why / before / next). Mention visible clue
 
 This photo is for role-play / advice. Note who the learner might speak to and the social situation.`;
   }
+  if (patternId === "compare") {
+    return `${base}
+
+This photo is ONE side of an A-vs-B comparison (either option A or option B). State which option this image represents if inferable from filename (a vs b); describe this side only in detail.`;
+  }
   return `${base}
 
 This photo is for a "describe the scene" speaking task.`;
 }
 
 async function captionImage(apiKey: string, imageUrl: string, patternId: SceneDescriptionEntry["patternId"]) {
-  const folder = patternId === "describe" ? "describe" : patternId === "speculate" ? "speculate" : "roleplay";
-  const parsed = parseImageUrl(imageUrl, folder);
+  const parsed = parseImageUrl(imageUrl, imageFolderForPattern(patternId));
   const buffer = await readFile(parsed.fullPath);
   const body = {
     contents: [

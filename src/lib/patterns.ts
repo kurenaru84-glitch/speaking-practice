@@ -404,11 +404,15 @@ Comparison topic shown to the learner:
 - Option B: ${scenario.labelB ?? "B"}`
       : "";
 
+    const imageNote = sceneBlock
+      ? ""
+      : "\nThe attached image shows A on the left and B on the right.";
+
     return `${intro}
 ${topicBlock}
+${sceneBlock}
 
-The learner compared Image A and Image B in ${languageName} and stated a preference.
-The attached image shows A on the left and B on the right.
+The learner compared Image A and Image B in ${languageName} and stated a preference.${imageNote}
 
 Return JSON only:
 ${buildJsonShape(
